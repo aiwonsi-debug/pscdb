@@ -142,11 +142,10 @@
     </header>
 
     <!-- Unified App Navigation Bar -->
-    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-bottom:12px;">
+    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px;">
       <button class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
       <button class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
-      <button class="nav-tab-btn" id="tab_btn_quota" onclick="switchAppTab('quota')">⚡ AI Quota</button>
-      <button class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 เลขา/PO</button>
+      <button class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
     </div>
 
     <!-- Sub Filter Tabs for Ops Tab -->
@@ -612,107 +611,6 @@
     </div>
 </div>
 
-<!-- SECTION 3: AI QUOTA & ENGINES DASHBOARD -->
-<div id="sec_quota" class="app-section">
-    <!-- SECTION 1: AGY CLI -->
-    <div class="card" style="border-left: 4px solid #a855f7;">
-      <div class="card-header">
-        <div class="card-title" style="color: #c084fc;">🚀 Google Antigravity CLI (AGY)</div>
-        <span class="badge badge-salaya" id="agy_acc">aiwonsi@gmail.com</span>
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <div style="font-size:12px; font-weight:600; color:#cbd5e1; margin-bottom:6px; display:flex; justify-content:space-between;">
-          <span>Gemini Models (Flash / Pro)</span>
-          <span style="color:#34d399; font-size:11px;">Active & Auto-Failover to Groq</span>
-        </div>
-        <div class="grid-2">
-          <div class="stat-box" style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
-            <span class="stat-label" style="font-size:11px; color:#94a3b8;">โควต้าประจำสัปดาห์ (Weekly Limit)</span>
-            <div class="stat-value" id="gem_week_val" style="font-size:15px; font-weight:700; color:#34d399;">92.16%</div>
-            <div class="progress-bar-bg" style="background:#1e293b; height:6px; border-radius:3px; margin-top:4px; overflow:hidden;">
-              <div class="progress-bar" id="gem_week_bar" style="width: 92.16%; height:100%; background:#10b981;"></div>
-            </div>
-            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">รีเฟรชเต็มใน: <b id="gem_week_ref" style="color:#94a3b8;">165h 57m</b></span>
-          </div>
-          <div class="stat-box" style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
-            <span class="stat-label" style="font-size:11px; color:#94a3b8;">โควต้า 5 ชั่วโมง (5-Hour Limit)</span>
-            <div class="stat-value" id="gem_5h_val" style="font-size:15px; font-weight:700; color:#38bdf8;">70.22%</div>
-            <div class="progress-bar-bg" style="background:#1e293b; height:6px; border-radius:3px; margin-top:4px; overflow:hidden;">
-              <div class="progress-bar" id="gem_5h_bar" style="width: 70.22%; height:100%; background:#38bdf8;"></div>
-            </div>
-            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">รีเฟรชเต็มใน: <b id="gem_5h_ref" style="color:#94a3b8;">3h 58m</b></span>
-          </div>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 12px; background:rgba(0,0,0,0.25); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
-        <div style="font-size:12px; font-weight:600; color:#cbd5e1; margin-bottom:6px; display:flex; justify-content:space-between;">
-          <span>Claude & GPT Models (Sonnet/Opus/GPT-OSS)</span>
-          <span style="color:#f87171; font-size:10px;">⚠️ Weekly Limit Reached</span>
-        </div>
-        <div class="grid-2">
-          <div class="stat-box">
-            <span class="stat-label" style="font-size:11px; color:#94a3b8;">Weekly Limit</span>
-            <div class="stat-value" style="color:#f87171; font-size:14px; font-weight:700;" id="cg_week_val">0%</div>
-            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">รีเฟรชใน: <b id="cg_week_ref" style="color:#94a3b8;">145h 42m</b></span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-label" style="font-size:11px; color:#94a3b8;">5-Hour Status</span>
-            <div class="stat-value" style="color:#f87171; font-size:13px; font-weight:700;">จำกัดชั่วคราว</div>
-            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">ระบบจะรีเซ็ตตามรอบสัปดาห์</span>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#94a3b8; background:rgba(255,255,255,0.02); padding:6px 10px; border-radius:6px;">
-        <div>คำสั่งสะสม Session นี้: <b id="agy_prompts" style="color:#f8fafc;">0 ครั้ง</b></div>
-        <div style="color:#34d399;">⚡ สลับเรียกใช้ Gemini Pro & Flash อัตโนมัติ</div>
-      </div>
-    </div>
-
-    <!-- SECTION 2: GROQ FAST LLAMA & QWEN API -->
-    <div class="card" style="border-left: 4px solid #38bdf8;">
-      <div class="card-header">
-        <div class="card-title">🚀 Groq Fast API (Auto-Failover)</div>
-        <span class="badge badge-primary" id="groq_model">qwen/qwen3.8-27b</span>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
-          <span style="font-size:11px; color:#94a3b8;">Requests Quota คงเหลือ</span>
-          <div style="font-size:14px; font-weight:700; color:#34d399;" id="groq_req_val">997 / 1,000</div>
-          <div style="background:#1e293b; height:5px; border-radius:3px; margin-top:4px; overflow:hidden;">
-            <div id="groq_req_bar" style="width: 100%; height:100%; background:#10b981;"></div>
-          </div>
-        </div>
-        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
-          <span style="font-size:11px; color:#94a3b8;">Tokens Quota คงเหลือ</span>
-          <div style="font-size:14px; font-weight:700; color:#38bdf8;" id="groq_tok_val">6,912 / 8,000</div>
-          <div style="background:#1e293b; height:5px; border-radius:3px; margin-top:4px; overflow:hidden;">
-            <div id="groq_tok_bar" style="width: 86%; height:100%; background:#38bdf8;"></div>
-          </div>
-        </div>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px;">
-        <div>Requests สะสม: <b id="groq_tot_req" style="color:#f8fafc;">5</b></div>
-        <div>Tokens สะสม: <b id="groq_tot_tok" style="color:#f8fafc;">830</b></div>
-        <div>Reset Req: <span id="groq_rst_req" style="color:#facc15;">-</span></div>
-        <div>Reset Tok: <span id="groq_rst_tok" style="color:#facc15;">-</span></div>
-      </div>
-    </div>
-
-    <!-- SECTION 3: RECENT TURNS TABLE -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">📜 ประวัติการเรียกใช้งาน AI สด</div>
-        <span class="badge badge-primary">Real-Time Turns</span>
-      </div>
-      <div id="recent_list" style="max-height: 220px; overflow-y: auto;">
-        <div style="text-align: center; color: #64748b; padding: 12px;">กำลังดึงข้อมูล...</div>
-      </div>
-    </div>
-</div>
-
 <!-- SECTION 4: SECRETARY & PO KNOWLEDGE BASE -->
 <div id="sec_sec" class="app-section">
     <div class="card" style="border-left: 4px solid #10b981;">
@@ -754,18 +652,7 @@
       </div>
     </div>
 
-    <!-- GT Schedule & D-2 -->
-    <div class="card" style="border-left: 4px solid #f59e0b;">
-      <div class="card-header">
-        <div class="card-title" style="color: #fbbf24;">📅 กำหนดการจัดทำ & ตรวจสอบ GT ล่วงหน้า (D-2)</div>
-        <span class="badge badge-warning">ระบบเตือนอัตโนมัติ</span>
-      </div>
-      <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-        • <b>รอบส่งมอบ AFT 03/09 (พฤหัส):</b> ตรวจสอบและเตือนแล้ว 02/09 12:00 น.<br>
-        • <b>รอบส่งมอบ AFT 05/09 & Yamamori 05/09:</b> กำหนดแจ้งเตือน 04/09 12:00 น.<br>
-        • <b>รอบส่งมอบ AFT 07/09 & TNS หอมแดง 07/09:</b> เลื่อนเตือนเป็น 05/09 12:00 น. (ติดวันอาทิตย์)
-      </div>
-    </div>
+
 </div>
 
     <footer>
@@ -1350,7 +1237,7 @@ if (cat === 'all') {
 
     
     function switchAppTab(tabId) {
-      const tabs = ['ops', 'stock', 'quota', 'sec'];
+      const tabs = ['ops', 'stock', 'sec'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab_btn_' + t);
         const sec = document.getElementById('sec_' + t);
@@ -1367,10 +1254,6 @@ if (cat === 'all') {
       
       if (subFilter) {
         subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
-      }
-
-      if (tabId === 'quota') {
-        fetchAiUsageData();
       }
     }
 
