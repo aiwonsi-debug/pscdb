@@ -147,6 +147,8 @@ function sendMessageWithKeyboard(chatId, text, replyMarkup) {
     return tgRequest('sendMessage', {
         chat_id: chatId,
         text: text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
         reply_markup: replyMarkup
     });
 }
@@ -155,7 +157,9 @@ function editMessageText(chatId, messageId, text, replyMarkup = null) {
     const payload = {
         chat_id: chatId,
         message_id: messageId,
-        text: text
+        text: text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
     };
     if (replyMarkup) payload.reply_markup = replyMarkup;
     return tgRequest('editMessageText', payload);
