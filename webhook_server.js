@@ -174,6 +174,13 @@ function recordLoadingReport(reportObj) {
         opsData.cards_state[cardId].loadedReported = true;
         opsData.cards_state[cardId].reportedAt = new Date().toISOString();
         opsData.cards_state[cardId].details = reportObj;
+        opsData.cards_state[cardId].loadedDate = reportObj.date;
+        opsData.cards_state[cardId].loadedItem = reportObj.item;
+        opsData.cards_state[cardId].loadedWeight = reportObj.weight;
+        opsData.cards_state[cardId].loadedFreight = reportObj.freight;
+        opsData.cards_state[cardId].loadedPayment = reportObj.payment;
+        opsData.cards_state[cardId].loadedLocation = reportObj.location;
+        opsData.cards_state[cardId].rawReport = reportObj.rawText;
     }
 
     opsData.history_logs.unshift({
