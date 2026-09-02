@@ -23,13 +23,12 @@ function log(msg) {
 
 const processes = {
     bot: { cmd: process.execPath, args: [path.join(__dirname, 'bot.js')], name: 'Telegram Secretary Bot', child: null, restarting: false },
-    ssh: { cmd: process.execPath, args: [path.join(__dirname, 'ssh_server.js')], name: 'SSH Server', child: null, restarting: false },
-    teamDash: { cmd: process.execPath, args: ['C:\\Users\\624\\team-dashboard\\server.js'], name: 'PSCDB Team Dashboard', child: null, restarting: false },
     daemon: { cmd: 'powershell.exe', args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', path.join(__dirname, 'Secretary-Daemon.ps1')], name: 'Secretary Daemon', child: null, restarting: false }
 };
 
 function launchProcess(key) {
     const item = processes[key];
+    if (!item) return;
     if (item.child && !item.child.killed && item.child.exitCode === null) {
         return; // Already running
     }
@@ -38,7 +37,7 @@ function launchProcess(key) {
     log(`[Supervisor] Spawning ${item.name}...`);
     
     const child = spawn(item.cmd, item.args, {
-        cwd: key === 'teamDash' ? 'C:\\Users\\624\\team-dashboard' : __dirname,
+        cwd: __dirname,
         stdio: 'ignore',
         windowsHide: true
     });
@@ -50,7 +49,13 @@ function launchProcess(key) {
         item.child = null;
         if (!item.restarting) {
             item.restarting = true;
-            setTimeout(() => launchProcess(key), 3000);
+            item.crashCount = (item.crashCount || 0) + 1;
+            // Exponential backoff: 3s, 6s, 12s, max 60s
+            const delay = Math.min(3000 * Math.pow(2, item.crashCount - 1), 60000);
+            log(`[Supervisor] ${item.name} crashed (${item.crashCount} times). Waiting ${delay/1000}s before restart...`);
+            setTimeout(() => {
+                launchProcess(key);
+            }, delay);
         }
     });
 
@@ -59,16 +64,29 @@ function launchProcess(key) {
         item.child = null;
         if (!item.restarting) {
             item.restarting = true;
-            setTimeout(() => launchProcess(key), 3000);
+            item.crashCount = (item.crashCount || 0) + 1;
+            const delay = Math.min(3000 * Math.pow(2, item.crashCount - 1), 60000);
+            setTimeout(() => launchProcess(key), delay);
         }
     });
 }
 
 // Start all services once
 launchProcess('bot');
-launchProcess('ssh');
-launchProcess('teamDash');
 launchProcess('daemon');
+
+
+// Watchdog 0: File Signal Reboot Watcher (Instant reboot on button click from dashboard)
+const rebootSignalFile = path.join(__dirname, 'reboot_bot.signal');
+setInterval(() => {
+    if (fs.existsSync(rebootSignalFile)) {
+        try {
+            fs.unlinkSync(rebootSignalFile);
+        } catch (e) {}
+        log('⚡ [Dashboard Trigger] User requested instant Bot Reboot from Team Dashboard. Restarting bot now...');
+        restartBotProcess();
+    }
+}, 1000);
 
 // Watchdog 1: Fast Dead Check (Checks every 10 seconds if process crashed)
 setInterval(() => {

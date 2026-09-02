@@ -190,6 +190,24 @@ const server = http.createServer(async (req, res) => {
             }, null, 2));
         }
 
+        
+        // Bot Reboot Request from Cloud Dashboard
+        if (req.method === 'POST' && (pathname === '/api/reboot-bot' || pathname === '/api/restart-bot')) {
+            const ops = loadTeamOps();
+            if (!ops.history_logs) ops.history_logs = [];
+            ops.history_logs.unshift({
+                timestamp: new Date().toISOString(),
+                event: 'REBOOT_REQUEST',
+                details: 'คำขอรีบูตบอทจาก Team Dashboard'
+            });
+            saveTeamOps(ops);
+            res.writeHead(200);
+            return res.end(JSON.stringify({ 
+                success: true, 
+                message: 'บันทึกคำสั่งรีบูตขึ้นระบบคลาวด์แล้ว บอทจะรีสตาร์ตอัตโนมัติ' 
+            }));
+        }
+
         // 3. Health Check
         if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
             res.writeHead(200);

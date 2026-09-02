@@ -243,6 +243,9 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'GET' && (pathname === '/' || pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
             if (fs.existsSync(mobileHtmlFile)) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
                 res.writeHead(200);
                 return res.end(fs.readFileSync(mobileHtmlFile, 'utf8'));
             } else {
@@ -310,6 +313,24 @@ const server = http.createServer(async (req, res) => {
                 timestamp: new Date().toISOString(),
                 gasSynced: !!GAS_URL
             }, null, 2));
+        }
+
+        
+        // Bot Reboot API (Triggered from Team Dashboard when bot is unresponsive)
+        if (req.method === 'POST' && (pathname === '/api/reboot-bot' || pathname === '/api/restart-bot')) {
+            const rebootSigFile = path.join(__dirname, 'reboot_bot.signal');
+            try {
+                fs.writeFileSync(rebootSigFile, new Date().toISOString(), 'utf8');
+                console.log('[Bot Reboot Requested from Team Dashboard] Reboot signal written.');
+                res.writeHead(200);
+                return res.end(JSON.stringify({ 
+                    success: true, 
+                    message: 'ส่งคำสั่งรีบูตระบบบอทเรียบร้อยแล้ว ระบบกำลังเริ่มต้นใหม่ภายใน 2 วินาที' 
+                }));
+            } catch(e) {
+                res.writeHead(500);
+                return res.end(JSON.stringify({ success: false, error: e.message }));
+            }
         }
 
         // 3. Gmail Push Webhook Endpoint (Instant Notification to Telegram Bot)
