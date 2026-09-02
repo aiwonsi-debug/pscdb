@@ -1,9 +1,9 @@
-{
+﻿{
   "AsOfDate": "2026-09-02",
-  "LastUpdated": "2026-09-02T01:57:32.103Z",
+  "LastUpdated": "2026-09-02T08:21:22.756Z",
   "Items": {
     "Cabbage": {
-      "Name": "กะหล่ำปลี",
+      "Name": "à¸à¸°à¸«à¸¥à¹ˆà¸³à¸›à¸¥à¸µ",
       "StockKg": 2575,
       "Yield": {
         "AFT": 0.6,
@@ -11,27 +11,27 @@
       }
     },
     "Onion_AFT": {
-      "Name": "หอม AFT",
+      "Name": "à¸«à¸­à¸¡ AFT",
       "StockKg": 26120
     },
     "Onion_Chinese": {
-      "Name": "หอมจีน",
+      "Name": "à¸«à¸­à¸¡à¸ˆà¸µà¸™",
       "StockKg": 3560
     },
     "Carrot": {
-      "Name": "แครอทสวย",
+      "Name": "à¹à¸„à¸£à¸­à¸—à¸ªà¸§à¸¢",
       "StockKg": 5840
     },
     "Purple_Sweet_Potato": {
-      "Name": "มันม่วงหัวเล็ก",
+      "Name": "à¸¡à¸±à¸™à¸¡à¹ˆà¸§à¸‡à¸«à¸±à¸§à¹€à¸¥à¹‡à¸",
       "StockKg": 1690
     },
     "Yellow_Sweet_Potato": {
-      "Name": "มันเหลืองไข่",
+      "Name": "à¸¡à¸±à¸™à¹€à¸«à¸¥à¸·à¸­à¸‡à¹„à¸‚à¹ˆ",
       "StockKg": 342
     },
     "Orange_Sweet_Potato": {
-      "Name": "มันส้ม",
+      "Name": "à¸¡à¸±à¸™à¸ªà¹‰à¸¡",
       "StockKg": 390
     }
   }
