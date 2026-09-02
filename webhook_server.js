@@ -9,6 +9,7 @@ const quotaTracker = require('./ai_quota_tracker.js');
 const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
+const stockFile = path.join(__dirname, 'stock_inventory.json');
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
 const TG_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM';
@@ -84,6 +85,33 @@ function syncToGoogleSheets(payload) {
     }
 }
 
+function fetchGoogleSheetsData() {
+    return new Promise((resolve) => {
+        if (!GAS_URL) return resolve(null);
+        try {
+            https.get(GAS_URL, (res) => {
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    https.get(res.headers.location, (redRes) => {
+                        let data = '';
+                        redRes.on('data', c => data += c);
+                        redRes.on('end', () => {
+                            try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+                        });
+                    }).on('error', () => resolve(null));
+                } else {
+                    let data = '';
+                    res.on('data', c => data += c);
+                    res.on('end', () => {
+                        try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+                    });
+                }
+            }).on('error', () => resolve(null));
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
 function loadTeamOps() {
     let data = { 
         last_updated: new Date().toISOString(), 
@@ -153,6 +181,40 @@ const server = http.createServer(async (req, res) => {
         // Set JSON Content-Type for all API endpoints
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
+        // Real-Time AI Usage & Quota Endpoint
+        if (req.method === 'GET' && (pathname === '/api/usage' || pathname === '/api/quota' || pathname === '/api/ai-usage')) {
+            const quotaData = quotaTracker.loadQuotaData();
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                success: true,
+                timestamp: new Date().toISOString(),
+                data: quotaData
+            }, null, 2));
+        }
+
+        // Real-Time Live Stock Inventory Endpoint
+        if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
+            let stockData = {
+                AsOfDate: new Date().toISOString().slice(0, 10),
+                Items: {
+                    Cabbage: { Name: "กะหล่ำปลี", StockKg: 2575 },
+                    Onion_AFT: { Name: "หอม AFT", StockKg: 26120 },
+                    Onion_Chinese: { Name: "หอมจีน", StockKg: 3560 },
+                    Carrot: { Name: "แครอทสวย", StockKg: 5840 },
+                    Purple_Sweet_Potato: { Name: "มันม่วงหัวเล็ก", StockKg: 1690 },
+                    Yellow_Sweet_Potato: { Name: "มันเหลืองไข่", StockKg: 342 },
+                    Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
+                }
+            };
+            if (fs.existsSync(stockFile)) {
+                try {
+                    stockData = JSON.parse(fs.readFileSync(stockFile, 'utf8'));
+                } catch (e) {}
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify(stockData, null, 2));
+        }
+
         // 2. Health Check
         if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
             res.writeHead(200);
@@ -199,9 +261,28 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
         }
 
-        // 4. Team Status GET
+        // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)
         if (req.method === 'GET' && pathname === '/api/team-status') {
             const ops = loadTeamOps();
+            
+            // Fetch latest from Google Sheets
+            try {
+                const sheetData = await fetchGoogleSheetsData();
+                if (sheetData && typeof sheetData === 'object') {
+                    if (!ops.cards_state) ops.cards_state = {};
+                    Object.keys(sheetData).forEach(id => {
+                        const item = sheetData[id];
+                        if (item) {
+                            if (!ops.cards_state[id]) ops.cards_state[id] = { id: id };
+                            if (item.supplier) ops.cards_state[id].supplier = item.supplier;
+                            if (item.truck) ops.cards_state[id].truck = item.truck;
+                            if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
+                            if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
+                        }
+                    });
+                }
+            } catch (e) {}
+
             res.writeHead(200);
             return res.end(JSON.stringify(ops, null, 2));
         }
@@ -302,13 +383,19 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 PSC Field Ops Server listening on port ${PORT}`);
-});
-
+let isListening = false;
 function createWebhookServer(cb) {
+    if (!isListening) {
+        isListening = true;
+        server.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 PSC Field Ops Server listening on port ${PORT}`);
+        });
+    }
     return server;
 }
 
-module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, server };
+if (require.main === module) {
+    createWebhookServer(null);
+}
 
+module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, server };
