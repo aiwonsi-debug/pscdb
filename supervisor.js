@@ -24,6 +24,7 @@ function log(msg) {
 const processes = {
     bot: { cmd: process.execPath, args: [path.join(__dirname, 'bot.js')], name: 'Telegram Secretary Bot', child: null, restarting: false },
     ssh: { cmd: process.execPath, args: [path.join(__dirname, 'ssh_server.js')], name: 'SSH Server', child: null, restarting: false },
+    teamDash: { cmd: process.execPath, args: ['C:\\Users\\624\\team-dashboard\\server.js'], name: 'PSCDB Team Dashboard', child: null, restarting: false },
     daemon: { cmd: 'powershell.exe', args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', path.join(__dirname, 'Secretary-Daemon.ps1')], name: 'Secretary Daemon', child: null, restarting: false }
 };
 
@@ -37,7 +38,7 @@ function launchProcess(key) {
     log(`[Supervisor] Spawning ${item.name}...`);
     
     const child = spawn(item.cmd, item.args, {
-        cwd: __dirname,
+        cwd: key === 'teamDash' ? 'C:\\Users\\624\\team-dashboard' : __dirname,
         stdio: 'ignore',
         windowsHide: true
     });
@@ -66,6 +67,7 @@ function launchProcess(key) {
 // Start all services once
 launchProcess('bot');
 launchProcess('ssh');
+launchProcess('teamDash');
 launchProcess('daemon');
 
 // Watchdog 1: Fast Dead Check (Checks every 10 seconds if process crashed)
@@ -118,4 +120,4 @@ function restartBotProcess() {
 // Run 15-minute Health Check
 setInterval(performDeepHealthCheck, 15 * 60 * 1000);
 
-log('[Supervisor] 24/7 Watchdog and 15-Minute Deep Health Probe initialized.');
+log('[Supervisor] 24/7 Watchdog, PSCDB Dashboard, and Deep Health Probe initialized.');

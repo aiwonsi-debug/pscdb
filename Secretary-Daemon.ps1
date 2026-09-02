@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Antigravity AI Secretary Background Daemon (Centralized in E:\agy)
 .DESCRIPTION
@@ -30,20 +30,8 @@ function Write-Log {
 
 function Show-Notification {
     param ([string]$title, [string]$message, [string]$iconType = "Info")
-    try {
-        $notify = New-Object System.Windows.Forms.NotifyIcon
-        $notify.Icon = [System.Drawing.SystemIcons]::Information
-        $notify.BalloonTipTitle = $title
-        $notify.BalloonTipText = $message
-        if ($iconType -eq "Warning") { $notify.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Warning }
-        elseif ($iconType -eq "Error") { $notify.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Error }
-        else { $notify.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info }
-        
-        $notify.Visible = $true
-        $notify.ShowBalloonTip(7000)
-        Start-Sleep -Seconds 2
-        $notify.Dispose()
-    } catch {}
+    # Disabled by user preference (Quiet background mode)
+    return
 }
 
 function Send-TelegramPush {
@@ -55,11 +43,12 @@ function Send-TelegramPush {
         
         $baseUrl = "https://api.telegram.org/bot$($tgCfg.BotToken)"
         
-        # Send Text Message
+        # Send Text Message (Safe HTML / Plain text)
+        $cleanText = $text -replace '<[^>]+>', ''
         $body = @{
             chat_id = "$($tgCfg.ChatId)"
             text = $text
-            parse_mode = "Markdown"
+            parse_mode = "HTML"
         } | ConvertTo-Json -Compress
         
         $utf8Bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
@@ -70,8 +59,26 @@ function Send-TelegramPush {
         $reqStream = $req.GetRequestStream()
         $reqStream.Write($utf8Bytes, 0, $utf8Bytes.Length)
         $reqStream.Close()
-        $res = $req.GetResponse()
-        $res.Close()
+        try {
+            $res = $req.GetResponse()
+            $res.Close()
+        } catch {
+            # Fallback to plain text if HTML fails
+            $bodyPlain = @{
+                chat_id = "$($tgCfg.ChatId)"
+                text = $cleanText
+            } | ConvertTo-Json -Compress
+            $utf8BytesPlain = [System.Text.Encoding]::UTF8.GetBytes($bodyPlain)
+            $reqPlain = [System.Net.WebRequest]::Create("$baseUrl/sendMessage")
+            $reqPlain.Method = "POST"
+            $reqPlain.ContentType = "application/json; charset=utf-8"
+            $reqPlain.ContentLength = $utf8BytesPlain.Length
+            $reqStreamPlain = $reqPlain.GetRequestStream()
+            $reqStreamPlain.Write($utf8BytesPlain, 0, $utf8BytesPlain.Length)
+            $reqStreamPlain.Close()
+            $resPlain = $reqPlain.GetResponse()
+            $resPlain.Close()
+        }
         
         # Send Attached PDF documents
         foreach ($fp in $filePaths) {

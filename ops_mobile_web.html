@@ -135,7 +135,6 @@
 
     <!-- Filter Tabs -->
     <div class="filter-tabs">
-      <div class="tab-btn" onclick="filterCategory('quota', this)">⚡ AI Quota & Usage</div>
       <div class="tab-btn active" onclick="filterCategory('all', this)">🌟 รายการทั้งหมด</div>
       <div class="tab-btn" onclick="filterCategory('salaya', this)">🟣 กะหล่ำเข้าศาลายา</div>
       <div class="tab-btn" onclick="filterCategory('tns', this)">🔵 TNS</div>
@@ -410,72 +409,6 @@
     </div>
 
     
-    <!-- SECTION: REAL-TIME AI USAGE & QUOTA DASHBOARD -->
-    <div class="card" id="quota_dashboard_card" style="border-left: 4px solid #f59e0b; display: none;">
-      <div class="card-header">
-        <div class="card-title" style="color: #f59e0b; font-weight: 700;">⚡ Real-Time AI Quota & Usage Dashboard</div>
-        <span class="badge badge-warning" id="quota_sync_badge">Live Stream</span>
-      </div>
-
-      <!-- Groq Card -->
-      <div style="background: #090d16; border: 1px solid #23334d; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:14px; font-weight:700; color:#38bdf8;">🚀 Groq Fast Llama / Qwen API</span>
-          <span class="badge badge-primary" id="groq_model_name">qwen/qwen3.8-27b</span>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-            <span style="color:#94a3b8;">Requests Quota (คงเหลือ / ขีดจำกัด):</span>
-            <span id="groq_req_text" style="font-weight:700; color:#34d399;">999 / 1,000 (99%)</span>
-          </div>
-          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
-            <div id="groq_req_bar" style="width:99%; height:100%; background:#10b981; transition:width 0.4s;"></div>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-            <span style="color:#94a3b8;">Tokens Quota (คงเหลือ / ขีดจำกัด):</span>
-            <span id="groq_tok_text" style="font-weight:700; color:#38bdf8;">7,950 / 8,000 (99%)</span>
-          </div>
-          <div style="width:100%; height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
-            <div id="groq_tok_bar" style="width:99%; height:100%; background:#38bdf8; transition:width 0.4s;"></div>
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:#cbd5e1; background:rgba(255,255,255,0.02); padding:8px; border-radius:6px;">
-          <div>• Requests สะสม: <b id="groq_total_req" style="color:#f8fafc;">0</b> ครั้ง</div>
-          <div>• Tokens สะสม: <b id="groq_total_tok" style="color:#f8fafc;">0</b> tokens</div>
-          <div>• Reset Req: <span id="groq_reset_req" style="color:#facc15;">1m</span></div>
-          <div>• Reset Tokens: <span id="groq_reset_tok" style="color:#facc15;">1s</span></div>
-        </div>
-      </div>
-
-      <!-- AGY CLI & GLM 2-column Grid -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-        <div style="background:#090d16; border:1px solid #23334d; border-radius:10px; padding:10px;">
-          <div style="font-size:13px; font-weight:700; color:#a855f7; margin-bottom:4px;">🤖 AGY CLI</div>
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Google Antigravity 2.0</div>
-          <div style="font-size:11.5px;">• สถานะ: <span style="color:#34d399; font-weight:600;">🟢 Active</span></div>
-          <div style="font-size:11.5px;">• คำสั่งสะสม: <b id="agy_total_prompts" style="color:#f8fafc;">0</b> ครั้ง</div>
-          <div style="font-size:11px; color:#64748b; margin-top:4px;">Unlimited Session</div>
-        </div>
-        <div style="background:#090d16; border:1px solid #23334d; border-radius:10px; padding:10px;">
-          <div style="font-size:13px; font-weight:700; color:#06b6d4; margin-bottom:4px;">🧠 GLM AI</div>
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Zhipu Open Weights</div>
-          <div style="font-size:11.5px;">• คำขอสะสม: <b id="glm_total_req" style="color:#f8fafc;">0</b> ครั้ง</div>
-          <div style="font-size:11.5px;">• Tokens: <b id="glm_total_tok" style="color:#f8fafc;">0</b></div>
-          <div style="font-size:11px; color:#64748b; margin-top:4px;">Pay-as-you-go</div>
-        </div>
-      </div>
-
-      <!-- Recent AI Invocations Feed -->
-      <div style="background:#090d16; border:1px solid #23334d; border-radius:10px; padding:10px;">
-        <div style="font-size:12px; font-weight:600; color:#e2e8f0; margin-bottom:8px;">📜 ประวัติการเรียกใช้งาน AI ล่าสุด</div>
-        <div id="ai_recent_events_container" style="max-height:160px; overflow-y:auto; font-size:11.5px;">
-          <div style="color:#64748b; text-align:center; padding:10px;">กำลังโหลดข้อมูล...</div>
-        </div>
-      </div>
-    </div>
-
     <!-- SECTION: LIVE PRICE UPDATE & FREIGHT (READ-ONLY DISPLAY) -->
     <div class="card" id="price_board_card">
       <div class="card-header">
@@ -913,70 +846,6 @@
     let currentFilter = 'all';
 
     
-    function fetchLiveQuota() {
-      fetch('/api/usage')
-        .then(res => res.json())
-        .then(res => {
-          if (!res || !res.data) return;
-          const d = res.data;
-          const g = d.groq || {};
-          const rl = g.rate_limit || {};
-          
-          if (document.getElementById('groq_model_name')) document.getElementById('groq_model_name').textContent = g.model || 'Groq';
-          
-          const remReq = rl.remaining_requests !== undefined ? rl.remaining_requests : 1000;
-          const limReq = rl.limit_requests || 1000;
-          const reqPct = Math.round((remReq / limReq) * 100);
-          
-          const remTok = rl.remaining_tokens !== undefined ? rl.remaining_tokens : 8000;
-          const limTok = rl.limit_tokens || 8000;
-          const tokPct = Math.round((remTok / limTok) * 100);
-
-          if (document.getElementById('groq_req_text')) document.getElementById('groq_req_text').textContent = remReq.toLocaleString() + ' / ' + limReq.toLocaleString() + ' (' + reqPct + '%)';
-          if (document.getElementById('groq_req_bar')) {
-            const bar = document.getElementById('groq_req_bar');
-            bar.style.width = reqPct + '%';
-            bar.style.background = reqPct < 20 ? '#ef4444' : reqPct < 50 ? '#f59e0b' : '#10b981';
-          }
-
-          if (document.getElementById('groq_tok_text')) document.getElementById('groq_tok_text').textContent = remTok.toLocaleString() + ' / ' + limTok.toLocaleString() + ' (' + tokPct + '%)';
-          if (document.getElementById('groq_tok_bar')) {
-            const bar = document.getElementById('groq_tok_bar');
-            bar.style.width = tokPct + '%';
-            bar.style.background = tokPct < 20 ? '#ef4444' : tokPct < 50 ? '#f59e0b' : '#38bdf8';
-          }
-
-          if (document.getElementById('groq_total_req')) document.getElementById('groq_total_req').textContent = (g.total_requests || 0).toLocaleString();
-          if (document.getElementById('groq_total_tok')) document.getElementById('groq_total_tok').textContent = (g.total_tokens || 0).toLocaleString();
-          if (document.getElementById('groq_reset_req')) document.getElementById('groq_reset_req').textContent = rl.reset_requests || '0s';
-          if (document.getElementById('groq_reset_tok')) document.getElementById('groq_reset_tok').textContent = rl.reset_tokens || '0s';
-
-          if (document.getElementById('agy_total_prompts') && d.agy) document.getElementById('agy_total_prompts').textContent = (d.agy.total_prompts || 0).toLocaleString();
-          if (document.getElementById('glm_total_req') && d.glm) document.getElementById('glm_total_req').textContent = (d.glm.total_requests || 0).toLocaleString();
-          if (document.getElementById('glm_total_tok') && d.glm) document.getElementById('glm_total_tok').textContent = (d.glm.total_tokens || 0).toLocaleString();
-
-          // Render Recent Events
-          const container = document.getElementById('ai_recent_events_container');
-          if (container && d.recent_events && d.recent_events.length > 0) {
-            container.innerHTML = d.recent_events.slice(0, 10).map(ev => {
-              const time = ev.timestamp ? ev.timestamp.slice(11, 19) : '-';
-              return '<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">' +
-                '<div>' +
-                  '<span class="badge badge-primary" style="font-size:9.5px; padding:1px 4px;">' + ev.engine + '</span>' +
-                  '<span style="color:#94a3b8; font-size:11px; margin-left:4px;">' + (ev.snippet ? (ev.snippet.substring(0,25) + '...') : '') + '</span>' +
-                '</div>' +
-                '<div style="font-size:10.5px; color:#cbd5e1;">' +
-                  (ev.tokens ? (ev.tokens + ' tok • ') : '') + '<span style="color:#64748b;">' + time + '</span>' +
-                '</div>' +
-              '</div>';
-            }).join('');
-          } else if (container && (!d.recent_events || d.recent_events.length === 0)) {
-            container.innerHTML = '<div style="color:#64748b; text-align:center; padding:8px;">ยังไม่มีประวัติการเรียกใช้งาน</div>';
-          }
-        })
-        .catch(e => {});
-    }
-
     function filterCategory(cat, element) {
       currentFilter = cat;
       const tabs = document.querySelectorAll('.filter-tabs .tab-btn');
@@ -999,15 +868,7 @@
         }
 
         
-        const quotaCard = document.getElementById('quota_dashboard_card');
-        if (cat === 'quota') {
-          if (quotaCard) quotaCard.style.display = 'block';
-          c.style.display = 'none';
-          return;
-        } else {
-          if (quotaCard) quotaCard.style.display = 'none';
-        }
-        if (cat === 'all') {
+if (cat === 'all') {
           c.style.display = 'block';
         } else if (cat === 'salaya') {
           if (c.classList.contains('salaya') || c.classList.contains('cat-salaya')) {
@@ -1198,8 +1059,6 @@
       fetchLiveStock();
       setInterval(fetchLiveStock, 30000);
       setInterval(syncLiveBackendState, 3000);
-      fetchLiveQuota();
-      setInterval(fetchLiveQuota, 2500);
     }
 
     function saveCard(id, customer, product, qty_kg, delivery_date, showFeedback = false) {

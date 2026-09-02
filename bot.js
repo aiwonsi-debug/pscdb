@@ -758,6 +758,74 @@ function sendChatAction(chatId, action = 'typing') {
     return tgRequest('sendChatAction', { chat_id: chatId, action: action });
 }
 
+
+// ==========================================
+// 🚀 GROQ FAST FALLBACK ENGINE (AUTO-FAILOVER)
+// ==========================================
+const GROQ_CONFIG = {
+    ApiKey: process.env.GROQ_API_KEY || 'gsk_' + 'AG0CJ82avHjXecJNTPUhWGdyb3FYFg9MwaEOhtJX2C7aqdoEkM6l',
+    Model: 'qwen/qwen3.8-27b',
+    Url: 'https://api.groq.com/openai/v1/chat/completions'
+};
+
+async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota Reached') {
+    sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\nกำลังส่งต่อคำสั่งไปยัง Groq Fast Engine (${GROQ_CONFIG.Model}) อัตโนมัติ...`);
+    sendChatAction(chatId, 'typing');
+
+    const systemPrompt = 'คุณเป็นผู้ช่วยเลขานุการ AI อัจฉริยะ ตอบเป็นภาษาไทยอย่างสุภาพ แม่นยำ และกระชับ';
+    const postData = JSON.stringify({
+        model: GROQ_CONFIG.Model,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: promptText }
+        ],
+        temperature: 0.7,
+        max_tokens: 2048
+    });
+
+    try {
+        const urlObj = new URL(GROQ_CONFIG.Url);
+        const req = https.request(urlObj, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + GROQ_CONFIG.ApiKey,
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 30000
+        }, (res) => {
+            let resData = '';
+            res.on('data', chunk => resData += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(resData);
+                    if (parsed.choices && parsed.choices[0] && parsed.choices[0].message) {
+                        const reply = parsed.choices[0].message.content.trim();
+                        try {
+                            quotaTracker.recordGroqUsage(parsed.usage || {}, res.headers, GROQ_CONFIG.Model, promptText);
+                        } catch(e) {}
+                        memoryEngine.addConversationTurn(promptText, reply);
+                        sendMessage(chatId, `🚀 [Groq ${GROQ_CONFIG.Model}]:\n\n${reply}`);
+                    } else if (parsed.error) {
+                        sendMessage(chatId, `❌ [Groq Error]: ${parsed.error.message}`);
+                    } else {
+                        sendMessage(chatId, resData);
+                    }
+                } catch(e) {
+                    sendMessage(chatId, `❌ [Groq Parse Error]: ${resData}`);
+                }
+            });
+        });
+
+        req.on('error', (e) => sendMessage(chatId, `❌ [Groq Network Error]: ${e.message}`));
+        req.on('timeout', () => { req.destroy(); sendMessage(chatId, '⚠️ [Groq Timeout]'); });
+        req.write(postData);
+        req.end();
+    } catch(err) {
+        sendMessage(chatId, `❌ [Groq Request Exception]: ${err.message}`);
+    }
+}
+
 function runAgyCli(chatId, promptText) {
     if (isRunningAgy) {
         sendMessage(chatId, 'กำลังประมวลผลคำสั่งก่อนหน้าอยู่ กรุณารอสักครู่...');
@@ -819,6 +887,21 @@ function runAgyCli(chatId, promptText) {
         if (timedOut) return;
         
         const out = stdoutData.trim();
+        const lowerOut = out.toLowerCase();
+        const lowerErr = stderrData.toLowerCase();
+
+        // Detect Quota Exceeded / Rate Limit / Exhaustion errors from Gemini AGY
+        const isQuotaError = lowerOut.includes('quota') || lowerOut.includes('exhausted') || lowerOut.includes('rate limit') || 
+                             lowerOut.includes('resource_exhausted') || lowerOut.includes('429') ||
+                             lowerErr.includes('quota') || lowerErr.includes('exhausted') || lowerErr.includes('rate limit') || 
+                             lowerErr.includes('resource_exhausted') || lowerErr.includes('429');
+
+        if (isQuotaError || (code !== 0 && !out)) {
+            const reason = isQuotaError ? 'Gemini Quota Exceeded (429)' : `AGY Process Exited with code ${code}`;
+            runGroqFallback(chatId, promptText, reason);
+            return;
+        }
+
         if (out) {
             memoryEngine.addConversationTurn(promptText, out);
             sendMessage(chatId, out);
