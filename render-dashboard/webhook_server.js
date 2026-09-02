@@ -162,7 +162,16 @@ function createWebhookServer(sendTelegramMsgCallback) {
             }
 
             // Set JSON Content-Type for all API routes
-            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                    if (req.method === 'GET' && pathname === '/api/patch-salaya') {
+            const opsData = loadTeamOps();
+            if (opsData.cards_state && opsData.cards_state['salaya_0209']) {
+                opsData.cards_state['salaya_0209'].loadedWeight = '8,715 kg (รับเข้า 8,500 kg)';
+                saveTeamOps(opsData);
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Patched salaya_0209' }));
+        }
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
             // 2. Health & Status (GET / or GET /api/status)
             if (req.method === 'GET' && (pathname === '/' || pathname === '/api/health' || pathname === '/api/status')) {
