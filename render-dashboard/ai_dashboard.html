@@ -272,18 +272,32 @@
             document.getElementById('glm_tokens').textContent = (d.glm.total_tokens || 0).toLocaleString() + ' Tokens';
           }
 
-          // Recent Events
+          // Recent Events (Bangkok Timezone ICT UTC+7)
           const container = document.getElementById('recent_list');
           if (container && d.recent_events && d.recent_events.length > 0) {
-            container.innerHTML = d.recent_events.slice(0, 10).map(ev => {
-              const time = ev.timestamp ? ev.timestamp.slice(11, 19) : '-';
+            container.innerHTML = d.recent_events.slice(0, 15).map(ev => {
+              let timeStr = '-';
+              if (ev.timestamp) {
+                try {
+                  const dateObj = new Date(ev.timestamp);
+                  timeStr = dateObj.toLocaleTimeString('th-TH', { 
+                    timeZone: 'Asia/Bangkok', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit', 
+                    hour12: false 
+                  }) + ' น.';
+                } catch(e) {
+                  timeStr = ev.timestamp.slice(11, 19);
+                }
+              }
               return '<div class="log-item">' +
-                '<div>' +
+                '<div style="max-width: 72%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
                   '<span class="badge badge-primary" style="font-size:10px; margin-right:6px;">' + ev.engine + '</span>' +
-                  '<span style="color:#94a3b8;">' + (ev.snippet ? ev.snippet : '') + '</span>' +
+                  '<span style="color:#94a3b8;" title="' + (ev.snippet ? ev.snippet.replace(/"/g, '&quot;') : '') + '">' + (ev.snippet ? ev.snippet : '') + '</span>' +
                 '</div>' +
-                '<div style="color:#cbd5e1; font-size:11px;">' +
-                  (ev.tokens ? (ev.tokens + ' tok • ') : '') + '<span style="color:#64748b;">' + time + '</span>' +
+                '<div style="color:#cbd5e1; font-size:11px; white-space: nowrap;">' +
+                  (ev.tokens ? (ev.tokens + ' tok • ') : '') + '<span style="color:#38bdf8; font-weight: 600;">' + timeStr + '</span>' +
                 '</div>' +
               '</div>';
             }).join('');
