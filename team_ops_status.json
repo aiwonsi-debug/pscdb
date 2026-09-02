@@ -1,4 +1,4 @@
-{
+﻿{
   "last_updated": "2026-09-01T12:51:36.220Z",
   "active_operations": [
     {
@@ -295,7 +295,7 @@
       "loadedReported": true,
       "loadedDate": "01/09/26",
       "loadedItem": "ขึ้นกะหล่ำปลีเฮียหนิง",
-      "loadedWeight": "8,715kg",
+      "loadedWeight": "8,715 kg (รับเข้า 8,500 kg)",
       "loadedFreight": "13,000บาท",
       "loadedPayment": "เก็บปลายทาง 13,000 บาท",
       "loadedLocation": "ขึ้นที่โกดัง  อมพาย แม่สะเรียง",
