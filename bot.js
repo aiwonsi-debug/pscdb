@@ -370,9 +370,25 @@ setTimeout(autoCheckTNSPreparation, 8000);
 function getPersistentReplyMarkup() {
     return {
         keyboard: [
-            [{ text: "📊 แดชบอร์ด" }, { text: "🚜 สถานะจัดซื้อ" }, { text: "🧠 ความจำเลขา" }],
-            [{ text: "📦 สรุป PO" }, { text: "🥬 สต็อกผัก" }, { text: "📅 กำหนดส่ง GT" }],
-            [{ text: "⚡ AI Quota" }, { text: "🔄 เช็กเมล PO" }, { text: "❓ เมนูคำสั่ง" }]
+            [
+                { text: "📱 PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } },
+                { text: "⚡ AI Quota App", web_app: { url: "https://pscdb.onrender.com/usage" } }
+            ],
+            [
+                { text: "📊 แดชบอร์ด" },
+                { text: "🚜 สถานะจัดซื้อ" },
+                { text: "🧠 ความจำเลขา" }
+            ],
+            [
+                { text: "📦 สรุป PO" },
+                { text: "🥬 สต็อกผัก" },
+                { text: "📅 กำหนดส่ง GT" }
+            ],
+            [
+                { text: "⚡ AI Quota" },
+                { text: "🔄 เช็กเมล PO" },
+                { text: "❓ เมนูคำสั่ง" }
+            ]
         ],
         resize_keyboard: true,
         persistent: true
@@ -384,8 +400,8 @@ function getDashboardInlineMarkup() {
     return {
         inline_keyboard: [
             [
-                { text: "⚡ เปิดเว็บ AI Quota สด", url: "https://pscdb.onrender.com/usage" },
-                { text: "📱 เปิดเว็บงานภาคสนาม", url: "https://pscdb.onrender.com/" }
+                { text: "📱 เปิด PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } },
+                { text: "⚡ เปิด AI Quota Mini App", web_app: { url: "https://pscdb.onrender.com/usage" } }
             ],
             [
                 { text: "🔄 รีเฟรชแดชบอร์ด", callback_data: "dash_refresh" },
@@ -1754,4 +1770,19 @@ function handleCommand(chatId, text) {
 }
 
 // Start polling
+
+// Setup Telegram Left-Corner Menu Button to open PSC Mini App
+function initTelegramMiniAppButton() {
+    tgRequest('setChatMenuButton', {
+        menu_button: {
+            type: 'web_app',
+            text: '📱 PSC Mini App',
+            web_app: { url: 'https://pscdb.onrender.com/' }
+        }
+    }).then(res => {
+        writeLog('[Telegram Mini App Button Initialized]: ' + (res && res.ok ? 'OK' : JSON.stringify(res)));
+    }).catch(e => {});
+}
+initTelegramMiniAppButton();
+
 pollUpdates();
