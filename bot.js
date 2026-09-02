@@ -375,8 +375,7 @@ function getPersistentReplyMarkup() {
     return {
         keyboard: [
             [
-                { text: "📱 PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } },
-                { text: "⚡ AI Quota App", web_app: { url: "https://pscdb.onrender.com/usage" } }
+                { text: "📱 PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } }
             ],
             [
                 { text: "📊 แดชบอร์ด" },
@@ -403,10 +402,6 @@ function getDashboardInlineMarkup() {
     const engineLabel = (currentAiEngine === 'glm') ? 'GLM-5.3' : 'AGY CLI';
     return {
         inline_keyboard: [
-            [
-                { text: "📱 เปิด PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } },
-                { text: "⚡ เปิด AI Quota Mini App", web_app: { url: "https://pscdb.onrender.com/usage" } }
-            ],
             [
                 { text: "🔄 รีเฟรชแดชบอร์ด", callback_data: "dash_refresh" },
                 { text: "📥 เช็ก Gmail ทันที", callback_data: "dash_sync_gmail" }
@@ -1533,6 +1528,41 @@ function handleCommand(chatId, text) {
     }
 
         // 3.0.3 Real-Time AI Usage & Quota Command (/usage, /quota)
+    
+    // Approach 2: Direct Command to update AI Quota from Telegram
+    if (lower.startsWith('/setquota') || lower.startsWith('/updatequota')) {
+        const parts = text.trim().split(/\s+/);
+        // Usage: /setquota <weekly_pct> <five_hour_pct> [5h_refresh]
+        // Example: /setquota 81.08 0 1h
+        if (parts.length >= 3) {
+            const weekVal = parseFloat(parts[1]) || 81.08;
+            const fiveVal = parseFloat(parts[2]) || 0;
+            const fiveRef = parts[3] || '1h 0m';
+
+            quotaTracker.updateAgyQuota({
+                gemini: {
+                    weekly_remaining_pct: weekVal,
+                    five_hour_remaining_pct: fiveVal,
+                    five_hour_refresh: fiveRef
+                }
+            });
+
+            const reply = '✅ <b>[อัปเดตโควต้า AGY สำเร็จ & ซิงค์ขึ้นคลาวด์แล้ว]</b>\n\n' +
+                          '• Gemini Weekly: <b>' + weekVal + '%</b>\n' +
+                          '• Gemini 5-Hour: <b>' + fiveVal + '%</b> (รีเฟรชใน ' + fiveRef + ')\n\n' +
+                          '📱 <i>ข้อมูลอัปเดตตรงเข้า Mini App เรียบร้อยแล้วค่ะ</i>';
+            sendMessageWithKeyboard(chatId, reply, getDashboardInlineMarkup());
+            return;
+        } else {
+            const guide = '💡 <b>[วิธีใช้คำสั่งอัปเดตโควต้า /setquota]</b>\n\n' +
+                          'พิมพ์: <code>/setquota &lt;Weekly%&gt; &lt;5-Hour%&gt; [เวลา]</code>\n' +
+                          'ตัวอย่าง: <code>/setquota 81.08 0 1h</code>\n' +
+                          'ตัวอย่างเต็ม: <code>/setquota 100 100</code>';
+            sendMessage(chatId, guide);
+            return;
+        }
+    }
+
     if (lower === '/usage' || lower === '/quota' || lower === '⚡ ai quota' || lower === 'quota' || lower === 'usage' || lower === 'โควต้า') {
         const usageText = quotaTracker.formatUsageForTelegram();
         sendMessageWithKeyboard(chatId, usageText, getDashboardInlineMarkup());
