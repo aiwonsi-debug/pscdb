@@ -1,0 +1,60 @@
+{
+  "ExcelFilePath": "E:\\รวมงาน\\งาน 25-26\\Cabbage\\Cabbage Daily Price Log.xlsx",
+  "AsOfDate": "2026-08-28",
+  "ShipmentHistory": [
+    {
+      "BatchId": "CB-20260827-01",
+      "Supplier": "เฮียหนิง",
+      "Location": "โกดัง ฮอด",
+      "DispatchDate": "2026-08-27",
+      "IntakeDate": "2026-08-28",
+      "TransitDays": 1,
+      "GrossDispatchKg": 9000,
+      "NetReceivedKg": 8400,
+      "TransitLossKg": 600,
+      "TransitLossPct": 6.67,
+      "LossReason": "สูญเสียจากการคายน้ำอย่างเดียว (Moisture / Transpiration Loss Only)",
+      "TruckFee": 12000,
+      "PaymentTerm": "เก็บเงินปลายทาง (โรงงาน)",
+      "FreightPerReceivedKg": 1.43,
+      "SampleTest": {
+        "SampleKg": 100,
+        "PeeledKg": 60.4,
+        "ActualYield": 0.604
+      },
+      "Notes": "กะหล่ำปลีพันธุ์ช้าง (กลาง+ใหญ่) สภาพพอใช้ แมง+ราค่อนข้างเยอะ น้ำหนักลดลง 600 kg จากการคายน้ำระหว่างเดินทาง 1 วัน"
+    },
+    {
+      "BatchId": "CB-20260901-01",
+      "Supplier": "เฮียหนิง",
+      "Location": "โกดัง อมพาย แม่สะเรียง",
+      "DispatchDate": "2026-09-01",
+      "GrossDispatchKg": 8715,
+      "TruckFee": 13000,
+      "PaymentTerm": "เก็บเงินปลายทาง (โรงงาน 13,000 บาท)",
+      "Notes": "ขึ้นกะหล่ำปลีเฮียหนิง น้ำหนักสุทธิ 8,715 กก. โกดังอมพาย แม่สะเรียง ค่ารถ 13,000 บาท | ถึงวันที่ 02/09/69 สภาพโดยรวมดี แมง+ราเล็กน้อย ขนาดกลาง",
+      "IntakeDate": "2026-09-02",
+      "NetReceivedKg": 8500,
+      "TransitLossKg": 215,
+      "TransitLossPct": 2.47,
+      "SampleTest": {
+        "SampleKg": 100,
+        "PeeledKg": 74.8,
+        "ActualYield": 0.748
+      }
+    }
+  ],
+  "Locations": {
+    "เฮียหนิง_อมพาย": {
+      "Supplier": "เฮียหนิง",
+      "Location": "โกดัง อมพาย แม่สะเรียง",
+      "CabbagePricePerKg": 3,
+      "TruckRates": {
+        "6 ล้อ": 13000,
+        "4 ล้อ": 8000
+      },
+      "PaymentTerm": "เก็บเงินปลายทาง (โรงงาน)",
+      "Notes": "ขึ้นของที่โกดังอมพาย แม่สะเรียง ค่ารถ 6 ล้อ 13,000 บาท"
+    }
+  }
+}
