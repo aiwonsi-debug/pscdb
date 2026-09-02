@@ -305,3 +305,10 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 PSC Field Ops Server listening on port ${PORT}`);
 });
+
+function createWebhookServer(cb) {
+    return server;
+}
+
+module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, server };
+

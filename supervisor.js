@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 
 const logFile = path.join(__dirname, 'supervisor.log');
 function formatDMY(date = new Date()) {
@@ -29,7 +30,7 @@ const processes = {
 function launchProcess(key) {
     const item = processes[key];
     if (item.child && !item.child.killed && item.child.exitCode === null) {
-        return; // Already running, do not duplicate
+        return; // Already running
     }
     
     item.restarting = false;
@@ -67,7 +68,7 @@ launchProcess('bot');
 launchProcess('ssh');
 launchProcess('daemon');
 
-// Heartbeat watchdog to keep Node.js event loop alive 24/7 (checks only if dead)
+// Watchdog 1: Fast Dead Check (Checks every 10 seconds if process crashed)
 setInterval(() => {
     Object.keys(processes).forEach(key => {
         const item = processes[key];
@@ -78,4 +79,43 @@ setInterval(() => {
     });
 }, 10000);
 
-log('[Supervisor] Watchdog heartbeat initialized and active.');
+// Watchdog 2: Deep Health Probe (Checks every 15 minutes by probing localhost:8080)
+function performDeepHealthCheck() {
+    log('[HealthProbe] Running scheduled 15-minute deep health check for Telegram Bot & Webhook...');
+    
+    const req = http.get('http://127.0.0.1:8080/api/health', { timeout: 8000 }, (res) => {
+        if (res.statusCode === 200) {
+            log('🟢 [HealthProbe] Bot & Webhook are healthy and responsive (Status: 200 OK).');
+        } else {
+            log(`⚠️ [HealthProbe] Bot returned unexpected HTTP ${res.statusCode}. Restarting bot...`);
+            restartBotProcess();
+        }
+    });
+
+    req.on('timeout', () => {
+        req.destroy();
+        log('🔴 [HealthProbe] Bot health check timed out (Frozen/Stuck). Force-restarting bot...');
+        restartBotProcess();
+    });
+
+    req.on('error', (err) => {
+        log(`🔴 [HealthProbe] Bot health check connection failed (${err.message}). Force-restarting bot...`);
+        restartBotProcess();
+    });
+}
+
+function restartBotProcess() {
+    const item = processes.bot;
+    if (item.child) {
+        try {
+            item.child.kill('SIGKILL');
+        } catch (e) {}
+    }
+    item.child = null;
+    launchProcess('bot');
+}
+
+// Run 15-minute Health Check
+setInterval(performDeepHealthCheck, 15 * 60 * 1000);
+
+log('[Supervisor] 24/7 Watchdog and 15-Minute Deep Health Probe initialized.');

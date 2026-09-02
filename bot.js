@@ -1,9 +1,10 @@
-﻿const https = require('https');
+const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { exec, spawn } = require('child_process');
 const memoryEngine = require('./memory_engine.js');
+const quotaTracker = require('./ai_quota_tracker.js');
 
 // Helper to execute commands in 100% hidden background mode (no popup cmd/powershell windows)
 function execSilent(command, options, callback) {
@@ -371,7 +372,7 @@ function getPersistentReplyMarkup() {
         keyboard: [
             [{ text: "📊 แดชบอร์ด" }, { text: "🚜 สถานะจัดซื้อ" }, { text: "🧠 ความจำเลขา" }],
             [{ text: "📦 สรุป PO" }, { text: "🥬 สต็อกผัก" }, { text: "📅 กำหนดส่ง GT" }],
-            [{ text: "💻 สถานะระบบ" }, { text: "🔄 เช็กเมล PO" }, { text: "❓ เมนูคำสั่ง" }]
+            [{ text: "⚡ AI Quota" }, { text: "🔄 เช็กเมล PO" }, { text: "❓ เมนูคำสั่ง" }]
         ],
         resize_keyboard: true,
         persistent: true
@@ -396,7 +397,7 @@ function getDashboardInlineMarkup() {
             ],
             [
                 { text: `🤖 สลับ Engine [${engineLabel}]`, callback_data: "dash_toggle_engine" },
-                { text: "🎨 AI Studio 300DPI", callback_data: "dash_ai_diffusion" }
+                { text: "⚡ AI Quota & RateLimit", callback_data: "dash_quota_usage" }
             ],
             [
                 { text: "📁 ขอไฟล์ล่าสุด", callback_data: "dash_get_latest_file" },
@@ -497,6 +498,11 @@ function handleCallbackQuery(cq) {
     if (data === 'dash_refresh' || data === 'dash_back') {
         answerCallbackQuery(cqId, '🔄 แดชบอร์ดอัปเดตข้อมูลล่าสุดเรียบร้อย');
         editMessageText(chatId, messageId, getDashboardSummary(), getDashboardInlineMarkup());
+    }
+    else if (data === 'dash_quota_usage') {
+        answerCallbackQuery(cqId, '⚡ Real-Time AI Quota & Usage');
+        const reply = quotaTracker.formatUsageForTelegram();
+        editMessageText(chatId, messageId, reply, backMarkup);
     }
     else if (data === 'dash_sync_gmail') {
         answerCallbackQuery(cqId, '⏳ กำลังตรวจสอบ Gmail ในพื้นหลัง...');
@@ -763,6 +769,7 @@ function runAgyCli(chatId, promptText) {
     
     // Auto-learn if the prompt contains explicit or implicit facts
     memoryEngine.autoLearnFromText(promptText);
+    try { quotaTracker.recordAgyUsage(promptText); } catch(e){}
     const fullPrompt = memoryEngine.buildAgyContextPrompt(promptText);
 
     let elapsedSeconds = 0;
@@ -1038,6 +1045,7 @@ function runGlm(chatId, promptText) {
                 try {
                     const parsed = JSON.parse(resData);
                     if (parsed.choices && parsed.choices[0] && parsed.choices[0].message) {
+                        try { quotaTracker.recordGlmUsage(parsed.usage || {}, promptText); } catch(e){}
                         sendMessage(chatId, parsed.choices[0].message.content);
                     } else if (parsed.error) {
                         sendMessage(chatId, `[GLM Error]: ${parsed.error.message || JSON.stringify(parsed.error)}`);
@@ -1411,6 +1419,13 @@ function handleCommand(chatId, text) {
         rep += `──────────────────\n`;
         rep += `🌐 <i>เว็บแอปทีมงานบันทึกงาน: http://localhost:${WEBHOOK_PORT}/ops</i>`;
         sendMessage(chatId, rep);
+        return;
+    }
+
+        // 3.0.3 Real-Time AI Usage & Quota Command (/usage, /quota)
+    if (lower === '/usage' || lower === '/quota' || lower === '⚡ ai quota' || lower === 'quota' || lower === 'usage' || lower === 'โควต้า') {
+        const usageText = quotaTracker.formatUsageForTelegram();
+        sendMessageWithKeyboard(chatId, usageText, getDashboardInlineMarkup());
         return;
     }
 
