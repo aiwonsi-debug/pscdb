@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-02T04:08:43.565Z",
+  "last_updated": "2026-09-02T05:30:34.742Z",
   "groq": {
     "model": "qwen/qwen3.8-27b",
     "total_requests": 5,
@@ -32,8 +32,8 @@
       "five_hour_remaining_pct": 0,
       "five_hour_status": "Weekly limit reached"
     },
-    "total_prompts": 2,
-    "last_prompt_time": "2026-09-02T03:40:16.060Z",
+    "total_prompts": 6,
+    "last_prompt_time": "2026-09-02T05:30:34.741Z",
     "status": "ACTIVE",
     "model": "Antigravity 2.0 / Gemini 3.1 Pro"
   },
@@ -47,6 +47,34 @@
     "status": "ONLINE"
   },
   "recent_events": [
+    {
+      "timestamp": "2026-09-02T05:30:34.741Z",
+      "engine": "AGY CLI",
+      "model": "Antigravity Direct",
+      "tokens": null,
+      "snippet": "always sync  to https://pscdb.onrender.com/ too"
+    },
+    {
+      "timestamp": "2026-09-02T05:28:52.594Z",
+      "engine": "AGY CLI",
+      "model": "Antigravity Direct",
+      "tokens": null,
+      "snippet": "dashboard  show 🥬 2. กะหล่ำปลี 8 ตัน (เข้าโรงงานศ"
+    },
+    {
+      "timestamp": "2026-09-02T05:18:32.012Z",
+      "engine": "AGY CLI",
+      "model": "Antigravity Direct",
+      "tokens": null,
+      "snippet": "แจ้งอัพเดท url dashboard อันใหม่ให้ทีมงานทาง line "
+    },
+    {
+      "timestamp": "2026-09-02T05:13:42.539Z",
+      "engine": "AGY CLI",
+      "model": "Antigravity Direct",
+      "tokens": null,
+      "snippet": "แจ้งอัพเดท url dashboard อันใหม่ให้ทีมงานทาง line"
+    },
     {
       "timestamp": "2026-09-02T04:08:43.565Z",
       "engine": "Groq",

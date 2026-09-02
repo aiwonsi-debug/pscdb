@@ -41,6 +41,34 @@ function sendTelegramNotification(text) {
     } catch (e) {}
 }
 
+const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
+
+function syncToRender(endpoint, payload) {
+    if (!RENDER_DASHBOARD_URL) return;
+    try {
+        const postData = JSON.stringify(payload);
+        const parsed = url.parse(RENDER_DASHBOARD_URL);
+        const req = https.request({
+            hostname: parsed.hostname,
+            port: 443,
+            path: endpoint,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 10000
+        }, (res) => {
+            console.log(`[Render Sync ${endpoint}] Status: ${res.statusCode}`);
+        });
+        req.on('error', (e) => console.error('[Render Sync Error]:', e.message));
+        req.write(postData);
+        req.end();
+    } catch (e) {
+        console.error('[Render Sync Exception]:', e.message);
+    }
+}
+
 function syncToGoogleSheets(payload) {
     if (!GAS_URL) return;
     try {
@@ -130,6 +158,43 @@ function loadTeamOps() {
         } catch (e) {}
     }
     return data;
+}
+
+
+function recordLoadingReport(reportObj) {
+    if (!reportObj) return;
+    const opsData = loadTeamOps();
+    if (!opsData.history_logs) opsData.history_logs = [];
+    if (!opsData.cards_state) opsData.cards_state = {};
+
+    const cardId = reportObj.cardId;
+    if (cardId) {
+        if (!opsData.cards_state[cardId]) opsData.cards_state[cardId] = { id: cardId };
+        opsData.cards_state[cardId].loadedReported = true;
+        opsData.cards_state[cardId].reportedAt = new Date().toISOString();
+        opsData.cards_state[cardId].details = reportObj;
+    }
+
+    opsData.history_logs.unshift({
+        id: 'LOG-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        date: reportObj.date,
+        item: reportObj.item,
+        weight: reportObj.weight,
+        freight: reportObj.freight,
+        payment: reportObj.payment,
+        location: reportObj.location,
+        cardId: cardId
+    });
+
+    if (opsData.history_logs.length > 50) opsData.history_logs.pop();
+    saveTeamOps(opsData);
+
+    // Auto sync to Render and Google Sheets
+    syncToRender('/api/loading-report', reportObj);
+    if (cardId) {
+        syncToGoogleSheets(opsData.cards_state[cardId]);
+    }
 }
 
 function saveTeamOps(data) {
@@ -288,6 +353,15 @@ const server = http.createServer(async (req, res) => {
         }
 
         // 5. Team Update POST (Syncs to Google Sheets & Updates Memory)
+        
+        // Loading Report POST (From Bot or Web)
+        if (req.method === 'POST' && pathname === '/api/loading-report') {
+            const body = await getBody();
+            recordLoadingReport(body);
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Loading report saved and synced' }));
+        }
+
         if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
             const body = await getBody();
             const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
@@ -322,6 +396,7 @@ const server = http.createServer(async (req, res) => {
                 }
                 
                 // Sync to Google Sheets
+                syncToRender('/api/team-update', body);
                 syncToGoogleSheets({
                     id: id,
                     supplier: opsData.cards_state[id].supplier || '',
@@ -368,6 +443,7 @@ const server = http.createServer(async (req, res) => {
                 opsData.cards_state[id].loadedReported = false;
                 saveTeamOps(opsData);
                 syncToGoogleSheets(opsData.cards_state[id]);
+                syncToRender('/api/team-reset', { id: id });
             }
             res.writeHead(200);
             return res.end(JSON.stringify({ success: true, message: `Card ${id} reset successfully` }));
@@ -398,4 +474,4 @@ if (require.main === module) {
     createWebhookServer(null);
 }
 
-module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, server };
+module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, saveTeamOps, recordLoadingReport, syncToRender, server };

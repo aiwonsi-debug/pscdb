@@ -101,8 +101,20 @@ function performDeepHealthCheck() {
     });
 
     req.on('error', (err) => {
-        log(`🔴 [HealthProbe] Bot health check connection failed (${err.message}). Force-restarting bot...`);
-        restartBotProcess();
+        log(`⚠️ [HealthProbe] Bot health check connection failed (${err.message}). Probing again before restarting...`);
+        // Retry once after 3 seconds before killing to avoid accidental restarts
+        setTimeout(() => {
+            http.get('http://127.0.0.1:8080/api/health', { timeout: 5000 }, (r) => {
+                if (r.statusCode === 200) {
+                    log('🟢 [HealthProbe] Secondary probe succeeded. Bot is healthy.');
+                } else {
+                    restartBotProcess();
+                }
+            }).on('error', () => {
+                log('🔴 [HealthProbe] Secondary probe failed. Force-restarting bot...');
+                restartBotProcess();
+            });
+        }, 3000);
     });
 }
 

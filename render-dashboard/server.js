@@ -75,6 +75,41 @@ function loadTeamOps() {
     return data;
 }
 
+
+function recordLoadingReport(reportObj) {
+    if (!reportObj) return;
+    const opsData = loadTeamOps();
+    if (!opsData.history_logs) opsData.history_logs = [];
+    if (!opsData.cards_state) opsData.cards_state = {};
+
+    const cardId = reportObj.cardId;
+    if (cardId) {
+        if (!opsData.cards_state[cardId]) opsData.cards_state[cardId] = { id: cardId };
+        opsData.cards_state[cardId].loadedReported = true;
+        opsData.cards_state[cardId].reportedAt = new Date().toISOString();
+        opsData.cards_state[cardId].details = reportObj;
+    }
+
+    opsData.history_logs.unshift({
+        id: 'LOG-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        date: reportObj.date,
+        item: reportObj.item,
+        weight: reportObj.weight,
+        freight: reportObj.freight,
+        payment: reportObj.payment,
+        location: reportObj.location,
+        cardId: cardId
+    });
+
+    if (opsData.history_logs.length > 50) opsData.history_logs.pop();
+    saveTeamOps(opsData);
+
+    if (cardId) {
+        syncToGoogleSheets(opsData.cards_state[cardId]);
+    }
+}
+
 function saveTeamOps(data) {
     data.last_updated = new Date().toISOString();
     try { fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
@@ -166,6 +201,15 @@ const server = http.createServer(async (req, res) => {
         }
 
         // 5. Team Update POST (Syncs to Google Sheets)
+        
+        // Loading Report POST
+        if (req.method === 'POST' && pathname === '/api/loading-report') {
+            const body = await getBody();
+            recordLoadingReport(body);
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Loading report saved' }));
+        }
+
         if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
             const body = await getBody();
             const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
