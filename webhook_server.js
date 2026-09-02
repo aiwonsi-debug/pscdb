@@ -1,13 +1,60 @@
 const http = require('http');
+const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
 const memoryEngine = require('./memory_engine.js');
 const lineNotifier = require('./line_notifier.js');
 
-const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 8080;
+const WEBHOOK_PORT = process.env.PORT || process.env.WEBHOOK_PORT || 8080;
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
+const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
+
+function syncToGoogleSheets(payload) {
+    if (!GAS_URL) return;
+    try {
+        const postData = JSON.stringify(payload);
+        const parsed = url.parse(GAS_URL);
+        const options = {
+            hostname: parsed.hostname,
+            path: parsed.path,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                // Follow Google Apps Script 302 Redirect
+                const redUrl = url.parse(res.headers.location);
+                const redReq = https.request({
+                    hostname: redUrl.hostname,
+                    path: redUrl.path,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, () => {});
+                redReq.on('error', () => {});
+                redReq.write(postData);
+                redReq.end();
+            }
+        });
+
+        req.on('error', (e) => {
+            console.error('[GoogleSheets Sync Error]:', e.message);
+        });
+
+        req.write(postData);
+        req.end();
+    } catch (e) {
+        console.error('[GoogleSheets Sync Exception]:', e.message);
+    }
+}
 
 function loadTeamOps() {
     let data = { last_updated: new Date().toISOString(), active_operations: [], history_logs: [], cards_state: {} };
@@ -56,15 +103,13 @@ ${activeOps.slice(-15).reverse().map(op => `* **[${op.timestamp ? op.timestamp.s
 *บันทึกข้อมูลอัตโนมัติลงเครื่อง Host (PSC Secretary Brain Gateway)*
 `;
         fs.writeFileSync(logMdFile, mdContent, 'utf8');
-    } catch (e) {
-        console.error('Error writing TEAM_OPS_LOG.md:', e);
-    }
+    } catch (e) {}
 }
 
 function saveTeamOps(data) {
     data.last_updated = new Date().toISOString();
     // 1. Primary host JSON
-    fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8');
+    try { fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
 
     // 2. Cloud mirror JSON
     const cloudFile = path.join(__dirname, 'cloud_secretary', 'team_ops_status.json');
@@ -116,6 +161,7 @@ function recordLoadingReport(reportObj) {
     });
 
     saveTeamOps(opsData);
+    syncToGoogleSheets(opsData.cards_state[reportObj.cardId]);
     return opsData.cards_state[reportObj.cardId];
 }
 
@@ -152,8 +198,8 @@ function createWebhookServer(sendTelegramMsgCallback) {
         });
 
         try {
-            // 1. Serve Mobile Web UI (GET /ops or GET /team-app)
-            if (req.method === 'GET' && (pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
+            // 1. Serve Mobile Web UI (GET /ops, /team-app, /field, or /)
+            if (req.method === 'GET' && (pathname === '/ops' || pathname === '/team-app' || pathname === '/field' || pathname === '/')) {
                 if (fs.existsSync(mobileHtmlFile)) {
                     res.setHeader('Content-Type', 'text/html; charset=utf-8');
                     res.writeHead(200);
@@ -164,8 +210,8 @@ function createWebhookServer(sendTelegramMsgCallback) {
             // Set JSON Content-Type for all API routes
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
-            // 2. Health & Status (GET / or GET /api/status)
-            if (req.method === 'GET' && (pathname === '/' || pathname === '/api/health' || pathname === '/api/status')) {
+            // 2. Health & Status (GET /api/status or /api/health)
+            if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
                 const mem = memoryEngine.loadMemory();
                 const ops = loadTeamOps();
                 res.writeHead(200);
@@ -175,10 +221,7 @@ function createWebhookServer(sendTelegramMsgCallback) {
                     port: WEBHOOK_PORT,
                     timestamp: new Date().toISOString(),
                     mobileWebAppUrl: `http://localhost:${WEBHOOK_PORT}/ops`,
-                    memoryStats: {
-                        learnedFactsCount: (mem.learned_facts || []).length,
-                        businessRulesCount: (mem.business_rules || []).length
-                    },
+                    gasSynced: !!GAS_URL,
                     activeOpsCount: (ops.active_operations || []).length
                 }, null, 2));
             }
@@ -186,27 +229,38 @@ function createWebhookServer(sendTelegramMsgCallback) {
             // 3. Team Ops Ingestion & Selection Sync (POST /api/team-update)
             if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
                 const body = await getBody();
-                const { id, farm, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
+                const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
 
                 const opsData = loadTeamOps();
                 if (!opsData.cards_state) opsData.cards_state = {};
 
+                const activeSupplier = supplier || farm;
+
                 if (id) {
                     if (!opsData.cards_state[id]) opsData.cards_state[id] = { id: id };
-                    if (farm !== undefined) opsData.cards_state[id].supplier = farm;
+                    if (activeSupplier !== undefined) opsData.cards_state[id].supplier = activeSupplier;
                     if (truck !== undefined) opsData.cards_state[id].truck = truck;
                     if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
                     if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
+                    
+                    // Sync to Google Sheets Database
+                    syncToGoogleSheets({
+                        id: id,
+                        supplier: opsData.cards_state[id].supplier || '',
+                        truck: opsData.cards_state[id].truck || '',
+                        orderChecked: !!opsData.cards_state[id].orderChecked,
+                        truckChecked: !!opsData.cards_state[id].truckChecked
+                    });
                 }
 
-                if (farm && product && qty_kg) {
+                if (activeSupplier && product && qty_kg) {
                     const opId = `OPS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-4)}`;
                     const newOp = {
                         id: opId,
                         timestamp: new Date().toISOString(),
                         customer: customer || 'โรงงานศาลายา / TNS',
                         delivery_date: delivery_date || '2026-09-01',
-                        farm: farm,
+                        farm: activeSupplier,
                         product: product,
                         qty_kg: parseFloat(qty_kg),
                         truck: truck || 'รถ 6 ล้อ',
@@ -222,7 +276,7 @@ function createWebhookServer(sendTelegramMsgCallback) {
                 res.writeHead(200);
                 return res.end(JSON.stringify({
                     success: true,
-                    message: 'Updated successfully',
+                    message: 'Updated successfully and synced to Google Sheets',
                     cards_state: opsData.cards_state
                 }, null, 2));
             }
@@ -235,6 +289,7 @@ function createWebhookServer(sendTelegramMsgCallback) {
                 if (opsData.cards_state && opsData.cards_state[id]) {
                     opsData.cards_state[id].loadedReported = false;
                     saveTeamOps(opsData);
+                    syncToGoogleSheets(opsData.cards_state[id]);
                 }
                 res.writeHead(200);
                 return res.end(JSON.stringify({ success: true, message: `Card ${id} reset successfully` }));
@@ -247,7 +302,7 @@ function createWebhookServer(sendTelegramMsgCallback) {
                 return res.end(JSON.stringify(ops, null, 2));
             }
 
-            // 5. Ingest Memory / Learn Fact (POST /api/memory/remember)
+            // 6. Ingest Memory / Learn Fact (POST /api/memory/remember)
             if (req.method === 'POST' && (pathname === '/api/memory/remember' || pathname === '/api/memory')) {
                 const body = await getBody();
                 const text = body.text || body.fact || body.rule;
@@ -282,7 +337,7 @@ function createWebhookServer(sendTelegramMsgCallback) {
                 }, null, 2));
             }
 
-            // 6. Get/Save LINE Config
+            // 7. Get/Save LINE Config
             if (pathname === '/api/line-config') {
                 if (req.method === 'GET') {
                     const cfg = lineNotifier.loadLineConfig();
@@ -299,35 +354,17 @@ function createWebhookServer(sendTelegramMsgCallback) {
                 }
             }
 
-            // 7. Test Send LINE Message
-            if (req.method === 'POST' && pathname === '/api/line-test') {
-                const todayStr = new Date().toISOString().slice(0, 10);
-                const testMsg = lineNotifier.generateD1LineMessage(todayStr);
-                const result = await lineNotifier.sendLineMessage(testMsg);
-                res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, result: result }, null, 2));
-            }
-
-            // 8. LINE Webhook Endpoint (Auto-captures Group ID and replies)
+            // 8. LINE Webhook Endpoint
             if (pathname === '/api/line-webhook' && req.method === 'POST') {
                 const body = await getBody();
-                console.log('[LINE WEBHOOK] Event Received:', JSON.stringify(body));
-
                 const events = body.events || [];
                 for (const ev of events) {
                     const source = ev.source || {};
                     const groupId = source.groupId || source.roomId;
-                    const replyToken = ev.replyToken;
-
                     if (groupId) {
                         const cfg = lineNotifier.loadLineConfig();
                         cfg.line_target_group_id = groupId;
                         lineNotifier.saveLineConfig(cfg);
-                        console.log('>>> [LINE WEBHOOK] Successfully captured PSC Group ID:', groupId);
-
-                        // Send confirmation message to the group
-                        const replyMsg = `🟢 [น้องเลขา PSC เชื่อมต่อกลุ่มทีมงานสำเร็จแล้วค่ะ] ✨\n──────────────────\n📌 บันทึกกลุ่มนี้สำหรับระบบแจ้งเตือนอัตโนมัติเรียบร้อยแล้วค่ะ\n⏰ ทุกเช้าเวลา 08:00 น. ตรง น้องเลขาจะส่งสรุปตารางขึ้นของ D-1 และสถานะจัดซื้อเข้ากลุ่มนี้นะคะ\n──────────────────\n🌐 ดูแดชบอร์ดงานสด:\nhttps://hours-wagner-pacific-kinda.trycloudflare.com/ops`;
-                        lineNotifier.sendLineMessage(replyMsg).catch(e => console.error('Reply err:', e));
                     }
                 }
 
@@ -345,12 +382,20 @@ function createWebhookServer(sendTelegramMsgCallback) {
         }
     });
 
-    lineNotifier.initDailyLineScheduler();
+    if (lineNotifier && typeof lineNotifier.initDailyLineScheduler === 'function') {
+        lineNotifier.initDailyLineScheduler();
+    }
+    
     server.listen(WEBHOOK_PORT, '0.0.0.0', () => {
         console.log(`📡 [Secretary Webhook API] Server listening on http://0.0.0.0:${WEBHOOK_PORT}`);
     });
 
     return server;
+}
+
+// Auto start if executed directly
+if (require.main === module) {
+    createWebhookServer(null);
 }
 
 module.exports = { createWebhookServer, WEBHOOK_PORT, loadTeamOps, recordLoadingReport };
