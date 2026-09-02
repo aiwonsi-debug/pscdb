@@ -8,6 +8,7 @@ const quotaTracker = require('./ai_quota_tracker.js');
 
 const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
+const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
@@ -143,8 +144,17 @@ const server = http.createServer(async (req, res) => {
     });
 
     try {
-        // 1. Serve Mobile Web UI for root, /ops, /usage, or /team-dashboard
-        if (req.method === 'GET' && (pathname === '/' || pathname === '/ops' || pathname === '/usage' || pathname === '/team-app' || pathname === '/field')) {
+        // 1. Serve Dedicated AI Quota & Usage Dashboard (/usage, /quota, /ai-dashboard, /dashboard)
+        if (req.method === 'GET' && (pathname === '/usage' || pathname === '/quota' || pathname === '/ai-dashboard' || pathname === '/dashboard')) {
+            if (fs.existsSync(aiHtmlFile)) {
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.writeHead(200);
+                return res.end(fs.readFileSync(aiHtmlFile, 'utf8'));
+            }
+        }
+
+        // 2. Serve Mobile Operations Web UI (/ or /ops or /team-app or /field)
+        if (req.method === 'GET' && (pathname === '/' || pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
             if (fs.existsSync(mobileHtmlFile)) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.writeHead(200);
