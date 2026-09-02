@@ -222,9 +222,11 @@ const server = http.createServer(async (req, res) => {
         req.on('data', chunk => body += chunk);
         req.on('end', () => {
             try {
-                resolve(body ? JSON.parse(body) : {});
+                const cleaned = (body || '').replace(/^\uFEFF/, '').trim();
+                resolve(cleaned ? JSON.parse(cleaned) : {});
             } catch (e) {
-                reject(new Error('Invalid JSON payload'));
+                console.error('[getBody JSON Parse Error]:', e.message, 'Raw length:', body ? body.length : 0);
+                reject(new Error('Invalid JSON payload: ' + e.message));
             }
         });
         req.on('error', reject);
