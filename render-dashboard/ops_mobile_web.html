@@ -140,11 +140,6 @@
         <h1>📱 PSC Mobile</h1>
         <p>บจก.ไพศาลเจริญ (1988)</p>
       </div>
-      <div>
-        <button id="btn_reboot_bot" onclick="requestBotReboot()" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 6px 10px; border-radius: 14px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s;">
-          🔄 รีสตาร์ตบอท
-        </button>
-      </div>
     </header>
 
     <!-- Unified App Navigation Bar -->
@@ -1396,52 +1391,6 @@ if (cat === 'all') {
     
     
     
-    function requestBotReboot() {
-      const btn = document.getElementById('btn_reboot_bot');
-      if (!confirm('ต้องการรีสตาร์ตระบบบอทเลขา Telegram ใช่หรือไม่?\n(ใช้เมื่อบอทค้างหรือไม่ตอบสนอง)')) {
-        return;
-      }
-      
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '⏳ กำลังรีสตาร์ต...';
-        btn.style.color = '#fbbf24';
-      }
-
-      fetch('/api/reboot-bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timestamp: new Date().toISOString() })
-      })
-      .then(res => res.json())
-      .then(res => {
-        showToast('🚀 ส่งคำสั่งรีสตาร์ตบอทเรียบร้อยแล้ว!');
-        setTimeout(() => {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '✅ บอทพร้อมใช้งาน';
-            btn.style.color = '#34d399';
-            setTimeout(() => {
-              btn.innerHTML = '🔄 รีสตาร์ตบอท';
-              btn.style.color = '#f87171';
-            }, 5000);
-          }
-        }, 3000);
-      })
-      .catch(err => {
-        // Direct local fallback
-        fetch('http://localhost:8080/api/reboot-bot', { method: 'POST' })
-        .then(() => showToast('🚀 รีสตาร์ตบอทในเครื่องสำเร็จ!'))
-        .catch(() => showToast('⚠️ บันทึกคำขอรีบูตแล้ว'));
-        
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '🔄 รีสตาร์ตบอท';
-          btn.style.color = '#f87171';
-        }
-      });
-    }
-
     function filterCalCustomer(cust, element) {
       const btns = ['btn_cal_all', 'btn_cal_aft', 'btn_cal_tns', 'btn_cal_yamamori'];
       btns.forEach(b => {
