@@ -218,6 +218,43 @@ function recordGlmUsage(usage = {}, promptSnippet = '') {
   return data;
 }
 
+
+function formatUsageForTelegram() {
+  const data = loadQuotaData();
+  const g = data.groq;
+  const rl = g.rate_limit || {};
+  const agy = data.agy || {};
+  const gem = agy.gemini || {};
+  const cg = agy.claude_gpt || {};
+  
+  const reqPct = rl.limit_requests ? Math.round((rl.remaining_requests / rl.limit_requests) * 100) : 100;
+  const tokPct = rl.limit_tokens ? Math.round((rl.remaining_tokens / rl.limit_tokens) * 100) : 100;
+
+  return `╔══════════════════════════════════╗\n` +
+         `  ⚡ REAL-TIME AI USAGE & QUOTA\n` +
+         `╚══════════════════════════════════╝\n\n` +
+         `🚀 <b>1. Google Antigravity CLI (AGY)</b>\n` +
+         `  • Account: <code>${agy.account || 'aiwonsi@gmail.com'}</code>\n` +
+         `  • <b>Gemini Models (Flash / Pro):</b>\n` +
+         `     - Weekly Limit: <b>${gem.weekly_remaining_pct || 92}%</b> (รีเฟรชใน ${gem.weekly_refresh || '165h'})\n` +
+         `     - 5-Hour Limit: <b>${gem.five_hour_remaining_pct || 70}%</b> (รีเฟรชใน ${gem.five_hour_refresh || '3h'})\n` +
+         `  • <b>Claude & GPT Models (Sonnet / Opus / GPT-OSS):</b>\n` +
+         `     - Weekly Limit: <b>${cg.weekly_remaining_pct || 0}%</b> (รีเฟรชใน ${cg.weekly_refresh || '145h'})\n` +
+         `     - สถานะ: ⚠️ ${cg.five_hour_status || 'Weekly limit reached'}\n` +
+         `  • คำสั่งสะสม: <b>${agy.total_prompts || 0} ครั้ง</b>\n\n` +
+         `🤖 <b>2. Groq Fast Engine (${g.model || 'qwen/qwen3.8-27b'})</b>\n` +
+         `  • Quota คำขอคงเหลือ: <b>${rl.remaining_requests || 0} / ${rl.limit_requests || 1000} (${reqPct}%)</b>\n` +
+         `  • Quota Tokens คงเหลือ: <b>${(rl.remaining_tokens || 0).toLocaleString()} / ${(rl.limit_tokens || 8000).toLocaleString()} (${tokPct}%)</b>\n` +
+         `  • Reset Req: ${rl.reset_requests || '1m'} | Tok: ${rl.reset_tokens || '1s'}\n` +
+         `  • ยอดสะสม: <b>${g.total_requests} ครั้ง | ${g.total_tokens.toLocaleString()} Tokens</b>\n\n` +
+         `🧠 <b>3. GLM AI Engine (${data.glm.model || 'glm-4-plus'})</b>\n` +
+         `  • คำขอสะสม: <b>${data.glm.total_requests} ครั้ง</b> (${data.glm.total_tokens.toLocaleString()} Tokens)\n` +
+         `──────────────────\n` +
+         `🌐 <b>แดชบอร์ดออนไลน์:</b>\n` +
+         `• ⚡ <b>AI Quota สด:</b> https://pscdb.onrender.com/usage\n` +
+         `• 📱 <b>งานภาคสนาม PSC:</b> https://pscdb.onrender.com/`;
+}
+
 module.exports = {
   loadQuotaData,
   saveQuotaData,
@@ -225,5 +262,6 @@ module.exports = {
   recordAgyUsage,
   updateAgyQuota,
   recordGlmUsage,
+  formatUsageForTelegram,
   QUOTA_FILE
 };

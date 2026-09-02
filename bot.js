@@ -384,6 +384,10 @@ function getDashboardInlineMarkup() {
     return {
         inline_keyboard: [
             [
+                { text: "⚡ เปิดเว็บ AI Quota สด", url: "https://pscdb.onrender.com/usage" },
+                { text: "📱 เปิดเว็บงานภาคสนาม", url: "https://pscdb.onrender.com/" }
+            ],
+            [
                 { text: "🔄 รีเฟรชแดชบอร์ด", callback_data: "dash_refresh" },
                 { text: "📥 เช็ก Gmail ทันที", callback_data: "dash_sync_gmail" }
             ],
@@ -397,7 +401,7 @@ function getDashboardInlineMarkup() {
             ],
             [
                 { text: `🤖 สลับ Engine [${engineLabel}]`, callback_data: "dash_toggle_engine" },
-                { text: "⚡ AI Quota & RateLimit", callback_data: "dash_quota_usage" }
+                { text: "⚡ สรุป AI Quota ในแชท", callback_data: "dash_quota_usage" }
             ],
             [
                 { text: "📁 ขอไฟล์ล่าสุด", callback_data: "dash_get_latest_file" },
@@ -1558,7 +1562,11 @@ function handleCommand(chatId, text) {
                       `• /latest หรือ "ไฟล์ล่าสุด" - ดึงไฟล์ Excel/PDF ล่าสุด\n\n` +
                       `🎨 [AI Studio 300 DPI]:\n` +
                       `• กดปุ่ม "🎨 AI Studio 300DPI" หรือพิมพ์ /diffusion\n\n` +
+                      `🌐 [ลิงก์แดชบอร์ดออนไลน์ (Render Cloud)]:\n` +
+                      `• ⚡ AI Quota & Usage: https://pscdb.onrender.com/usage\n` +
+                      `• 📱 PSC Mobile Operations: https://pscdb.onrender.com/\n\n` +
                       `⚡ [คำสั่งระบบ]:\n` +
+                      `• /quota หรือ /usage - ตรวจสอบโควต้า AI และเวลาไทย\n` +
                       `• /status - ตรวจสอบสถานะการทำงาน\n` +
                       `• /cmd <คำสั่ง> - รัน PowerShell บนเครื่อง\n` +
                       `• /model glm | /model agy - สลับโมเดล`;
