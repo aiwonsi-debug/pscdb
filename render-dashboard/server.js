@@ -175,7 +175,7 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST' && (pathname === '/api/sync-quota' || pathname === '/api/quota-sync')) {
             const body = await getBody();
             if (body && (body.groq || body.agy)) {
-                quotaTracker.saveQuotaData(body);
+                quotaTracker.saveQuotaData(body, false);
             }
             res.writeHead(200);
             return res.end(JSON.stringify({ success: true, message: 'Quota synced to cloud' }));

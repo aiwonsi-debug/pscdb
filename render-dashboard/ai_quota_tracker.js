@@ -1,37 +1,13 @@
-
-const https = require('https');
-const url = require('url');
-
-const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
-
-function syncQuotaToRender(data) {
-  if (!RENDER_DASHBOARD_URL) return;
-  try {
-    const postData = JSON.stringify(data);
-    const parsed = url.parse(RENDER_DASHBOARD_URL + '/api/sync-quota');
-    const req = https.request({
-      hostname: parsed.hostname,
-      port: 443,
-      path: parsed.path,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 8000
-    }, () => {});
-    req.on('error', () => {});
-    req.write(postData);
-    req.end();
-  } catch(e) {}
-}
-
+// AI Quota & Usage Tracker with Loop-Safe Sync
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const url = require('url');
 
 const QUOTA_FILE = path.join(__dirname, 'ai_quota_usage.json');
+const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 const DEFAULT_DATA = {
   last_updated: new Date().toISOString(),
@@ -99,21 +75,45 @@ function loadQuotaData() {
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 
-function saveQuotaData(data) {
+function syncQuotaToRender(data) {
+  if (!RENDER_DASHBOARD_URL || process.env.IS_RENDER_SERVER === 'true') return;
+  try {
+    const postData = JSON.stringify(data);
+    const parsed = url.parse(RENDER_DASHBOARD_URL + '/api/sync-quota');
+    const req = https.request({
+      hostname: parsed.hostname,
+      port: 443,
+      path: parsed.path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      timeout: 8000
+    }, () => {});
+    req.on('error', () => {});
+    req.write(postData);
+    req.end();
+  } catch(e) {}
+}
+
+function saveQuotaData(data, shouldSync = true) {
   data.last_updated = new Date().toISOString();
   try {
     fs.writeFileSync(QUOTA_FILE, JSON.stringify(data, null, 2), 'utf8');
-    try { syncQuotaToRender(data); } catch(e) {}
+    if (shouldSync) {
+      syncQuotaToRender(data);
+    }
   } catch (e) {
     console.error('[QuotaTracker] Error saving quota file:', e.message);
   }
 }
 
-function recordGroqUsage(usage = {}, headers = {}, model = 'qwen/qwen3.8-27b', promptSnippet = '') {
+function recordGroqUsage(usage = {}, headers = null, model = 'qwen/qwen3.8-27b', promptSnippet = '') {
   const data = loadQuotaData();
-  data.groq.model = model;
   data.groq.total_requests += 1;
   data.groq.last_request_time = new Date().toISOString();
+  data.groq.model = model;
 
   const promptTokens = usage.prompt_tokens || 0;
   const compTokens = usage.completion_tokens || 0;
@@ -123,7 +123,6 @@ function recordGroqUsage(usage = {}, headers = {}, model = 'qwen/qwen3.8-27b', p
   data.groq.completion_tokens += compTokens;
   data.groq.total_tokens += totTokens;
 
-  // Extract rate limit headers from fetch or https response
   const getHeader = (name) => {
     if (!headers) return null;
     if (typeof headers.get === 'function') return headers.get(name);
@@ -154,7 +153,7 @@ function recordGroqUsage(usage = {}, headers = {}, model = 'qwen/qwen3.8-27b', p
 
   if (data.recent_events.length > 20) data.recent_events.pop();
 
-  saveQuotaData(data);
+  saveQuotaData(data, true);
   return data;
 }
 
@@ -169,7 +168,7 @@ function updateAgyQuota(quotaUpdate = {}) {
   if (quotaUpdate.account) {
     data.agy.account = quotaUpdate.account;
   }
-  saveQuotaData(data);
+  saveQuotaData(data, true);
   return data;
 }
 
@@ -188,11 +187,11 @@ function recordAgyUsage(promptText = '') {
 
   if (data.recent_events.length > 20) data.recent_events.pop();
 
-  saveQuotaData(data);
+  saveQuotaData(data, true);
   return data;
 }
 
-function recordGlmUsage(usage = {}, promptText = '') {
+function recordGlmUsage(usage = {}, promptSnippet = '') {
   const data = loadQuotaData();
   data.glm.total_requests += 1;
   data.glm.last_request_time = new Date().toISOString();
@@ -210,47 +209,13 @@ function recordGlmUsage(usage = {}, promptText = '') {
     engine: 'GLM',
     model: data.glm.model || 'glm-4-plus',
     tokens: totTokens,
-    snippet: (promptText || '').substring(0, 50)
+    snippet: (promptSnippet || '').substring(0, 50)
   });
 
   if (data.recent_events.length > 20) data.recent_events.pop();
 
-  saveQuotaData(data);
+  saveQuotaData(data, true);
   return data;
-}
-
-function formatUsageForTelegram() {
-  const data = loadQuotaData();
-  const g = data.groq;
-  const rl = g.rate_limit || {};
-  const agy = data.agy || {};
-  const gem = agy.gemini || {};
-  const cg = agy.claude_gpt || {};
-  
-  const reqPct = rl.limit_requests ? Math.round((rl.remaining_requests / rl.limit_requests) * 100) : 100;
-  const tokPct = rl.limit_tokens ? Math.round((rl.remaining_tokens / rl.limit_tokens) * 100) : 100;
-
-  return `╔══════════════════════════════════╗\n` +
-         `  ⚡ REAL-TIME AI USAGE & QUOTA\n` +
-         `╚══════════════════════════════════╝\n\n` +
-         `🚀 <b>1. Google Antigravity CLI (AGY)</b>\n` +
-         `  • Account: <code>${agy.account || 'aiwonsi@gmail.com'}</code>\n` +
-         `  • <b>Gemini Models (Flash / Pro):</b>\n` +
-         `     - Weekly Limit: <b>${gem.weekly_remaining_pct || 92}%</b> (รีเฟรชใน ${gem.weekly_refresh || '165h'})\n` +
-         `     - 5-Hour Limit: <b>${gem.five_hour_remaining_pct || 70}%</b> (รีเฟรชใน ${gem.five_hour_refresh || '3h'})\n` +
-         `  • <b>Claude & GPT Models (Sonnet / Opus / GPT-OSS):</b>\n` +
-         `     - Weekly Limit: <b>${cg.weekly_remaining_pct || 0}%</b> (รีเฟรชใน ${cg.weekly_refresh || '145h'})\n` +
-         `     - สถานะ: ⚠️ ${cg.five_hour_status || 'Weekly limit reached'}\n` +
-         `  • คำสั่งสะสม: <b>${agy.total_prompts || 0} ครั้ง</b>\n\n` +
-         `🤖 <b>2. Groq Fast Engine (${g.model || 'qwen/qwen3.8-27b'})</b>\n` +
-         `  • Quota คำขอคงเหลือ: <b>${rl.remaining_requests || 0} / ${rl.limit_requests || 1000} (${reqPct}%)</b>\n` +
-         `  • Quota Tokens คงเหลือ: <b>${(rl.remaining_tokens || 0).toLocaleString()} / ${(rl.limit_tokens || 8000).toLocaleString()} (${tokPct}%)</b>\n` +
-         `  • Reset Req: ${rl.reset_requests || '1m'} | Tok: ${rl.reset_tokens || '1s'}\n` +
-         `  • ยอดสะสม: <b>${g.total_requests} ครั้ง | ${g.total_tokens.toLocaleString()} Tokens</b>\n\n` +
-         `🧠 <b>3. GLM AI Engine (${data.glm.model || 'glm-4-plus'})</b>\n` +
-         `  • คำขอสะสม: <b>${data.glm.total_requests} ครั้ง</b> (${data.glm.total_tokens.toLocaleString()} Tokens)\n` +
-         `──────────────────\n` +
-         `🌐 <i>เปิดแดชบอร์ดสด: http://localhost:8080/ops (แท็บ ⚡ AI Quota)</i>`;
 }
 
 module.exports = {
@@ -260,6 +225,5 @@ module.exports = {
   recordAgyUsage,
   updateAgyQuota,
   recordGlmUsage,
-  formatUsageForTelegram,
   QUOTA_FILE
 };
