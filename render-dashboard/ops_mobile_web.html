@@ -125,46 +125,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
   
-    /* On-Demand AI Quota Modal */
-    .quota-modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.75);
-      z-index: 2000;
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      padding: 14px;
-    }
-    .quota-modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
-    .quota-modal-card {
-      background: #131c2e;
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      width: 100%;
-      max-width: 500px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 16px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-    }
-    .quota-badge-btn {
-      background: rgba(56, 189, 248, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      color: #38bdf8;
-      padding: 5px 10px;
-      border-radius: 16px;
-      font-size: 11.5px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: 0.2s;
-    }
-    .quota-badge-btn:active { background: var(--primary); color: #090d16; }
-
   </style>
 </head>
 <body>
@@ -1430,14 +1390,6 @@ if (cat === 'all') {
     
     
     
-    function openQuotaModal() {
-      document.getElementById('quota_modal').classList.add('active');
-      fetchAiUsageData();
-    }
-    function closeQuotaModal() {
-      document.getElementById('quota_modal').classList.remove('active');
-    }
-
     function filterCalCustomer(cust, element) {
       const btns = ['btn_cal_all', 'btn_cal_aft', 'btn_cal_tns', 'btn_cal_yamamori'];
       btns.forEach(b => {
@@ -1481,163 +1433,8 @@ if (cat === 'all') {
       }
     }
 
-    function fetchAiUsageData() {
-      fetch('/api/usage')
-        .then(res => res.json())
-        .then(resData => {
-          if (!resData || !resData.success || !resData.data) return;
-          const d = resData.data;
-
-          if (d.agy) {
-            if (d.agy.account && document.getElementById('modal_agy_acc')) document.getElementById('modal_agy_acc').textContent = d.agy.account;
-            if (d.agy.gemini) {
-              const gem = d.agy.gemini;
-              if (gem.weekly_remaining_pct !== undefined && document.getElementById('modal_gem_week')) document.getElementById('modal_gem_week').textContent = gem.weekly_remaining_pct + '%';
-              if (gem.weekly_refresh && document.getElementById('modal_gem_week_ref')) document.getElementById('modal_gem_week_ref').textContent = gem.weekly_refresh;
-              if (gem.five_hour_remaining_pct !== undefined && document.getElementById('modal_gem_5h')) document.getElementById('modal_gem_5h').textContent = gem.five_hour_remaining_pct + '%';
-              if (gem.five_hour_refresh && document.getElementById('modal_gem_5h_ref')) document.getElementById('modal_gem_5h_ref').textContent = gem.five_hour_refresh;
-            }
-          }
-
-          if (d.groq) {
-            const g = d.groq;
-            const rl = g.rate_limit || {};
-            if (rl.remaining_requests !== undefined && rl.limit_requests && document.getElementById('modal_groq_req')) {
-              document.getElementById('modal_groq_req').textContent = rl.remaining_requests.toLocaleString() + ' / ' + rl.limit_requests.toLocaleString();
-            }
-            if (rl.remaining_tokens !== undefined && rl.limit_tokens && document.getElementById('modal_groq_tok')) {
-              document.getElementById('modal_groq_tok').textContent = rl.remaining_tokens.toLocaleString() + ' / ' + rl.limit_tokens.toLocaleString();
-            }
-            if (g.total_requests !== undefined && document.getElementById('modal_groq_tot')) {
-              document.getElementById('modal_groq_tot').textContent = g.total_requests + ' ครั้ง (' + (g.total_tokens || 0).toLocaleString() + ' Tokens)';
-            }
-          }
-
-          if (d.agy) {
-            if (d.agy.account && document.getElementById('agy_acc')) document.getElementById('agy_acc').textContent = d.agy.account;
-            if (d.agy.total_prompts !== undefined && document.getElementById('agy_prompts')) document.getElementById('agy_prompts').textContent = d.agy.total_prompts + ' ครั้ง';
-            
-            if (d.agy.gemini) {
-              const gem = d.agy.gemini;
-              if (gem.weekly_remaining_pct !== undefined && document.getElementById('gem_week_val')) {
-                document.getElementById('gem_week_val').textContent = gem.weekly_remaining_pct + '%';
-                if (document.getElementById('gem_week_bar')) document.getElementById('gem_week_bar').style.width = gem.weekly_remaining_pct + '%';
-              }
-              if (gem.weekly_refresh && document.getElementById('gem_week_ref')) document.getElementById('gem_week_ref').textContent = gem.weekly_refresh;
-              
-              if (gem.five_hour_remaining_pct !== undefined && document.getElementById('gem_5h_val')) {
-                document.getElementById('gem_5h_val').textContent = gem.five_hour_remaining_pct + '%';
-                if (document.getElementById('gem_5h_bar')) document.getElementById('gem_5h_bar').style.width = gem.five_hour_remaining_pct + '%';
-              }
-              if (gem.five_hour_refresh && document.getElementById('gem_5h_ref')) document.getElementById('gem_5h_ref').textContent = gem.five_hour_refresh;
-            }
-
-            if (d.agy.claude_gpt) {
-              const cg = d.agy.claude_gpt;
-              if (cg.weekly_remaining_pct !== undefined && document.getElementById('cg_week_val')) document.getElementById('cg_week_val').textContent = cg.weekly_remaining_pct + '%';
-              if (cg.weekly_refresh && document.getElementById('cg_week_ref')) document.getElementById('cg_week_ref').textContent = cg.weekly_refresh;
-            }
-          }
-
-          if (d.groq) {
-            const g = d.groq;
-            const rl = g.rate_limit || {};
-            if (g.model && document.getElementById('groq_model')) document.getElementById('groq_model').textContent = g.model;
-            if (rl.remaining_requests !== undefined && rl.limit_requests) {
-              if (document.getElementById('groq_req_val')) document.getElementById('groq_req_val').textContent = rl.remaining_requests.toLocaleString() + ' / ' + rl.limit_requests.toLocaleString();
-              const reqPct = Math.min(100, Math.round((rl.remaining_requests / rl.limit_requests) * 100));
-              if (document.getElementById('groq_req_bar')) document.getElementById('groq_req_bar').style.width = reqPct + '%';
-            }
-            if (rl.remaining_tokens !== undefined && rl.limit_tokens) {
-              if (document.getElementById('groq_tok_val')) document.getElementById('groq_tok_val').textContent = rl.remaining_tokens.toLocaleString() + ' / ' + rl.limit_tokens.toLocaleString();
-              const tokPct = Math.min(100, Math.round((rl.remaining_tokens / rl.limit_tokens) * 100));
-              if (document.getElementById('groq_tok_bar')) document.getElementById('groq_tok_bar').style.width = tokPct + '%';
-            }
-            if (g.total_requests !== undefined && document.getElementById('groq_tot_req')) document.getElementById('groq_tot_req').textContent = g.total_requests;
-            if (g.total_tokens !== undefined && document.getElementById('groq_tot_tok')) document.getElementById('groq_tot_tok').textContent = g.total_tokens.toLocaleString();
-            if (rl.reset_requests && document.getElementById('groq_rst_req')) document.getElementById('groq_rst_req').textContent = rl.reset_requests;
-            if (rl.reset_tokens && document.getElementById('groq_rst_tok')) document.getElementById('groq_rst_tok').textContent = rl.reset_tokens;
-          }
-
-          // Recent Events (Bangkok Timezone)
-          const container = document.getElementById('recent_list');
-          if (container && d.recent_events && d.recent_events.length > 0) {
-            container.innerHTML = d.recent_events.slice(0, 15).map(ev => {
-              let timeStr = '-';
-              if (ev.timestamp) {
-                try {
-                  const dateObj = new Date(ev.timestamp);
-                  timeStr = dateObj.toLocaleTimeString('th-TH', { 
-                    timeZone: 'Asia/Bangkok', 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit', 
-                    hour12: false 
-                  }) + ' น.';
-                } catch(e) {
-                  timeStr = ev.timestamp.slice(11, 19);
-                }
-              }
-              return '<div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11.5px;">' +
-                '<div style="max-width: 72%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
-                  '<span class="badge badge-primary" style="font-size:10px; margin-right:6px;">' + ev.engine + '</span>' +
-                  '<span style="color:#94a3b8;" title="' + (ev.snippet ? ev.snippet.replace(/"/g, '&quot;') : '') + '">' + (ev.snippet ? ev.snippet : '') + '</span>' +
-                '</div>' +
-                '<div style="color:#cbd5e1; font-size:11px; white-space: nowrap;">' +
-                  (ev.tokens ? (ev.tokens + ' tok • ') : '') + '<span style="color:#38bdf8; font-weight: 600;">' + timeStr + '</span>' +
-                '</div>' +
-              '</div>';
-            }).join('');
-          }
-        })
-        .catch(e => {});
-    }
-
     window.onload = function() { loadSavedState(); updateNotificationBtn(); scheduleDaily8AMAlert(); };
   </script>
 
-  <!-- ON-DEMAND AI QUOTA POPUP MODAL (FETCHES ONLY ONCE WHEN OPENED) -->
-  <div id="quota_modal" class="quota-modal-overlay" onclick="if(event.target === this) closeQuotaModal();">
-    <div class="quota-modal-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px; margin-bottom:12px;">
-        <div style="font-weight:700; color:#38bdf8; font-size:14px; display:flex; align-items:center; gap:6px;">
-          ⚡ สถานะโควต้า AI (On-Demand)
-        </div>
-        <button onclick="closeQuotaModal()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer; padding:2px 8px;">✕</button>
-      </div>
-
-      <!-- AGY Section -->
-      <div style="background:rgba(9, 13, 22, 0.8); border:1px solid #23334d; border-radius:10px; padding:10px; margin-bottom:10px;">
-        <div style="font-weight:600; color:#c084fc; font-size:12.5px; margin-bottom:6px; display:flex; justify-content:space-between;">
-          <span>🚀 Google Antigravity CLI</span>
-          <span style="font-size:10.5px; color:#94a3b8;" id="modal_agy_acc">aiwonsi@gmail.com</span>
-        </div>
-        <div style="font-size:11.5px; color:#cbd5e1; line-height:1.6;">
-          • <b>Gemini Weekly Limit:</b> <b style="color:#34d399;" id="modal_gem_week">81.08%</b> (<span id="modal_gem_week_ref">162h 59m</span>)<br>
-          • <b>Gemini 5-Hour Limit:</b> <b style="color:#f87171;" id="modal_gem_5h">0.00%</b> (รีเฟรชใน <span id="modal_gem_5h_ref">1h 0m</span>)<br>
-          • <b>Claude / GPT Models:</b> <b style="color:#f87171;">0%</b> (Weekly Limit Reached)
-        </div>
-      </div>
-
-      <!-- Groq Section -->
-      <div style="background:rgba(9, 13, 22, 0.8); border:1px solid #23334d; border-radius:10px; padding:10px; margin-bottom:12px;">
-        <div style="font-weight:600; color:#38bdf8; font-size:12.5px; margin-bottom:6px; display:flex; justify-content:space-between;">
-          <span>🤖 Groq Fast Engine (Auto-Failover)</span>
-          <span class="badge badge-primary" style="font-size:9.5px;">qwen/qwen3.8-27b</span>
-        </div>
-        <div style="font-size:11.5px; color:#cbd5e1; line-height:1.6;">
-          • <b>Requests คงเหลือ:</b> <b style="color:#34d399;" id="modal_groq_req">997 / 1,000</b> (99.7%)<br>
-          • <b>Tokens คงเหลือ:</b> <b style="color:#38bdf8;" id="modal_groq_tok">6,912 / 8,000</b> (86.4%)<br>
-          • <b>คำสั่งสะสม:</b> <span id="modal_groq_tot">5 ครั้ง (830 Tokens)</span>
-        </div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <button onclick="fetchAiUsageData(); showToast('🔄 อัปเดตโควต้าล่าสุดเรียบร้อย');" class="tab-btn active" style="font-size:11px; padding:6px 12px;">🔄 รีเฟรชเดี๋ยวนี้</button>
-        <button onclick="closeQuotaModal()" class="tab-btn" style="font-size:11px; padding:6px 12px;">ปิดหน้าต่าง</button>
-      </div>
-    </div>
-  </div>
-
-</body>
+  </body>
 </html>

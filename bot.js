@@ -375,9 +375,6 @@ function getPersistentReplyMarkup() {
     return {
         keyboard: [
             [
-                { text: "📱 PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } }
-            ],
-            [
                 { text: "📊 แดชบอร์ด" },
                 { text: "🚜 สถานะจัดซื้อ" },
                 { text: "🧠 ความจำเลขา" }
@@ -402,9 +399,6 @@ function getDashboardInlineMarkup() {
     const engineLabel = (currentAiEngine === 'glm') ? 'GLM-5.3' : 'AGY CLI';
     return {
         inline_keyboard: [
-            [
-                { text: "📱 เปิด PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } }
-            ],
             [
                 { text: "🔄 รีเฟรชแดชบอร์ด", callback_data: "dash_refresh" },
                 { text: "📥 เช็ก Gmail ทันที", callback_data: "dash_sync_gmail" }
@@ -1616,8 +1610,8 @@ function handleCommand(chatId, text) {
                       `• /latest หรือ "ไฟล์ล่าสุด" - ดึงไฟล์ Excel/PDF ล่าสุด\n\n` +
                       `🎨 [AI Studio 300 DPI]:\n` +
                       `• กดปุ่ม "🎨 AI Studio 300DPI" หรือพิมพ์ /diffusion\n\n` +
-                      `🌐 [ลิงก์ระบบออนไลน์ PSC Mini App]:\n` +
-                      `• 📱 PSC Mini App (ครบทุกฟังก์ชัน): https://pscdb.onrender.com/\n\n` +
+                      `🌐 [ลิงก์เว็บปฏิบัติงาน PSC]:\n` +
+                      `• 📱 PSC Web Operations: https://pscdb.onrender.com/\n\n` +
                       `⚡ [คำสั่งระบบ]:\n` +
                       `• /quota หรือ /usage - ตรวจสอบโควต้า AI และเวลาไทย\n` +
                       `• /status - ตรวจสอบสถานะการทำงาน\n` +
@@ -1801,16 +1795,12 @@ function handleCommand(chatId, text) {
 
 // Start polling
 
-// Setup Telegram Left-Corner Menu Button to open PSC Mini App
+// Reset Telegram Left-Corner Menu Button to Default
 function initTelegramMiniAppButton() {
     tgRequest('setChatMenuButton', {
-        menu_button: {
-            type: 'web_app',
-            text: '📱 PSC Mini App',
-            web_app: { url: 'https://pscdb.onrender.com/' }
-        }
+        menu_button: { type: 'default' }
     }).then(res => {
-        writeLog('[Telegram Mini App Button Initialized]: ' + (res && res.ok ? 'OK' : JSON.stringify(res)));
+        writeLog('[Telegram Menu Button Reset to Default]: ' + (res && res.ok ? 'OK' : JSON.stringify(res)));
     }).catch(e => {});
 }
 initTelegramMiniAppButton();

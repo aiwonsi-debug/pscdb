@@ -254,7 +254,7 @@ function formatUsageForTelegram() {
     '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง (' + (g.total_tokens || 0).toLocaleString() + ' tok)',
     '━━━━━━━━━━━━━━━━━━━━',
-    '📱 <i>แตะปุ่มด้านล่างเพื่อเปิด PSC Mini App</i>'
+    '📱 <i>สถานะโควต้า AI พร้อมใช้งานตลอด 24 ชม.</i>'
   ].join('\n');
 }
 
