@@ -71,3 +71,51 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+/**
+ * Trigger Function: Push incoming unread email directly to Render & Telegram Bot
+ */
+function pushIncomingMailToBot() {
+  var threads = GmailApp.search('is:unread label:inbox');
+  if (!threads || threads.length === 0) return;
+
+  var renderWebhookUrl = 'https://pscdb.onrender.com/api/gmail-webhook';
+
+  for (var i = 0; i < threads.length; i++) {
+    var messages = threads[i].getMessages();
+    for (var j = 0; j < messages.length; j++) {
+      var msg = messages[j];
+      if (msg.isUnread()) {
+        var attachments = msg.getAttachments();
+        var attNames = [];
+        for (var a = 0; a < attachments.length; a++) {
+          attNames.push(attachments[a].getName());
+        }
+
+        var payload = {
+          from: msg.getFrom(),
+          to: msg.getTo(),
+          subject: msg.getSubject(),
+          date: msg.getDate().toISOString(),
+          snippet: msg.getPlainBody().substring(0, 1000),
+          hasAttachments: attachments.length > 0,
+          attachmentNames: attNames
+        };
+
+        try {
+          UrlFetchApp.fetch(renderWebhookUrl, {
+            method: 'post',
+            contentType: 'application/json',
+            payload: JSON.stringify(payload),
+            muteHttpExceptions: true
+          });
+        } catch (err) {
+          Logger.log('Push error: ' + err.message);
+        }
+
+        // Mark read to avoid duplicate push
+        msg.markRead();
+      }
+    }
+  }
+}

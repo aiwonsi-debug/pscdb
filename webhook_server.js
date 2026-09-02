@@ -1,13 +1,44 @@
+const memoryEngine = require('./memory_engine.js');
 const http = require('http');
 const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const quotaTracker = require('./ai_quota_tracker.js');
 
 const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
+
+const TG_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM';
+const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1532466397';
+
+function sendTelegramNotification(text) {
+    if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+    try {
+        const payload = JSON.stringify({
+            chat_id: TG_CHAT_ID,
+            text: text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: false
+        });
+
+        const req = https.request({
+            hostname: 'api.telegram.org',
+            port: 443,
+            path: `/bot${TG_BOT_TOKEN}/sendMessage`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, () => {});
+        req.on('error', (err) => console.error('[TG Notify Error]:', err.message));
+        req.write(payload);
+        req.end();
+    } catch (e) {}
+}
 
 function syncToGoogleSheets(payload) {
     if (!GAS_URL) return;
@@ -54,11 +85,20 @@ function syncToGoogleSheets(payload) {
 }
 
 function loadTeamOps() {
-    let data = { last_updated: new Date().toISOString(), active_operations: [], history_logs: [], cards_state: {} };
+    let data = { 
+        last_updated: new Date().toISOString(), 
+        active_operations: [], 
+        history_logs: [], 
+        cards_state: {},
+        custom_suppliers: [],
+        custom_trucks: []
+    };
     if (fs.existsSync(teamOpsFile)) {
         try {
             data = Object.assign(data, JSON.parse(fs.readFileSync(teamOpsFile, 'utf8')));
             if (!data.cards_state) data.cards_state = {};
+            if (!data.custom_suppliers) data.custom_suppliers = [];
+            if (!data.custom_trucks) data.custom_trucks = [];
         } catch (e) {}
     }
     return data;
@@ -125,14 +165,48 @@ const server = http.createServer(async (req, res) => {
             }, null, 2));
         }
 
-        // 3. Team Status GET
+        // 3. Gmail Push Webhook Endpoint (Instant Notification to Telegram Bot)
+        if (req.method === 'POST' && (pathname === '/api/gmail-webhook' || pathname === '/api/gmail-push')) {
+            const body = await getBody();
+            const from = body.from || 'ไม่ระบุผู้ส่ง';
+            const subject = body.subject || 'ไม่มีหัวข้อ';
+            const date = body.date ? new Date(body.date).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) : new Date().toLocaleString('th-TH');
+            const snippet = (body.snippet || '').trim();
+            const attNames = body.attachmentNames || [];
+
+            console.log(`[Gmail Push Webhook] New Email from ${from}: ${subject}`);
+
+            let tgMsg = `📬 <b>[มีอีเมลใหม่เข้าถึงเลขาแบบ Real-time]</b> ✨\n` +
+                        `──────────────────\n` +
+                        `👤 <b>ผู้ส่ง:</b> ${from}\n` +
+                        `📌 <b>หัวข้อ:</b> ${subject}\n` +
+                        `⏰ <b>เวลา:</b> ${date}\n`;
+
+            if (attNames.length > 0) {
+                tgMsg += `📎 <b>ไฟล์แนบ (${attNames.length}):</b> ${attNames.join(', ')}\n`;
+            }
+
+            if (snippet) {
+                tgMsg += `📝 <b>ข้อความ:</b>\n<i>${snippet.substring(0, 300)}...</i>\n`;
+            }
+
+            tgMsg += `──────────────────\n` +
+                     `⚡ <i>ระบบ Push Notification อัตโนมัติจาก Gmail</i>`;
+
+            sendTelegramNotification(tgMsg);
+
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
+        }
+
+        // 4. Team Status GET
         if (req.method === 'GET' && pathname === '/api/team-status') {
             const ops = loadTeamOps();
             res.writeHead(200);
             return res.end(JSON.stringify(ops, null, 2));
         }
 
-        // 4. Team Update POST (Syncs to Google Sheets)
+        // 5. Team Update POST (Syncs to Google Sheets & Updates Memory)
         if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
             const body = await getBody();
             const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
@@ -148,6 +222,23 @@ const server = http.createServer(async (req, res) => {
                 if (truck !== undefined) opsData.cards_state[id].truck = truck;
                 if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
                 if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
+
+                // Auto-add custom seller/location to database & memory
+                if (activeSupplier && activeSupplier !== '__custom__' && activeSupplier.trim() !== '') {
+                    const s = activeSupplier.trim();
+                    if (!opsData.custom_suppliers.includes(s)) {
+                        opsData.custom_suppliers.push(s);
+                        try { memoryEngine.rememberItem('แหล่งสวน/ผู้ขายใหม่ที่เพิ่มจาก Dashboard: ' + s, 'learned_facts'); } catch(e) {}
+                    }
+                }
+                // Auto-add custom transport/truck to database & memory
+                if (truck && truck !== '__custom__' && truck.trim() !== '') {
+                    const t = truck.trim();
+                    if (!opsData.custom_trucks.includes(t)) {
+                        opsData.custom_trucks.push(t);
+                        try { memoryEngine.rememberItem('สายรถ/ขนส่งใหม่ที่เพิ่มจาก Dashboard: ' + t, 'learned_facts'); } catch(e) {}
+                    }
+                }
                 
                 // Sync to Google Sheets
                 syncToGoogleSheets({
@@ -187,7 +278,7 @@ const server = http.createServer(async (req, res) => {
             }, null, 2));
         }
 
-        // 5. Team Reset POST
+        // 6. Team Reset POST
         if (req.method === 'POST' && pathname === '/api/team-reset') {
             const body = await getBody();
             const { id } = body;
