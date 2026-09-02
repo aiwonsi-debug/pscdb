@@ -1615,9 +1615,8 @@ function handleCommand(chatId, text) {
                       `• /latest หรือ "ไฟล์ล่าสุด" - ดึงไฟล์ Excel/PDF ล่าสุด\n\n` +
                       `🎨 [AI Studio 300 DPI]:\n` +
                       `• กดปุ่ม "🎨 AI Studio 300DPI" หรือพิมพ์ /diffusion\n\n` +
-                      `🌐 [ลิงก์แดชบอร์ดออนไลน์ (Render Cloud)]:\n` +
-                      `• ⚡ AI Quota & Usage: https://pscdb.onrender.com/usage\n` +
-                      `• 📱 PSC Mobile Operations: https://pscdb.onrender.com/\n\n` +
+                      `🌐 [ลิงก์ระบบออนไลน์ PSC Mini App]:\n` +
+                      `• 📱 PSC Mini App (ครบทุกฟังก์ชัน): https://pscdb.onrender.com/\n\n` +
                       `⚡ [คำสั่งระบบ]:\n` +
                       `• /quota หรือ /usage - ตรวจสอบโควต้า AI และเวลาไทย\n` +
                       `• /status - ตรวจสอบสถานะการทำงาน\n` +

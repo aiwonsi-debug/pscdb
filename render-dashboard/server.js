@@ -146,13 +146,10 @@ const server = http.createServer(async (req, res) => {
     });
 
     try {
-        // 1. Serve Dedicated AI Quota & Usage Dashboard (/usage, /quota, /ai-dashboard, /dashboard)
+        // 1. Redirect /usage, /quota, /dashboard to root Mini App (Single Unified App)
         if (req.method === 'GET' && (pathname === '/usage' || pathname === '/quota' || pathname === '/ai-dashboard' || pathname === '/dashboard')) {
-            if (fs.existsSync(aiHtmlFile)) {
-                res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                res.writeHead(200);
-                return res.end(fs.readFileSync(aiHtmlFile, 'utf8'));
-            }
+            res.writeHead(302, { 'Location': '/' });
+            return res.end();
         }
 
         // 2. Serve Mobile Operations Web UI (/ or /ops or /team-app or /field)

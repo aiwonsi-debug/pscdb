@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-02T05:30:34.742Z",
+  "last_updated": "2026-09-02T07:50:29.752Z",
   "groq": {
     "model": "qwen/qwen3.8-27b",
     "total_requests": 5,
@@ -20,15 +20,15 @@
     "account": "aiwonsi@gmail.com",
     "gemini": {
       "models": "Gemini Flash, Gemini Pro",
-      "weekly_remaining_pct": 92.16,
-      "weekly_refresh": "165h 57m",
-      "five_hour_remaining_pct": 70.22,
-      "five_hour_refresh": "3h 58m"
+      "weekly_remaining_pct": 81.08,
+      "weekly_refresh": "162h 59m",
+      "five_hour_remaining_pct": 0,
+      "five_hour_refresh": "1h 0m"
     },
     "claude_gpt": {
       "models": "Claude Opus, Claude Sonnet, GPT-OSS",
       "weekly_remaining_pct": 0,
-      "weekly_refresh": "145h 42m",
+      "weekly_refresh": "142h 44m",
       "five_hour_remaining_pct": 0,
       "five_hour_status": "Weekly limit reached"
     },

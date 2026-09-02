@@ -233,13 +233,10 @@ const server = http.createServer(async (req, res) => {
     });
 
     try {
-        // 1. Serve Dedicated AI Quota & Usage Dashboard UI
+        // 1. Redirect /usage, /quota, /dashboard to root Mini App (Single Unified App)
         if (req.method === 'GET' && (pathname === '/usage' || pathname === '/quota' || pathname === '/ai-dashboard' || pathname === '/dashboard')) {
-            if (fs.existsSync(aiHtmlFile)) {
-                res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                res.writeHead(200);
-                return res.end(fs.readFileSync(aiHtmlFile, 'utf8'));
-            }
+            res.writeHead(302, { 'Location': '/' });
+            return res.end();
         }
 
         // 2. Serve Mobile Field Ops Web UI
@@ -486,6 +483,13 @@ let isListening = false;
 function createWebhookServer(cb) {
     if (!isListening) {
         isListening = true;
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                console.log(`[WebhookServer] Port ${PORT} already in use, attaching to existing instance.`);
+            } else {
+                console.error('[WebhookServer] Server error:', err);
+            }
+        });
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 PSC Field Ops Server listening on port ${PORT}`);
         });
