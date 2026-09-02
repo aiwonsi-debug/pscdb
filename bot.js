@@ -448,19 +448,19 @@ function getDashboardSummary() {
         } catch(e) {}
     }
     
-    // Read Stock Inventory
-    let cabbageNet = 16843.94;
-    let carrotStock = 3770;
-    let onionStock = 12370;
+    // Read Stock Inventory (Accurate Ground Truth as of 02/09/2026)
+    let cabbageNet = 2575;
+    let carrotStock = 5840;
+    let onionStock = 29680;
     const stockPath = path.join(agyBaseDir, 'stock_inventory.json');
     if (fs.existsSync(stockPath)) {
         try {
             const stk = JSON.parse(fs.readFileSync(stockPath, 'utf8'));
             if (stk.Items) {
-                if (stk.Items.Cabbage) cabbageNet = stk.Items.Cabbage.NetStockKg || cabbageNet;
+                if (stk.Items.Cabbage) cabbageNet = stk.Items.Cabbage.StockKg || cabbageNet;
                 if (stk.Items.Carrot) carrotStock = stk.Items.Carrot.StockKg || carrotStock;
-                const onionAFT = (stk.Items.Onion_AFT && stk.Items.Onion_AFT.StockKg) || 6020;
-                const onionCN = (stk.Items.Onion_Chinese && stk.Items.Onion_Chinese.StockKg) || 6350;
+                const onionAFT = (stk.Items.Onion_AFT && stk.Items.Onion_AFT.StockKg) || 26120;
+                const onionCN = (stk.Items.Onion_Chinese && stk.Items.Onion_Chinese.StockKg) || 3560;
                 onionStock = onionAFT + onionCN;
             }
         } catch(e) {}
@@ -594,20 +594,23 @@ function handleCallbackQuery(cq) {
         editMessageText(chatId, messageId, reply, backMarkup);
     }
     else if (data === 'dash_stock_status') {
-        answerCallbackQuery(cqId, '🥬 สต็อก & วัตถุดิบ');
-        let reply = `🥬 [สถานะสต็อกและรันเวย์วัตถุดิบ]\n\n` +
-                    `1. กะหล่ำปลี:\n` +
-                    `   • สต็อกสุทธิ: 16,843.94 kg\n` +
-                    `   • รอบรับเข้าล่าสุด: เฮียหนิง โกดังฮอด (8,400 kg)\n` +
+        answerCallbackQuery(cqId, '🥬 สต็อก 02/09/69 (ตรวจนับจริง)');
+        let reply = `🥬 <b>[สถานะสต็อกคงเหลือจริง ณ 02/09/2569]</b>\n` +
+                    `━━━━━━━━━━━━━━━━━━━━\n` +
+                    `1. 🥬 <b>กะหล่ำปลี:</b> <b>2,575 kg</b>\n` +
+                    `   • คาดการณ์ใช้ได้ถึง: ~15/09/69 (มีรอบเติม 8 ตันต่อเนื่อง 02/09, 03/09, 08/09)\n` +
                     `   • Actual Yield ล่าสุด: 60.4% (AFT Unsize)\n\n` +
-                    `2. หอมหัวใหญ่:\n` +
-                    `   • หอม AFT: 6,020 kg\n` +
-                    `   • หอมจีน: 6,350 kg\n` +
-                    `   ➔ รวม: 12,370 kg\n\n` +
-                    `3. แครอทสวย:\n` +
-                    `   • คงเหลือ: 3,770 kg\n\n` +
-                    `4. พืชหัวอื่นๆ:\n` +
-                    `   • มันม่วง: 1,690 kg | มันเหลืองไข่: 342 kg | มันส้ม: 390 kg`;
+                    `2. 🧅 <b>หอมหัวใหญ่:</b> <b>29,680 kg</b>\n` +
+                    `   • หอม AFT: 26,120 kg (พอถึง 30/09/69)\n` +
+                    `   • หอมจีน: 3,560 kg (พอถึง 30/09/69)\n\n` +
+                    `3. 🥕 <b>แครอทสวย:</b> <b>5,840 kg</b>\n` +
+                    `   • คาดการณ์ใช้ได้ถึง: ~10/09/69 (สต็อกเข้าเติมแล้ว ปลอดภัย)\n\n` +
+                    `4. 🍠 <b>พืชหัวและมันหวาน:</b>\n` +
+                    `   • มันม่วงหัวเล็ก: 1,690 kg\n` +
+                    `   • มันเหลืองไข่: 342 kg\n` +
+                    `   • มันส้ม: 390 kg (พอตลอดเดือน)\n` +
+                    `━━━━━━━━━━━━━━━━━━━━\n` +
+                    `📱 <i>เปิดดูสต็อกสด & คาดการณ์รันเวย์ได้ใน PSC Mini App</i>`;
         editMessageText(chatId, messageId, reply, backMarkup);
     }
     else if (data === 'dash_ai_diffusion') {
@@ -1605,22 +1608,17 @@ function handleCommand(chatId, text) {
         sendMessageWithKeyboard(chatId, reply, getDashboardInlineMarkup());
         return;
     }
-    else if (lower === '🥬 สต็อกผัก' || lower === '/stock') {
-        let cabbageNet = 16843.94;
-        const stockPath = path.join(agyBaseDir, 'stock_inventory.json');
-        if (fs.existsSync(stockPath)) {
-            try {
-                const stk = JSON.parse(fs.readFileSync(stockPath, 'utf8'));
-                if (stk.Items && stk.Items.Cabbage) cabbageNet = stk.Items.Cabbage.NetStockKg || cabbageNet;
-            } catch(e) {}
-        }
-        const reply = `🥬 [สถานะสต็อก & วัตถุดิบคงคลัง]\n\n` +
-                      `• กะหล่ำปลีคงเหลือสุทธิ: ${cabbageNet.toLocaleString()} kg\n` +
-                      `• หอม AFT: 6,020 kg | หอมจีน: 6,350 kg (รวม 12,370 kg)\n` +
-                      `• แครอทคงเหลือ: 3,770 kg\n` +
-                      `• มันม่วง: 1,690 kg | มันเหลืองไข่: 342 kg | มันส้ม: 390 kg\n\n` +
-                      `รับเข้าล่าสุด: เฮียหนิง โกดังฮอด (8,400 kg @ Yield 60.4%)`;
-        sendMessage(chatId, reply);
+    else if (lower === '🥬 สต็อกผัก' || lower === '/stock' || lower === 'สต็อก' || lower === 'stock') {
+        const reply = `🥬 <b>[สถานะสต็อกคงเหลือจริง ณ 02/09/2569]</b>\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `1. 🥬 <b>กะหล่ำปลี:</b> <b>2,575 kg</b>\n` +
+                      `   • คาดการณ์ใช้ได้ถึง: ~15/09/69 (เติม 8 ตันต่อเนื่อง 02/09, 03/09, 08/09)\n` +
+                      `2. 🧅 <b>หอมหัวใหญ่:</b> <b>29,680 kg</b> (หอม AFT 26,120 kg | หอมจีน 3,560 kg)\n` +
+                      `3. 🥕 <b>แครอทสวย:</b> <b>5,840 kg</b> (พอถึง ~10/09/69 สต็อกเข้าเติมแล้ว)\n` +
+                      `4. 🍠 <b>พืชหัวอื่นๆ:</b> มันม่วง 1,690 kg | มันเหลือง 342 kg | มันส้ม 390 kg\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `📱 <i>แตะปุ่มด้านล่างเพื่อเปิด Mini App ดูสต็อกสดได้ทันทีค่ะ</i>`;
+        sendMessageWithKeyboard(chatId, reply, getDashboardInlineMarkup());
         return;
     }
     else if (lower === '/prep_gt' || lower === '📅 กำหนดส่ง gt') {
