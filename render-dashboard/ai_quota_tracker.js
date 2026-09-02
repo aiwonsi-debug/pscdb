@@ -231,16 +231,20 @@ function formatUsageForTelegram() {
   const reqPct = rl.limit_requests ? Math.round((rl.remaining_requests / rl.limit_requests) * 100) : 100;
   const tokPct = rl.limit_tokens ? Math.round((rl.remaining_tokens / rl.limit_tokens) * 100) : 100;
 
+  const gemWeek = gem.weekly_remaining_pct !== undefined ? gem.weekly_remaining_pct : 81.08;
+  const gemFive = gem.five_hour_remaining_pct !== undefined ? gem.five_hour_remaining_pct : 0.00;
+  const cgWeek = cg.weekly_remaining_pct !== undefined ? cg.weekly_remaining_pct : 0.00;
+
   return [
     '⚡ <b>AI QUOTA & RATE LIMIT STATUS</b>',
     '━━━━━━━━━━━━━━━━━━━━',
     '🚀 <b>Google Antigravity CLI (AGY)</b>',
     '• <b>บัญชี:</b> <code>' + (agy.account || 'aiwonsi@gmail.com') + '</code>',
     '• <b>Gemini (Flash / Pro):</b>',
-    '  └ สัปดาห์: <b>' + (gem.weekly_remaining_pct || 92) + '%</b> (' + (gem.weekly_refresh || '165h') + ')',
-    '  └ 5 ชั่วโมง: <b>' + (gem.five_hour_remaining_pct || 70) + '%</b> (' + (gem.five_hour_refresh || '3h') + ')',
+    '  └ สัปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh || '162h 59m') + ')',
+    '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '1h 0m') + ')',
     '• <b>Claude / GPT (Sonnet/Opus):</b>',
-    '  └ สัปดาห์: <b>' + (cg.weekly_remaining_pct || 0) + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '145h') + ')',
+    '  └ สัปดาห์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '142h 44m') + ')',
     '  └ สถานะ: ⚠️ ' + (cg.five_hour_status || 'Weekly limit reached'),
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
@@ -250,7 +254,7 @@ function formatUsageForTelegram() {
     '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง (' + (g.total_tokens || 0).toLocaleString() + ' tok)',
     '━━━━━━━━━━━━━━━━━━━━',
-    '📱 <i>แตะปุ่มด้านล่างเพื่อเปิด Mini App สดได้ทันทีค่ะ</i>'
+    '📱 <i>แตะปุ่มด้านล่างเพื่อเปิด PSC Mini App</i>'
   ].join('\n');
 }
 

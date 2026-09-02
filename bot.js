@@ -403,6 +403,9 @@ function getDashboardInlineMarkup() {
     return {
         inline_keyboard: [
             [
+                { text: "📱 เปิด PSC Mini App", web_app: { url: "https://pscdb.onrender.com/" } }
+            ],
+            [
                 { text: "🔄 รีเฟรชแดชบอร์ด", callback_data: "dash_refresh" },
                 { text: "📥 เช็ก Gmail ทันที", callback_data: "dash_sync_gmail" }
             ],
@@ -564,28 +567,26 @@ function handleCallbackQuery(cq) {
         editMessageText(chatId, messageId, reply, backMarkup);
     }
     else if (data === 'dash_po_summary') {
-        answerCallbackQuery(cqId, '📦 สรุป PO 3 โรงงาน');
-        const reply = `📦 [สรุป PO ประจำเดือน ก.ย. 2569]\n` +
-                      `──────────────────\n` +
-                      `🏢 1. AFT (Ajinomoto)\n` +
-                      `  • กะหล่ำปลี: 50,400 kg\n` +
-                      `  • หอมใหญ่ปอก: 23,800 kg\n` +
-                      `  • แครอท: 2,630 kg\n` +
-                      `  ➔ รวม AFT: 76,830 kg (20 วัน)\n\n` +
-                      `🏢 2. TNS (Thai Nisshin)\n` +
-                      `  • แครอท: 15,600 kg\n` +
-                      `  • กะหล่ำปลี: 12,700 kg\n` +
-                      `  • พริกหวานเขียว: 2,000 kg (16 ก.ย.)\n` +
-                      `  • ขิง: 1,630 kg\n` +
-                      `  • หอมแดง: 1,000 kg (7 & 21 ก.ย.)\n` +
-                      `  • ต้นหอม: 750 kg\n` +
-                      `  ➔ รวม TNS: 33,680 kg (24 วัน)\n\n` +
-                      `🏢 3. Siam Yamamori\n` +
+        answerCallbackQuery(cqId, '📦 สรุป PO 3 โรงงาน (Rev.01)');
+        const reply = `📦 <b>[สรุป PO ประจำเดือน ก.ย. 2569 (Ground Truth 100%)]</b>\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `🏢 1. <b>AFT (Ajinomoto) - Rev.01</b>\n` +
+                      `  • กะหล่ำปลี: 51,900 kg (เช้า 45.9t / บ่าย 6t)\n` +
+                      `  • หอมใหญ่ปอก: 21,300 kg (เช้า 19.2t / บ่าย 2.1t)\n` +
+                      `  • แครอท: 2,634 kg (รวม Sample RD 4 kg)\n` +
+                      `  ➔ <b>รวม AFT: 75,834 kg (20 วัน)</b>\n\n` +
+                      `🏢 2. <b>TNS (Thai Nisshin)</b>\n` +
+                      `  • แครอท: 15,600 kg | กะหล่ำปลี: 12,700 kg\n` +
+                      `  • พริกหวานเขียว: 2,000 kg (16 ก.ย.) | ขิง: 1,630 kg\n` +
+                      `  • หอมแดง: 1,000 kg (7 & 21 ก.ย.) | ต้นหอม: 750 kg\n` +
+                      `  ➔ <b>รวม TNS: 33,680 kg (24 วัน)</b>\n\n` +
+                      `🏢 3. <b>Siam Yamamori</b>\n` +
                       `  • PO2357 (05/09): แครอท 180kg, หอมใหญ่ 625kg\n` +
                       `  • PO2358 (10/09): แครอท 136kg, หอมใหญ่ 1,150kg\n` +
-                      `  ➔ รวม Yamamori: 2,091 kg (69,588 บ.)\n` +
-                      `──────────────────\n` +
-                      `🌟 ยอดรวมทั้งเดือน: 112,601 kg`;
+                      `  ➔ <b>รวม Yamamori: 2,091 kg (69,588 บ.)</b>\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `🌟 <b>ยอดรวมทั้ง 3 โรงงาน: 111,605 kg</b>\n\n` +
+                      `📱 <i>เปิดดูปฏิทินส่งมอบรายสัปดาห์ใน PSC Mini App</i>`;
         editMessageText(chatId, messageId, reply, backMarkup);
     }
     else if (data === 'dash_stock_status') {
@@ -1687,27 +1688,25 @@ function handleCommand(chatId, text) {
         return;
     }
     else if (lower === '/po' || lower === '📦 สรุป po') {
-        const reply = `📦 [สรุป PO ประจำเดือน ก.ย. 2569]\n` +
-                      `──────────────────\n` +
-                      `🏢 1. AFT (Ajinomoto)\n` +
-                      `  • กะหล่ำปลี: 50,400 kg\n` +
-                      `  • หอมใหญ่ปอก: 23,800 kg\n` +
-                      `  • แครอท: 2,630 kg\n` +
-                      `  ➔ รวม AFT: 76,830 kg (20 วัน)\n\n` +
-                      `🏢 2. TNS (Thai Nisshin)\n` +
-                      `  • แครอท: 15,600 kg\n` +
-                      `  • กะหล่ำปลี: 12,700 kg\n` +
-                      `  • พริกหวานเขียว: 2,000 kg (16 ก.ย.)\n` +
-                      `  • ขิง: 1,630 kg\n` +
-                      `  • หอมแดง: 1,000 kg (7 & 21 ก.ย.)\n` +
-                      `  • ต้นหอม: 750 kg\n` +
-                      `  ➔ รวม TNS: 33,680 kg (24 วัน)\n\n` +
-                      `🏢 3. Siam Yamamori\n` +
+        const reply = `📦 <b>[สรุป PO ประจำเดือน ก.ย. 2569 (Ground Truth 100%)]</b>\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `🏢 1. <b>AFT (Ajinomoto) - Rev.01</b>\n` +
+                      `  • กะหล่ำปลี: 51,900 kg (เช้า 45.9t / บ่าย 6t)\n` +
+                      `  • หอมใหญ่ปอก: 21,300 kg (เช้า 19.2t / บ่าย 2.1t)\n` +
+                      `  • แครอท: 2,634 kg (รวม Sample RD 4 kg)\n` +
+                      `  ➔ <b>รวม AFT: 75,834 kg (20 วัน)</b>\n\n` +
+                      `🏢 2. <b>TNS (Thai Nisshin)</b>\n` +
+                      `  • แครอท: 15,600 kg | กะหล่ำปลี: 12,700 kg\n` +
+                      `  • พริกหวานเขียว: 2,000 kg (16 ก.ย.) | ขิง: 1,630 kg\n` +
+                      `  • หอมแดง: 1,000 kg (7 & 21 ก.ย.) | ต้นหอม: 750 kg\n` +
+                      `  ➔ <b>รวม TNS: 33,680 kg (24 วัน)</b>\n\n` +
+                      `🏢 3. <b>Siam Yamamori</b>\n` +
                       `  • PO2357 (05/09): แครอท 180kg, หอมใหญ่ 625kg\n` +
                       `  • PO2358 (10/09): แครอท 136kg, หอมใหญ่ 1,150kg\n` +
-                      `  ➔ รวม Yamamori: 2,091 kg (69,588 บ.)\n` +
-                      `──────────────────\n` +
-                      `🌟 ยอดรวมทั้งเดือน: 112,601 kg`;
+                      `  ➔ <b>รวม Yamamori: 2,091 kg (69,588 บ.)</b>\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `🌟 <b>ยอดรวมทั้ง 3 โรงงาน: 111,605 kg</b>\n\n` +
+                      `📱 <i>แตะปุ่มด้านล่างเพื่อเปิด PSC Mini App</i>`;
         sendMessage(chatId, reply);
         return;
     }
