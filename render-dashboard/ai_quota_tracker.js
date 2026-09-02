@@ -1,3 +1,31 @@
+
+const https = require('https');
+const url = require('url');
+
+const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
+
+function syncQuotaToRender(data) {
+  if (!RENDER_DASHBOARD_URL) return;
+  try {
+    const postData = JSON.stringify(data);
+    const parsed = url.parse(RENDER_DASHBOARD_URL + '/api/sync-quota');
+    const req = https.request({
+      hostname: parsed.hostname,
+      port: 443,
+      path: parsed.path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      timeout: 8000
+    }, () => {});
+    req.on('error', () => {});
+    req.write(postData);
+    req.end();
+  } catch(e) {}
+}
+
 'use strict';
 
 const fs = require('fs');
@@ -75,6 +103,7 @@ function saveQuotaData(data) {
   data.last_updated = new Date().toISOString();
   try {
     fs.writeFileSync(QUOTA_FILE, JSON.stringify(data, null, 2), 'utf8');
+    try { syncQuotaToRender(data); } catch(e) {}
   } catch (e) {
     console.error('[QuotaTracker] Error saving quota file:', e.message);
   }

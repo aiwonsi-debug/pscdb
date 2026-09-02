@@ -257,6 +257,17 @@ const server = http.createServer(async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
         // Real-Time AI Usage & Quota Endpoint
+        
+        // Sync Quota POST (Receive live stats from local machine)
+        if (req.method === 'POST' && (pathname === '/api/sync-quota' || pathname === '/api/quota-sync')) {
+            const body = await getBody();
+            if (body && (body.groq || body.agy)) {
+                quotaTracker.saveQuotaData(body);
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Quota synced to cloud' }));
+        }
+
         if (req.method === 'GET' && (pathname === '/api/usage' || pathname === '/api/quota' || pathname === '/api/ai-usage')) {
             const quotaData = quotaTracker.loadQuotaData();
             res.writeHead(200);
