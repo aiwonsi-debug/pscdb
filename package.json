@@ -1,0 +1,15 @@
+{
+  "name": "psc-dashboard",
+  "version": "1.0.0",
+  "description": "PSC Field Operations & Procurement Dashboard",
+  "main": "webhook_server.js",
+  "scripts": {
+    "start": "node webhook_server.js"
+  },
+  "dependencies": {
+    "pdf-parse": "^2.4.5",
+    "pdf2json": "^3.1.4",
+    "ssh2": "^1.17.0",
+    "xlsx": "^0.18.5"
+  }
+}

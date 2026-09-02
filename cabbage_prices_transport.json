@@ -1,0 +1,28 @@
+﻿{
+  "ExcelFilePath": "E:\\รวมงาน\\งาน 25-26\\Cabbage\\Cabbage Daily Price Log.xlsx",
+  "AsOfDate": "2026-08-28",
+  "ShipmentHistory": [
+    {
+      "BatchId": "CB-20260827-01",
+      "Supplier": "เฮียหนิง",
+      "Location": "โกดัง ฮอด",
+      "DispatchDate": "2026-08-27",
+      "IntakeDate": "2026-08-28",
+      "TransitDays": 1,
+      "GrossDispatchKg": 9000.0,
+      "NetReceivedKg": 8400.0,
+      "TransitLossKg": 600.0,
+      "TransitLossPct": 6.67,
+      "LossReason": "สูญเสียจากการคายน้ำอย่างเดียว (Moisture / Transpiration Loss Only)",
+      "TruckFee": 12000.0,
+      "PaymentTerm": "เก็บเงินปลายทาง (โรงงาน)",
+      "FreightPerReceivedKg": 1.43,
+      "SampleTest": {
+        "SampleKg": 100.0,
+        "PeeledKg": 60.4,
+        "ActualYield": 0.604
+      },
+      "Notes": "กะหล่ำปลีพันธุ์ช้าง (กลาง+ใหญ่) สภาพพอใช้ แมง+ราค่อนข้างเยอะ น้ำหนักลดลง 600 kg จากการคายน้ำระหว่างเดินทาง 1 วัน"
+    }
+  ]
+}

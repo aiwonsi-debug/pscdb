@@ -1,0 +1,10 @@
+{
+  "name": "psc-dashboard",
+  "version": "1.0.0",
+  "description": "PSC Team Ops Dashboard",
+  "main": "webhook_server.js",
+  "scripts": {
+    "start": "node webhook_server.js"
+  },
+  "dependencies": {}
+}

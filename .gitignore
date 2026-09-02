@@ -1,0 +1,7 @@
+node_modules/
+*.log
+*.pem
+*_config.json
+.env
+ops_backup/
+extracted_po_images/
