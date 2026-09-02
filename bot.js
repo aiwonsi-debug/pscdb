@@ -143,13 +143,13 @@ function sendMessage(chatId, text) {
 
 function sendMessageWithKeyboard(chatId, text, replyMarkup) {
     if (!text) return Promise.resolve();
-    writeLog(`[Sending TG Menu to ${chatId}]: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
+    writeLog(`[Sending TG to ${chatId}]: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
     return tgRequest('sendMessage', {
         chat_id: chatId,
         text: text,
         parse_mode: 'HTML',
         disable_web_page_preview: true,
-        reply_markup: replyMarkup
+        reply_markup: { remove_keyboard: true }
     });
 }
 
@@ -372,55 +372,11 @@ setTimeout(autoCheckTNSPreparation, 8000);
 // ==========================================
 
 function getPersistentReplyMarkup() {
-    return {
-        keyboard: [
-            [
-                { text: "📊 แดชบอร์ด" },
-                { text: "🚜 สถานะจัดซื้อ" },
-                { text: "🧠 ความจำเลขา" }
-            ],
-            [
-                { text: "📦 สรุป PO" },
-                { text: "🥬 สต็อกผัก" },
-                { text: "📅 กำหนดส่ง GT" }
-            ],
-            [
-                { text: "⚡ AI Quota" },
-                { text: "🔄 เช็กเมล PO" },
-                { text: "❓ เมนูคำสั่ง" }
-            ]
-        ],
-        resize_keyboard: true,
-        persistent: true
-    };
+    return { remove_keyboard: true };
 }
 
 function getDashboardInlineMarkup() {
-    const engineLabel = (currentAiEngine === 'glm') ? 'GLM-5.3' : 'AGY CLI';
-    return {
-        inline_keyboard: [
-            [
-                { text: "🔄 รีเฟรชแดชบอร์ด", callback_data: "dash_refresh" },
-                { text: "📥 เช็ก Gmail ทันที", callback_data: "dash_sync_gmail" }
-            ],
-            [
-                { text: "🧠 ความจำ & การเรียนรู้", callback_data: "dash_memory" },
-                { text: "📅 กำหนดส่ง GT (D-2)", callback_data: "dash_gt_schedule" }
-            ],
-            [
-                { text: "📦 สรุป PO 3 โรงงาน", callback_data: "dash_po_summary" },
-                { text: "🥬 รันเวย์สต็อกผัก", callback_data: "dash_stock_status" }
-            ],
-            [
-                { text: `🤖 สลับ Engine [${engineLabel}]`, callback_data: "dash_toggle_engine" },
-                { text: "⚡ สรุป AI Quota ในแชท", callback_data: "dash_quota_usage" }
-            ],
-            [
-                { text: "📁 ขอไฟล์ล่าสุด", callback_data: "dash_get_latest_file" },
-                { text: "❓ วิธีสั่งงาน & เมนู", callback_data: "dash_help_menu" }
-            ]
-        ]
-    };
+    return null;
 }
 
 function getDashboardSummary() {
@@ -580,7 +536,7 @@ function handleCallbackQuery(cq) {
                       `  ➔ <b>รวม Yamamori: 2,091 kg (69,588 บ.)</b>\n` +
                       `━━━━━━━━━━━━━━━━━━━━\n` +
                       `🌟 <b>ยอดรวมทั้ง 3 โรงงาน: 111,605 kg</b>\n\n` +
-                      `📱 <i>เปิดดูปฏิทินส่งมอบรายสัปดาห์ใน PSC Mini App</i>`;
+                      ``;
         editMessageText(chatId, messageId, reply, backMarkup);
     }
     else if (data === 'dash_stock_status') {
@@ -1591,33 +1547,41 @@ function handleCommand(chatId, text) {
     }
 
     // 3.2 Fast Dashboard & Menu Shortcuts
-    if (lower === '/start' || lower === '/dashboard' || lower === 'dashboard' || lower === 'แดชบอร์ด' || lower === '📊 แดชบอร์ด') {
-        sendMessageWithKeyboard(chatId, getDashboardSummary(), Object.assign({}, getDashboardInlineMarkup(), {
-            reply_markup: getPersistentReplyMarkup()
-        }));
-        sendMessageWithKeyboard(chatId, '📱 Quick Menu Bar พร้อมใช้งานด้านล่าง 👇 (สามารถพิมพ์สั่งงาน AGY ได้โดยตรง)', getPersistentReplyMarkup());
+    
+    // Reboot / Restart Command directly from Telegram
+    if (lower === '/reboot' || lower === '/restart' || lower === 'รีบูต' || lower === 'รีสตาร์ต' || lower === 'รีเซ็ตบอท') {
+        sendMessage(chatId, '🔄 <b>[กำลังรีสตาร์ตระบบบอทเลขา...]</b>\n\nระบบกำลังตัดการทำงานและเริ่มใหม่อัตโนมัติใน 1 วินาทีค่ะ 🚀');
+        setTimeout(() => {
+            const rebootSigFile = path.join(__dirname, 'reboot_bot.signal');
+            try { fs.writeFileSync(rebootSigFile, new Date().toISOString(), 'utf8'); } catch(e) {}
+            // Force exit this process, Supervisor will instantly relaunch it!
+            process.exit(0);
+        }, 800);
         return;
     }
-    else if (lower === '/menu' || lower === 'เมนู' || lower === '❓ เมนูคำสั่ง' || lower === '/help' || lower === 'help') {
-        const reply = `🤖 [เมนูคำสั่งระบบเลขา AI & แดชบอร์ด]\n\n` +
-                      `✨ **พิมพ์ข้อความสั่งงานทั่วไปได้โดยตรงทันที ไม่ต้องใส่ /agy นำหน้า!**\n\n` +
-                      `📊 [แดชบอร์ด & ปุ่มลัด]:\n` +
-                      `• กดปุ่ม "📊 แดชบอร์ด" หรือพิมพ์ /dashboard\n` +
-                      `• /po หรือ "สรุป po" - รายละเอียด PO 3 โรงงาน\n` +
-                      `• /check หรือ "เช็กเมล" - ดึง Order & PO ใหม่จาก Gmail\n` +
-                      `• /prep_gt หรือ "กำหนดส่ง gt" - ตรวจสอบตาราง D-2\n` +
-                      `• /stock หรือ "สต็อกผัก" - สถานะสต็อกและรันเวย์กะหล่ำปลี\n` +
-                      `• /latest หรือ "ไฟล์ล่าสุด" - ดึงไฟล์ Excel/PDF ล่าสุด\n\n` +
-                      `🎨 [AI Studio 300 DPI]:\n` +
-                      `• กดปุ่ม "🎨 AI Studio 300DPI" หรือพิมพ์ /diffusion\n\n` +
-                      `🌐 [ลิงก์เว็บปฏิบัติงาน PSC]:\n` +
-                      `• 📱 PSC Web Operations: https://pscdb.onrender.com/\n\n` +
-                      `⚡ [คำสั่งระบบ]:\n` +
-                      `• /quota หรือ /usage - ตรวจสอบโควต้า AI และเวลาไทย\n` +
-                      `• /status - ตรวจสอบสถานะการทำงาน\n` +
-                      `• /cmd <คำสั่ง> - รัน PowerShell บนเครื่อง\n` +
-                      `• /model glm | /model agy - สลับโมเดล`;
-        sendMessageWithKeyboard(chatId, reply, getDashboardInlineMarkup());
+
+    if (lower === '/start' || lower === '/dashboard' || lower === 'dashboard' || lower === 'แดชบอร์ด') {
+        sendMessage(chatId, getDashboardSummary());
+        return;
+    }
+    else if (lower === '/menu' || lower === 'เมนู' || lower === '/help' || lower === 'help') {
+        const reply = `🤖 <b>[ระบบเลขา AI - รับคำสั่งข้อความโดยตรง 100%]</b>\n\n` +
+                      `✨ <b>สามารถพิมพ์สอบถามหรือสั่งงานภาษาไทยได้ทันที:</b>\n` +
+                      `• <i>"ขอสรุป order aft ล่าสุด"</i>\n` +
+                      `• <i>"สต็อกกะหล่ำปลีเหลือเท่าไหร่"</i>\n` +
+                      `• <i>"รอบส่ง yamamori มีวันไหนบ้าง"</i>\n` +
+                      `• <i>"ขอไฟล์ PO ล่าสุด"</i>\n\n` +
+                      `📌 <b>คำสั่งด่วน (Shortcuts):</b>\n` +
+                      `• <code>/dashboard</code> - สรุปภาพรวมระบบทั้งหมด\n` +
+                      `• <code>/po</code> - สรุปยอด PO ก.ย. 69 ทุกโรงงาน\n` +
+                      `• <code>/stock</code> - ยอดสต็อกคงเหลือจริง\n` +
+                      `• <code>/check</code> - เช็กอีเมล Gmail PO ทันที\n` +
+                      `• <code>/prep_gt</code> - ตรวจสอบตาราง GT ล่วงหน้า\n` +
+                      `• <code>/quota</code> - เช็กโควต้า AI\n` +
+                      `• <code>/memory</code> - ความจำเลขา\n` +
+                      `• <code>/status</code> - สถานะเซิร์ฟเวอร์
+• <code>/reboot</code> - รีสตาร์ตบอททันที (เมื่อบอทค้าง)`;
+        sendMessage(chatId, reply);
         return;
     }
     else if (lower === '🎨 ai studio 300dpi' || lower === '/diffusion' || lower === '/studio' || lower === '300dpi') {
@@ -1641,7 +1605,7 @@ function handleCommand(chatId, text) {
                       `3. 🥕 <b>แครอทสวย:</b> <b>5,840 kg</b> (พอถึง ~10/09/69 สต็อกเข้าเติมแล้ว)\n` +
                       `4. 🍠 <b>พืชหัวอื่นๆ:</b> มันม่วง 1,690 kg | มันเหลือง 342 kg | มันส้ม 390 kg\n` +
                       `━━━━━━━━━━━━━━━━━━━━\n` +
-                      `📱 <i>แตะปุ่มด้านล่างเพื่อเปิด Mini App ดูสต็อกสดได้ทันทีค่ะ</i>`;
+                      ``;
         sendMessageWithKeyboard(chatId, reply, getDashboardInlineMarkup());
         return;
     }
