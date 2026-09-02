@@ -116,6 +116,14 @@
     .btn-restore:active { background: rgba(255,255,255,0.15); color: #fff; }
 
     footer { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 14px; padding: 12px 0; border-top: 1px solid var(--card-border); }
+  
+    .main-nav-bar { background: #131c2e; padding: 6px; border-radius: 12px; border: 1px solid var(--card-border); }
+    .nav-tab-btn { background: rgba(255,255,255,0.04); border: 1px solid transparent; color: var(--text-muted); padding: 8px 4px; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .nav-tab-btn.active { background: var(--primary); color: #090d16; font-weight: 700; box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4); }
+    .app-section { display: none; }
+    .app-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
   </style>
 </head>
 <body>
@@ -133,13 +141,22 @@
       </div>
     </header>
 
-    <!-- Filter Tabs -->
-    <div class="filter-tabs">
-      <div class="tab-btn active" onclick="filterCategory('all', this)">🌟 รายการทั้งหมด</div>
-      <div class="tab-btn" onclick="filterCategory('salaya', this)">🟣 กะหล่ำเข้าศาลายา</div>
-      <div class="tab-btn" onclick="filterCategory('tns', this)">🔵 TNS</div>
+    <!-- Unified App Navigation Bar -->
+    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-bottom:12px;">
+      <button class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
+      <button class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
+      <button class="nav-tab-btn" id="tab_btn_quota" onclick="switchAppTab('quota')">⚡ AI Quota</button>
+      <button class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 เลขา/PO</button>
     </div>
 
+    <!-- Sub Filter Tabs for Ops Tab -->
+    <div class="filter-tabs" id="ops_sub_filters">
+      <div class="tab-btn active" onclick="filterCategory('all', this)">🌟 ทุกรายการ</div>
+      <div class="tab-btn" onclick="filterCategory('salaya', this)">🟣 กะหล่ำศาลายา</div>
+      <div class="tab-btn" onclick="filterCategory('tns', this)">🔵 TNS ผัก</div>
+    </div>
+
+<div id="sec_ops" class="app-section active">
 <!-- SECTION: ORDER CARDS (STRICT CHRONOLOGICAL ORDER WITH CUSTOM TYPING SUPPORT) -->
     <div class="card">
       <div class="card-header">
@@ -409,7 +426,11 @@
     </div>
 
     
-    <!-- SECTION: LIVE PRICE UPDATE & FREIGHT (READ-ONLY DISPLAY) -->
+    </div>
+
+<!-- SECTION: STOCK & PRICES -->
+<div id="sec_stock" class="app-section">
+<!-- SECTION: LIVE PRICE UPDATE & FREIGHT (READ-ONLY DISPLAY) -->
     <div class="card" id="price_board_card">
       <div class="card-header">
         <div class="card-title">💰 ราคาวัตถุดิบ & ค่าขนส่งล่าสุด</div>
@@ -589,6 +610,163 @@
 
       </div>
     </div>
+</div>
+
+<!-- SECTION 3: AI QUOTA & ENGINES DASHBOARD -->
+<div id="sec_quota" class="app-section">
+    <!-- SECTION 1: AGY CLI -->
+    <div class="card" style="border-left: 4px solid #a855f7;">
+      <div class="card-header">
+        <div class="card-title" style="color: #c084fc;">🚀 Google Antigravity CLI (AGY)</div>
+        <span class="badge badge-salaya" id="agy_acc">aiwonsi@gmail.com</span>
+      </div>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-size:12px; font-weight:600; color:#cbd5e1; margin-bottom:6px; display:flex; justify-content:space-between;">
+          <span>Gemini Models (Flash / Pro)</span>
+          <span style="color:#34d399; font-size:11px;">Active & Auto-Failover to Groq</span>
+        </div>
+        <div class="grid-2">
+          <div class="stat-box" style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
+            <span class="stat-label" style="font-size:11px; color:#94a3b8;">โควต้าประจำสัปดาห์ (Weekly Limit)</span>
+            <div class="stat-value" id="gem_week_val" style="font-size:15px; font-weight:700; color:#34d399;">92.16%</div>
+            <div class="progress-bar-bg" style="background:#1e293b; height:6px; border-radius:3px; margin-top:4px; overflow:hidden;">
+              <div class="progress-bar" id="gem_week_bar" style="width: 92.16%; height:100%; background:#10b981;"></div>
+            </div>
+            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">รีเฟรชเต็มใน: <b id="gem_week_ref" style="color:#94a3b8;">165h 57m</b></span>
+          </div>
+          <div class="stat-box" style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
+            <span class="stat-label" style="font-size:11px; color:#94a3b8;">โควต้า 5 ชั่วโมง (5-Hour Limit)</span>
+            <div class="stat-value" id="gem_5h_val" style="font-size:15px; font-weight:700; color:#38bdf8;">70.22%</div>
+            <div class="progress-bar-bg" style="background:#1e293b; height:6px; border-radius:3px; margin-top:4px; overflow:hidden;">
+              <div class="progress-bar" id="gem_5h_bar" style="width: 70.22%; height:100%; background:#38bdf8;"></div>
+            </div>
+            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">รีเฟรชเต็มใน: <b id="gem_5h_ref" style="color:#94a3b8;">3h 58m</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px; background:rgba(0,0,0,0.25); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
+        <div style="font-size:12px; font-weight:600; color:#cbd5e1; margin-bottom:6px; display:flex; justify-content:space-between;">
+          <span>Claude & GPT Models (Sonnet/Opus/GPT-OSS)</span>
+          <span style="color:#f87171; font-size:10px;">⚠️ Weekly Limit Reached</span>
+        </div>
+        <div class="grid-2">
+          <div class="stat-box">
+            <span class="stat-label" style="font-size:11px; color:#94a3b8;">Weekly Limit</span>
+            <div class="stat-value" style="color:#f87171; font-size:14px; font-weight:700;" id="cg_week_val">0%</div>
+            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">รีเฟรชใน: <b id="cg_week_ref" style="color:#94a3b8;">145h 42m</b></span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label" style="font-size:11px; color:#94a3b8;">5-Hour Status</span>
+            <div class="stat-value" style="color:#f87171; font-size:13px; font-weight:700;">จำกัดชั่วคราว</div>
+            <span style="font-size:10px; color:#64748b; margin-top:3px; display:block;">ระบบจะรีเซ็ตตามรอบสัปดาห์</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#94a3b8; background:rgba(255,255,255,0.02); padding:6px 10px; border-radius:6px;">
+        <div>คำสั่งสะสม Session นี้: <b id="agy_prompts" style="color:#f8fafc;">0 ครั้ง</b></div>
+        <div style="color:#34d399;">⚡ สลับเรียกใช้ Gemini Pro & Flash อัตโนมัติ</div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: GROQ FAST LLAMA & QWEN API -->
+    <div class="card" style="border-left: 4px solid #38bdf8;">
+      <div class="card-header">
+        <div class="card-title">🚀 Groq Fast API (Auto-Failover)</div>
+        <span class="badge badge-primary" id="groq_model">qwen/qwen3.8-27b</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
+          <span style="font-size:11px; color:#94a3b8;">Requests Quota คงเหลือ</span>
+          <div style="font-size:14px; font-weight:700; color:#34d399;" id="groq_req_val">997 / 1,000</div>
+          <div style="background:#1e293b; height:5px; border-radius:3px; margin-top:4px; overflow:hidden;">
+            <div id="groq_req_bar" style="width: 100%; height:100%; background:#10b981;"></div>
+          </div>
+        </div>
+        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #23334d;">
+          <span style="font-size:11px; color:#94a3b8;">Tokens Quota คงเหลือ</span>
+          <div style="font-size:14px; font-weight:700; color:#38bdf8;" id="groq_tok_val">6,912 / 8,000</div>
+          <div style="background:#1e293b; height:5px; border-radius:3px; margin-top:4px; overflow:hidden;">
+            <div id="groq_tok_bar" style="width: 86%; height:100%; background:#38bdf8;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px;">
+        <div>Requests สะสม: <b id="groq_tot_req" style="color:#f8fafc;">5</b></div>
+        <div>Tokens สะสม: <b id="groq_tot_tok" style="color:#f8fafc;">830</b></div>
+        <div>Reset Req: <span id="groq_rst_req" style="color:#facc15;">-</span></div>
+        <div>Reset Tok: <span id="groq_rst_tok" style="color:#facc15;">-</span></div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: RECENT TURNS TABLE -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📜 ประวัติการเรียกใช้งาน AI สด</div>
+        <span class="badge badge-primary">Real-Time Turns</span>
+      </div>
+      <div id="recent_list" style="max-height: 220px; overflow-y: auto;">
+        <div style="text-align: center; color: #64748b; padding: 12px;">กำลังดึงข้อมูล...</div>
+      </div>
+    </div>
+</div>
+
+<!-- SECTION 4: SECRETARY & PO KNOWLEDGE BASE -->
+<div id="sec_sec" class="app-section">
+    <div class="card" style="border-left: 4px solid #10b981;">
+      <div class="card-header">
+        <div class="card-title" style="color: #34d399;">📦 สรุปยอด PO ประจำเดือน ก.ย. 2569</div>
+        <span class="badge badge-success">Ground Truth 100%</span>
+      </div>
+      
+      <!-- AFT -->
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+        <div style="font-weight: 700; color: #38bdf8; font-size: 13.5px; margin-bottom: 4px;">🏢 1. AFT (Ajinomoto Frozen Foods) - Rev.01</div>
+        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+          • <b>กะหล่ำปลี:</b> 51,900 kg (เช้า 45,900 kg / บ่าย 6,000 kg)<br>
+          • <b>หอมใหญ่ปอก:</b> 21,300 kg (เช้า 19,200 kg / บ่าย 2,100 kg)<br>
+          • <b>แครอท:</b> 2,634 kg (รวม Sample R&D 4 kg)<br>
+          • <b>ยอดรวมทั้งเดือน:</b> <b style="color:#34d399;">75,834 kg (20 วันส่งมอบ)</b>
+        </div>
+      </div>
+
+      <!-- TNS -->
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+        <div style="font-weight: 700; color: #c084fc; font-size: 13.5px; margin-bottom: 4px;">🏢 2. TNS (Thai Nisshin Seifun)</div>
+        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+          • <b>แครอท:</b> 15,600 kg | <b>กะหล่ำปลี:</b> 12,700 kg<br>
+          • <b>พริกหวานเขียว:</b> 2,000 kg (ส่ง 16 ก.ย.) | <b>ขิง:</b> 1,630 kg<br>
+          • <b>หอมแดง:</b> 1,000 kg (ส่ง 7 & 21 ก.ย.) | <b>ต้นหอม:</b> 750 kg<br>
+          • <b>ยอดรวมทั้งเดือน:</b> <b style="color:#34d399;">33,680 kg (24 วันส่งมอบ)</b>
+        </div>
+      </div>
+
+      <!-- Siam Yamamori -->
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 8px; padding: 10px;">
+        <div style="font-weight: 700; color: #f59e0b; font-size: 13.5px; margin-bottom: 4px;">🏢 3. Siam Yamamori</div>
+        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+          • <b>PO2357 (ส่ง 05/09):</b> แครอท 180 kg, หอมใหญ่ 625 kg<br>
+          • <b>PO2358 (ส่ง 10/09):</b> แครอท 136 kg, หอมใหญ่ 1,150 kg<br>
+          • <b>ยอดรวมทั้งเดือน:</b> <b style="color:#34d399;">2,091 kg (มูลค่า 69,588 บาท)</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- GT Schedule & D-2 -->
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+      <div class="card-header">
+        <div class="card-title" style="color: #fbbf24;">📅 กำหนดการจัดทำ & ตรวจสอบ GT ล่วงหน้า (D-2)</div>
+        <span class="badge badge-warning">ระบบเตือนอัตโนมัติ</span>
+      </div>
+      <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+        • <b>รอบส่งมอบ AFT 03/09 (พฤหัส):</b> ตรวจสอบและเตือนแล้ว 02/09 12:00 น.<br>
+        • <b>รอบส่งมอบ AFT 05/09 & Yamamori 05/09:</b> กำหนดแจ้งเตือน 04/09 12:00 น.<br>
+        • <b>รอบส่งมอบ AFT 07/09 & TNS หอมแดง 07/09:</b> เลื่อนเตือนเป็น 05/09 12:00 น. (ติดวันอาทิตย์)
+      </div>
+    </div>
+</div>
 
     <footer>
       บจก.ไพศาลเจริญ (1988)
@@ -1170,7 +1348,120 @@ if (cat === 'all') {
       renderDeliveryLogTable();
     }
 
-    window.onload = function() { loadSavedState(); updateNotificationBtn(); scheduleDaily8AMAlert(); };
+    
+    function switchAppTab(tabId) {
+      const tabs = ['ops', 'stock', 'quota', 'sec'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab_btn_' + t);
+        const sec = document.getElementById('sec_' + t);
+        if (btn) btn.classList.remove('active');
+        if (sec) sec.classList.remove('active');
+      });
+
+      const activeBtn = document.getElementById('tab_btn_' + tabId);
+      const activeSec = document.getElementById('sec_' + tabId);
+      const subFilter = document.getElementById('ops_sub_filters');
+      
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeSec) activeSec.classList.add('active');
+      
+      if (subFilter) {
+        subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
+      }
+
+      if (tabId === 'quota') {
+        fetchAiUsageData();
+      }
+    }
+
+    function fetchAiUsageData() {
+      fetch('/api/usage')
+        .then(res => res.json())
+        .then(resData => {
+          if (!resData || !resData.success || !resData.data) return;
+          const d = resData.data;
+
+          if (d.agy) {
+            if (d.agy.account && document.getElementById('agy_acc')) document.getElementById('agy_acc').textContent = d.agy.account;
+            if (d.agy.total_prompts !== undefined && document.getElementById('agy_prompts')) document.getElementById('agy_prompts').textContent = d.agy.total_prompts + ' ครั้ง';
+            
+            if (d.agy.gemini) {
+              const gem = d.agy.gemini;
+              if (gem.weekly_remaining_pct !== undefined && document.getElementById('gem_week_val')) {
+                document.getElementById('gem_week_val').textContent = gem.weekly_remaining_pct + '%';
+                if (document.getElementById('gem_week_bar')) document.getElementById('gem_week_bar').style.width = gem.weekly_remaining_pct + '%';
+              }
+              if (gem.weekly_refresh && document.getElementById('gem_week_ref')) document.getElementById('gem_week_ref').textContent = gem.weekly_refresh;
+              
+              if (gem.five_hour_remaining_pct !== undefined && document.getElementById('gem_5h_val')) {
+                document.getElementById('gem_5h_val').textContent = gem.five_hour_remaining_pct + '%';
+                if (document.getElementById('gem_5h_bar')) document.getElementById('gem_5h_bar').style.width = gem.five_hour_remaining_pct + '%';
+              }
+              if (gem.five_hour_refresh && document.getElementById('gem_5h_ref')) document.getElementById('gem_5h_ref').textContent = gem.five_hour_refresh;
+            }
+
+            if (d.agy.claude_gpt) {
+              const cg = d.agy.claude_gpt;
+              if (cg.weekly_remaining_pct !== undefined && document.getElementById('cg_week_val')) document.getElementById('cg_week_val').textContent = cg.weekly_remaining_pct + '%';
+              if (cg.weekly_refresh && document.getElementById('cg_week_ref')) document.getElementById('cg_week_ref').textContent = cg.weekly_refresh;
+            }
+          }
+
+          if (d.groq) {
+            const g = d.groq;
+            const rl = g.rate_limit || {};
+            if (g.model && document.getElementById('groq_model')) document.getElementById('groq_model').textContent = g.model;
+            if (rl.remaining_requests !== undefined && rl.limit_requests) {
+              if (document.getElementById('groq_req_val')) document.getElementById('groq_req_val').textContent = rl.remaining_requests.toLocaleString() + ' / ' + rl.limit_requests.toLocaleString();
+              const reqPct = Math.min(100, Math.round((rl.remaining_requests / rl.limit_requests) * 100));
+              if (document.getElementById('groq_req_bar')) document.getElementById('groq_req_bar').style.width = reqPct + '%';
+            }
+            if (rl.remaining_tokens !== undefined && rl.limit_tokens) {
+              if (document.getElementById('groq_tok_val')) document.getElementById('groq_tok_val').textContent = rl.remaining_tokens.toLocaleString() + ' / ' + rl.limit_tokens.toLocaleString();
+              const tokPct = Math.min(100, Math.round((rl.remaining_tokens / rl.limit_tokens) * 100));
+              if (document.getElementById('groq_tok_bar')) document.getElementById('groq_tok_bar').style.width = tokPct + '%';
+            }
+            if (g.total_requests !== undefined && document.getElementById('groq_tot_req')) document.getElementById('groq_tot_req').textContent = g.total_requests;
+            if (g.total_tokens !== undefined && document.getElementById('groq_tot_tok')) document.getElementById('groq_tot_tok').textContent = g.total_tokens.toLocaleString();
+            if (rl.reset_requests && document.getElementById('groq_rst_req')) document.getElementById('groq_rst_req').textContent = rl.reset_requests;
+            if (rl.reset_tokens && document.getElementById('groq_rst_tok')) document.getElementById('groq_rst_tok').textContent = rl.reset_tokens;
+          }
+
+          // Recent Events (Bangkok Timezone)
+          const container = document.getElementById('recent_list');
+          if (container && d.recent_events && d.recent_events.length > 0) {
+            container.innerHTML = d.recent_events.slice(0, 15).map(ev => {
+              let timeStr = '-';
+              if (ev.timestamp) {
+                try {
+                  const dateObj = new Date(ev.timestamp);
+                  timeStr = dateObj.toLocaleTimeString('th-TH', { 
+                    timeZone: 'Asia/Bangkok', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit', 
+                    hour12: false 
+                  }) + ' น.';
+                } catch(e) {
+                  timeStr = ev.timestamp.slice(11, 19);
+                }
+              }
+              return '<div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11.5px;">' +
+                '<div style="max-width: 72%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
+                  '<span class="badge badge-primary" style="font-size:10px; margin-right:6px;">' + ev.engine + '</span>' +
+                  '<span style="color:#94a3b8;" title="' + (ev.snippet ? ev.snippet.replace(/"/g, '&quot;') : '') + '">' + (ev.snippet ? ev.snippet : '') + '</span>' +
+                '</div>' +
+                '<div style="color:#cbd5e1; font-size:11px; white-space: nowrap;">' +
+                  (ev.tokens ? (ev.tokens + ' tok • ') : '') + '<span style="color:#38bdf8; font-weight: 600;">' + timeStr + '</span>' +
+                '</div>' +
+              '</div>';
+            }).join('');
+          }
+        })
+        .catch(e => {});
+    }
+
+    window.onload = function() { loadSavedState(); updateNotificationBtn(); scheduleDaily8AMAlert(); fetchAiUsageData(); };
   </script>
 </body>
 </html>
