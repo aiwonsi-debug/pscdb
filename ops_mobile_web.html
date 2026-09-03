@@ -7,28 +7,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: #131c2e;
-      --card-border: #23334d;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #38bdf8;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --bg: #181a1b;
+      --card-bg: #1d2125;
+      --card-border: #35393b;
+      --text-main: #e8e6e3;
+      --text-muted: #9e9689;
+      --primary: #3391b8;
+      --accent-orange: #e85a3c;
+      --success: #2b9348;
+      --warning: #d48806;
+      --danger: #d93838;
       --line-green: #06c755;
-      --salaya-purple: #a855f7;
-      --tns-cyan: #06b6d4;
+      --salaya-purple: #9d4edd;
+      --tns-cyan: #2aa198;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text-main); padding: 12px; min-height: 100vh; font-size: 14px; }
     .container { max-width: 800px; margin: 0 auto; }
     
     /* Header */
-    header { background: #131c2e; border: 1px solid var(--card-border); padding: 14px 16px; border-radius: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    .brand h1 { font-size: 18px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+    header { background: #1d2125; border: 1px solid var(--card-border); padding: 14px 16px; border-radius: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .brand h1 { font-size: 18px; font-weight: 700; color: #e85a3c; display: flex; align-items: center; gap: 6px; }
     .brand p { font-size: 11px; color: var(--text-muted); }
-    .sync-status { font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 4px 10px; border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 500; }
+    .sync-status { font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #48bb78; padding: 4px 10px; border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 500; }
 
     /* Toast Notification */
     .toast {
@@ -55,7 +56,7 @@
     /* Filter Tabs */
     .filter-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
     .tab-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; }
-    .tab-btn.active { background: var(--primary); color: #090d16; font-weight: 700; border-color: var(--primary); }
+    .tab-btn.active { background: var(--primary); color: #090d16; font-weight: 700; border-color: #e85a3c; }
 
     /* Section Card */
     .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -64,8 +65,8 @@
 
     /* Badges */
     .badge { padding: 3px 7px; border-radius: 6px; font-size: 10px; font-weight: 600; }
-    .badge-primary { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
-    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-primary { background: rgba(56, 189, 248, 0.2); color: #3391b8; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #48bb78; }
     .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
     .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
     .badge-salaya { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
@@ -83,19 +84,19 @@
     .order-details { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px; }
     
     /* Interactive Selection Box */
-    .action-box { background: #131c2e; border: 1px solid #23334d; border-radius: 8px; padding: 10px; margin-top: 6px; }
+    .action-box { background: #1d2125; border: 1px solid #35393b; border-radius: 8px; padding: 10px; margin-top: 6px; }
     .select-group { margin-bottom: 8px; }
     .select-group:last-child { margin-bottom: 0; }
     .select-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; display: block; font-weight: 500; }
     
-    select.mobile-select { width: 100%; background: #090d16; border: 1px solid #334155; color: #f8fafc; padding: 8px 10px; border-radius: 6px; font-size: 12px; outline: none; }
-    select.mobile-select:focus { border-color: var(--primary); }
+    select.mobile-select { width: 100%; background: #141718; border: 1px solid #35393b; color: #f8fafc; padding: 8px 10px; border-radius: 6px; font-size: 12px; outline: none; }
+    select.mobile-select:focus { border-color: #e85a3c; }
 
     /* Checkbox buttons */
     .check-row { display: flex; gap: 8px; margin-top: 8px; }
-    .check-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 6px; background: #090d16; border: 1px solid #334155; font-size: 12px; cursor: pointer; user-select: none; transition: 0.2s; color: var(--text-muted); }
+    .check-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 6px; background: #141718; border: 1px solid #35393b; font-size: 12px; cursor: pointer; user-select: none; transition: 0.2s; color: var(--text-muted); }
     .check-btn input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--success); }
-    .check-btn.checked { background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: #34d399; font-weight: 600; }
+    .check-btn.checked { background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: #48bb78; font-weight: 600; }
 
     /* Completed Delivery Log Table */
     
@@ -111,15 +112,15 @@
     .log-table tr:last-child td { border-bottom: none; }
     .log-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
     .log-tag.salaya { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
-    .log-tag.tns { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .log-tag.tns { background: rgba(56, 189, 248, 0.15); color: #3391b8; border: 1px solid rgba(56, 189, 248, 0.3); }
     .btn-restore { background: rgba(255,255,255,0.06); border: 1px solid #475569; color: #cbd5e1; font-size: 10.5px; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .btn-restore:active { background: rgba(255,255,255,0.15); color: #fff; }
 
     footer { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 14px; padding: 12px 0; border-top: 1px solid var(--card-border); }
   
-    .main-nav-bar { background: #131c2e; padding: 6px; border-radius: 12px; border: 1px solid var(--card-border); }
+    .main-nav-bar { background: #1d2125; padding: 6px; border-radius: 12px; border: 1px solid var(--card-border); }
     .nav-tab-btn { background: rgba(255,255,255,0.04); border: 1px solid transparent; color: var(--text-muted); padding: 8px 4px; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
-    .nav-tab-btn.active { background: var(--primary); color: #090d16; font-weight: 700; box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4); }
+    .nav-tab-btn.active { background: #3391b8; color: #ffffff; font-weight: 700; box-shadow: 0 2px 8px rgba(51, 145, 184, 0.4); }
     .app-section { display: none; }
     .app-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -519,20 +520,20 @@
 <!-- SECTION: EXACT STOCK 02/09/69 & RUNWAY FORECAST -->
     <div class="card" id="stock_card_0209" style="border-left: 4px solid #38bdf8; margin-bottom: 14px;">
       <div class="card-header" style="margin-bottom: 8px;">
-        <div class="card-title" style="font-size: 15px; font-weight: 700; color: #38bdf8;">📦 Stock 02/09/69 (ตรวจนับจริง) & คาดการณ์</div>
+        <div class="card-title" style="font-size: 15px; font-weight: 700; color: #3391b8;">📦 Stock 02/09/69 (ตรวจนับจริง) & คาดการณ์</div>
         <span class="badge badge-success" id="stock_as_of_badge">อัปเดต ณ 02/09/69</span>
       </div>
-      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 8px; padding: 10px 14px;">
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 8px; padding: 10px 14px;">
         
         <!-- 1. กะหล่ำ -->
         <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13.5px;">🥬 <b>กะหล่ำปลี</b></span>
-            <span style="font-weight: 700; color: #38bdf8; font-size: 14px;" id="stk_val_cabbage">2,575 กก.</span>
+            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_cabbage">2,575 กก.</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
             <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #38bdf8; font-weight: 600;">~15/09/69 (มีรอบเติม 8 ตันต่อเนื่อง 02/09, 03/09, 08/09)</span>
+            <span style="color: #3391b8; font-weight: 600;">~15/09/69 (มีรอบเติม 8 ตันต่อเนื่อง 02/09, 03/09, 08/09)</span>
           </div>
         </div>
 
@@ -552,11 +553,11 @@
         <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13.5px;">🧅 <b>หอมจีน</b></span>
-            <span style="font-weight: 700; color: #34d399; font-size: 14px;" id="stk_val_onion_chinese">3,560 กก.</span>
+            <span style="font-weight: 700; color: #48bb78; font-size: 14px;" id="stk_val_onion_chinese">3,560 กก.</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
             <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #34d399; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
+            <span style="color: #48bb78; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
           </div>
         </div>
 
@@ -564,7 +565,7 @@
         <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13.5px;">🥕 <b>แครอทสวย</b></span>
-            <span style="font-weight: 700; color: #38bdf8; font-size: 14px;" id="stk_val_carrot">5,840 กก.</span>
+            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_carrot">5,840 กก.</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
             <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
@@ -617,7 +618,7 @@
     <!-- SECTION: WEEKLY DELIVERY CALENDAR FOR EACH CUSTOMER -->
     <div class="card" style="border-left: 4px solid #38bdf8;">
       <div class="card-header">
-        <div class="card-title" style="color: #38bdf8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (Weekly Delivery Calendar)</div>
+        <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (Weekly Delivery Calendar)</div>
         <span class="badge badge-primary">กันยายน 2569</span>
       </div>
         <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update"><script>document.write(new Date(document.lastModified).toLocaleString("th-TH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " น.");</script></span></div>
@@ -631,7 +632,7 @@
       </div>
 
       <!-- WEEK 1: 01/09 - 06/09 -->
-      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
+      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom:6px; margin-bottom:8px;">
           <span style="font-weight:700; color:#38bdf8; font-size:13px;">📌 สัปดาห์ที่ 1 (01/09 - 06/09/69)</span>
           <span class="badge badge-primary">สัปดาห์ปัจจุบัน 🚨</span>
@@ -661,7 +662,7 @@
       </div>
 
       <!-- WEEK 2: 07/09 - 13/09 -->
-      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
+      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom:6px; margin-bottom:8px;">
           <span style="font-weight:700; color:#38bdf8; font-size:13px;">📌 สัปดาห์ที่ 2 (07/09 - 13/09/69)</span>
           <span class="badge badge-warning">สัปดาห์หน้า</span>
@@ -697,7 +698,7 @@
       </div>
 
       <!-- WEEK 3: 14/09 - 20/09 -->
-      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
+      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom:6px; margin-bottom:8px;">
           <span style="font-weight:700; color:#38bdf8; font-size:13px;">📌 สัปดาห์ที่ 3 (14/09 - 20/09/69)</span>
           <span class="badge badge-primary">กลางเดือน</span>
@@ -732,7 +733,7 @@
       </div>
 
       <!-- WEEK 4 & 5: 21/09 - 30/09 -->
-      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #23334d; border-radius: 10px; padding: 12px;">
+      <div class="cal-week-box" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 10px; padding: 12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom:6px; margin-bottom:8px;">
           <span style="font-weight:700; color:#38bdf8; font-size:13px;">📌 สัปดาห์ที่ 4 & ปลายเดือน (21/09 - 30/09/69)</span>
           <span class="badge badge-primary">รอบส่งท้ายเดือน</span>
