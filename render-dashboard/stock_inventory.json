@@ -1,10 +1,10 @@
 {
-  "AsOfDate": "2026-09-02",
-  "LastUpdated": "2026-09-02T10:56:02.370Z",
+  "AsOfDate": "2026-09-03",
+  "LastUpdated": "2026-09-03T01:28:26.592Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 2575,
+      "StockKg": 6075,
       "Yield": {
         "AFT": 0.748,
         "TNS": 0.99
@@ -16,11 +16,11 @@
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
-      "StockKg": 3560
+      "StockKg": 7760
     },
     "Carrot": {
       "Name": "แครอทสวย",
-      "StockKg": 5840
+      "StockKg": 5830
     },
     "Purple_Sweet_Potato": {
       "Name": "มันม่วงหัวเล็ก",
