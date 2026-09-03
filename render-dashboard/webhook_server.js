@@ -1,365 +1,540 @@
-﻿const http = require('http');
+const memoryEngine = require('./memory_engine.js');
+const http = require('http');
+const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
-const memoryEngine = require('./memory_engine.js');
-const lineNotifier = require('./line_notifier.js');
+const quotaTracker = require('./ai_quota_tracker.js');
 
-const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 8080;
-const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
+const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
+const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
+const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
+const stockFile = path.join(__dirname, 'stock_inventory.json');
+const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
+
+const TG_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM';
+const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1532466397';
+
+function sendTelegramNotification(text) {
+    if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+    try {
+        const payload = JSON.stringify({
+            chat_id: TG_CHAT_ID,
+            text: text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: false
+        });
+
+        const req = https.request({
+            hostname: 'api.telegram.org',
+            port: 443,
+            path: `/bot${TG_BOT_TOKEN}/sendMessage`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, () => {});
+        req.on('error', (err) => console.error('[TG Notify Error]:', err.message));
+        req.write(payload);
+        req.end();
+    } catch (e) {}
+}
+
+const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
+
+function syncToRender(endpoint, payload) {
+    if (!RENDER_DASHBOARD_URL) return;
+    try {
+        const postData = JSON.stringify(payload);
+        const parsed = url.parse(RENDER_DASHBOARD_URL);
+        const req = https.request({
+            hostname: parsed.hostname,
+            port: 443,
+            path: endpoint,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 10000
+        }, (res) => {
+            console.log(`[Render Sync ${endpoint}] Status: ${res.statusCode}`);
+        });
+        req.on('error', (e) => console.error('[Render Sync Error]:', e.message));
+        req.write(postData);
+        req.end();
+    } catch (e) {
+        console.error('[Render Sync Exception]:', e.message);
+    }
+}
+
+function syncToGoogleSheets(payload) {
+    if (!GAS_URL) return;
+    try {
+        const postData = JSON.stringify(payload);
+        const parsed = url.parse(GAS_URL);
+        const options = {
+            hostname: parsed.hostname,
+            path: parsed.path,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                const redUrl = url.parse(res.headers.location);
+                const redReq = https.request({
+                    hostname: redUrl.hostname,
+                    path: redUrl.path,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, () => {});
+                redReq.on('error', () => {});
+                redReq.write(postData);
+                redReq.end();
+            }
+        });
+
+        req.on('error', (e) => {
+            console.error('[GoogleSheets Sync Error]:', e.message);
+        });
+
+        req.write(postData);
+        req.end();
+    } catch (e) {
+        console.error('[GoogleSheets Sync Exception]:', e.message);
+    }
+}
+
+function fetchGoogleSheetsData() {
+    return new Promise((resolve) => {
+        if (!GAS_URL) return resolve(null);
+        try {
+            https.get(GAS_URL, (res) => {
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    https.get(res.headers.location, (redRes) => {
+                        let data = '';
+                        redRes.on('data', c => data += c);
+                        redRes.on('end', () => {
+                            try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+                        });
+                    }).on('error', () => resolve(null));
+                } else {
+                    let data = '';
+                    res.on('data', c => data += c);
+                    res.on('end', () => {
+                        try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+                    });
+                }
+            }).on('error', () => resolve(null));
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
 
 function loadTeamOps() {
-    let data = { last_updated: new Date().toISOString(), active_operations: [], history_logs: [], cards_state: {} };
+    let data = { 
+        last_updated: new Date().toISOString(), 
+        active_operations: [], 
+        history_logs: [], 
+        cards_state: {},
+        custom_suppliers: [],
+        custom_trucks: []
+    };
     if (fs.existsSync(teamOpsFile)) {
         try {
             data = Object.assign(data, JSON.parse(fs.readFileSync(teamOpsFile, 'utf8')));
             if (!data.cards_state) data.cards_state = {};
+            if (!data.custom_suppliers) data.custom_suppliers = [];
+            if (!data.custom_trucks) data.custom_trucks = [];
         } catch (e) {}
     }
     return data;
 }
 
-function exportMarkdownOpsLog(data) {
-    try {
-        const logMdFile = path.join(__dirname, 'TEAM_OPS_LOG.md');
-        const cards = data.cards_state || {};
-        const activeOps = data.active_operations || [];
-        
-        const cardRows = Object.keys(cards).map(id => {
-            const c = cards[id] || {};
-            let status = '⏳ รอดำเนินการ';
-            if (c.loadedReported) status = '🎉 ส่งของเสร็จสิ้นแล้ว';
-            else if (c.orderChecked && c.truckChecked) status = '✅ สั่งของ & สั่งรถแล้ว';
-            else if (c.orderChecked) status = '🌿 สั่งของแล้ว (รอยืนยันรถ)';
-            else if (c.truckChecked) status = '🚛 จองรถแล้ว (รอยืนยันของ)';
-            
-            return `| \`${id}\` | ${c.supplier || '-'} | ${c.truck || '-'} | ${c.orderChecked ? '✓' : '-'} | ${c.truckChecked ? '✓' : '-'} | ${c.loadedReported ? '✓' : '-'} | **${status}** |`;
-        }).join('\n');
 
-        const mdContent = `# 📋 PSC Field Operations & Procurement Log (บันทึกงานจัดซื้อ & ขนส่งภาคสนาม)
-**อัปเดตล่าสุด:** ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })} (Host File: \`team_ops_status.json\`)
+function recordLoadingReport(reportObj) {
+    if (!reportObj) return;
+    const opsData = loadTeamOps();
+    if (!opsData.history_logs) opsData.history_logs = [];
+    if (!opsData.cards_state) opsData.cards_state = {};
 
----
+    const cardId = reportObj.cardId;
+    if (cardId) {
+        if (!opsData.cards_state[cardId]) opsData.cards_state[cardId] = { id: cardId };
+        opsData.cards_state[cardId].loadedReported = true;
+        opsData.cards_state[cardId].reportedAt = new Date().toISOString();
+        opsData.cards_state[cardId].details = reportObj;
+        opsData.cards_state[cardId].loadedDate = reportObj.date;
+        opsData.cards_state[cardId].loadedItem = reportObj.item;
+        opsData.cards_state[cardId].loadedWeight = reportObj.weight;
+        opsData.cards_state[cardId].loadedFreight = reportObj.freight;
+        opsData.cards_state[cardId].loadedPayment = reportObj.payment;
+        opsData.cards_state[cardId].loadedLocation = reportObj.location;
+        opsData.cards_state[cardId].rawReport = reportObj.rawText;
+    }
 
-## 🚚 1. สถานะการเตรียมงานรายรายการ (Current Card States)
-| ID รายการ | สวน / ผู้ขาย | รถขนส่ง | สั่งของ | สั่งรถ | ส่งแล้ว | สถานะปัจจุบัน |
-|---|---|---|---|---|---|---|
-${cardRows || '| - | - | - | - | - | - | ไม่มีข้อมูล |'}
+    opsData.history_logs.unshift({
+        id: 'LOG-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        date: reportObj.date,
+        item: reportObj.item,
+        weight: reportObj.weight,
+        freight: reportObj.freight,
+        payment: reportObj.payment,
+        location: reportObj.location,
+        cardId: cardId
+    });
 
----
+    if (opsData.history_logs.length > 50) opsData.history_logs.pop();
+    saveTeamOps(opsData);
 
-## 📝 2. ประวัติการบันทึกงานล่าสุด (Recent Activity History - ${activeOps.length} รายการ)
-${activeOps.slice(-15).reverse().map(op => `* **[${op.timestamp ? op.timestamp.slice(0, 19).replace('T', ' ') : '-'}] ${op.customer} (${op.delivery_date}):** ${op.product} ${op.qty_kg ? op.qty_kg.toLocaleString() + ' kg' : ''} | สวน: ${op.farm || '-'} | รถ: ${op.truck || '-'} | สถานะ: \`${op.status || '-'}\``).join('\n')}
-
----
-*บันทึกข้อมูลอัตโนมัติลงเครื่อง Host (PSC Secretary Brain Gateway)*
-`;
-        fs.writeFileSync(logMdFile, mdContent, 'utf8');
-    } catch (e) {
-        console.error('Error writing TEAM_OPS_LOG.md:', e);
+    // Auto sync to Render and Google Sheets
+    syncToRender('/api/loading-report', reportObj);
+    if (cardId) {
+        syncToGoogleSheets(opsData.cards_state[cardId]);
     }
 }
 
 function saveTeamOps(data) {
     data.last_updated = new Date().toISOString();
-    // 1. Primary host JSON
-    fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8');
-
-    // 2. Cloud mirror JSON
-    const cloudFile = path.join(__dirname, 'cloud_secretary', 'team_ops_status.json');
-    if (fs.existsSync(path.dirname(cloudFile))) {
-        try { fs.writeFileSync(cloudFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
-    }
-
-    // 3. Human-readable Markdown log on Host
-    exportMarkdownOpsLog(data);
-
-    // 4. Daily backup directory on Host
-    const backupDir = path.join(__dirname, 'ops_backup');
-    if (!fs.existsSync(backupDir)) {
-        try { fs.mkdirSync(backupDir, { recursive: true }); } catch (e) {}
-    }
-    const dailyBackup = path.join(backupDir, `team_ops_${new Date().toISOString().slice(0, 10)}.json`);
-    try { fs.writeFileSync(dailyBackup, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
+    try { fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
 }
 
-function recordLoadingReport(reportObj) {
-    const opsData = loadTeamOps();
-    if (!opsData.cards_state) opsData.cards_state = {};
-    opsData.cards_state[reportObj.cardId] = {
-        id: reportObj.cardId,
-        loadedReported: true,
-        loadedDate: reportObj.date,
-        loadedItem: reportObj.item,
-        loadedWeight: reportObj.weight,
-        loadedFreight: reportObj.freight,
-        loadedPayment: reportObj.payment,
-        loadedLocation: reportObj.location,
-        rawReport: reportObj.rawText,
-        reportedAt: new Date().toISOString()
-    };
+const server = http.createServer(async (req, res) => {
+    // CORS Headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    const opId = `OPS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-4)}`;
-    opsData.active_operations.push({
-        id: opId,
-        timestamp: new Date().toISOString(),
-        customer: reportObj.cardId.startsWith('salaya') ? 'โรงงานศาลายา' : 'TNS',
-        delivery_date: reportObj.date,
-        farm: reportObj.item,
-        product: reportObj.item,
-        qty_kg: parseInt(reportObj.weight.replace(/\D/g, '')) || 0,
-        truck: reportObj.freight + (reportObj.payment ? ' (' + reportObj.payment + ')' : ''),
-        status: 'ขึ้นของและส่งรายงานแล้ว',
-        recorder: 'รายงานทาง Telegram',
-        notes: reportObj.rawText
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        return res.end();
+    }
+
+    const parsedUrl = url.parse(req.url, true);
+    const pathname = parsedUrl.pathname;
+
+    const getBody = () => new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const cleaned = (body || '').replace(/^\uFEFF/, '').trim();
+                resolve(cleaned ? JSON.parse(cleaned) : {});
+            } catch (e) {
+                console.error('[getBody JSON Parse Error]:', e.message, 'Raw length:', body ? body.length : 0);
+                reject(new Error('Invalid JSON payload: ' + e.message));
+            }
+        });
+        req.on('error', reject);
     });
 
-    saveTeamOps(opsData);
-    return opsData.cards_state[reportObj.cardId];
-}
-
-/**
- * Live Secretary Brain Webhook API Server
- */
-function createWebhookServer(sendTelegramMsgCallback) {
-    const server = http.createServer(async (req, res) => {
-        // Enable CORS
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-        if (req.method === 'OPTIONS') {
-            res.writeHead(204);
+    try {
+        // 1. Redirect /usage, /quota, /dashboard to root Mini App (Single Unified App)
+        if (req.method === 'GET' && (pathname === '/usage' || pathname === '/quota' || pathname === '/ai-dashboard' || pathname === '/dashboard')) {
+            res.writeHead(302, { 'Location': '/' });
             return res.end();
         }
 
-        const parsedUrl = url.parse(req.url, true);
-        const pathname = parsedUrl.pathname;
-
-        // Helper to parse JSON body
-        const getBody = () => new Promise((resolve, reject) => {
-            let body = '';
-            req.on('data', chunk => body += chunk);
-            req.on('end', () => {
-                try {
-                    resolve(body ? JSON.parse(body) : {});
-                } catch (e) {
-                    reject(new Error('Invalid JSON payload: ' + e.message));
-                }
-            });
-            req.on('error', reject);
-        });
-
-        try {
-            // 1. Serve Mobile Web UI (GET /ops or GET /team-app)
-            if (req.method === 'GET' && (pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
-                if (fs.existsSync(mobileHtmlFile)) {
-                    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                    res.writeHead(200);
-                    return res.end(fs.readFileSync(mobileHtmlFile, 'utf8'));
-                }
+        // 2. Serve Mobile Field Ops Web UI
+        if (req.method === 'GET' && (pathname === '/' || pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
+            if (fs.existsSync(mobileHtmlFile)) {
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+                res.writeHead(200);
+                return res.end(fs.readFileSync(mobileHtmlFile, 'utf8'));
+            } else {
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.writeHead(200);
+                return res.end('<h1>PSC Field Ops Dashboard</h1><p>Ops HTML file not found on server.</p>');
             }
-
-            // Set JSON Content-Type for all API routes
-                    if (req.method === 'GET' && pathname === '/api/patch-salaya') {
-            const opsData = loadTeamOps();
-            if (opsData.cards_state && opsData.cards_state['salaya_0209']) {
-                opsData.cards_state['salaya_0209'].loadedWeight = '8,715 kg (รับเข้า 8,500 kg)';
-                saveTeamOps(opsData);
-            }
-            res.writeHead(200);
-            return res.end(JSON.stringify({ success: true, message: 'Patched salaya_0209' }));
         }
+
+        // Set JSON Content-Type for all API endpoints
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
-            // 2. Health & Status (GET / or GET /api/status)
-            if (req.method === 'GET' && (pathname === '/' || pathname === '/api/health' || pathname === '/api/status')) {
-                const mem = memoryEngine.loadMemory();
-                const ops = loadTeamOps();
+        // Real-Time AI Usage & Quota Endpoint
+        
+        // Sync Quota POST (Receive live stats from local machine)
+        if (req.method === 'POST' && (pathname === '/api/sync-quota' || pathname === '/api/quota-sync')) {
+            const body = await getBody();
+            if (body && (body.groq || body.agy)) {
+                quotaTracker.saveQuotaData(body, false);
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Quota synced to cloud' }));
+        }
+
+        if (req.method === 'GET' && (pathname === '/api/usage' || pathname === '/api/quota' || pathname === '/api/ai-usage')) {
+            const quotaData = quotaTracker.loadQuotaData();
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                success: true,
+                timestamp: new Date().toISOString(),
+                data: quotaData
+            }, null, 2));
+        }
+
+
+        if (req.method === 'POST' && pathname === '/api/stock-update') {
+            const body = await getBody();
+            try { fs.writeFileSync(stockFile, JSON.stringify(body, null, 2), 'utf8'); } catch(e){}
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true }));
+        }
+
+        // Real-Time Live Stock Inventory Endpoint
+        if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
+            let stockData = {
+                AsOfDate: new Date().toISOString().slice(0, 10),
+                Items: {
+                    Cabbage: { Name: "กะหล่ำปลี", StockKg: 2575 },
+                    Onion_AFT: { Name: "หอม AFT", StockKg: 26120 },
+                    Onion_Chinese: { Name: "หอมจีน", StockKg: 3560 },
+                    Carrot: { Name: "แครอทสวย", StockKg: 5840 },
+                    Purple_Sweet_Potato: { Name: "มันม่วงหัวเล็ก", StockKg: 1690 },
+                    Yellow_Sweet_Potato: { Name: "มันเหลืองไข่", StockKg: 342 },
+                    Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
+                }
+            };
+            if (fs.existsSync(stockFile)) {
+                try {
+                    stockData = JSON.parse(fs.readFileSync(stockFile, 'utf8'));
+                } catch (e) {}
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify(stockData, null, 2));
+        }
+
+        // 2. Health Check
+        if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                status: 'ONLINE',
+                service: 'PSC Field Operations Cloud Gateway',
+                port: PORT,
+                timestamp: new Date().toISOString(),
+                gasSynced: !!GAS_URL
+            }, null, 2));
+        }
+
+        
+        // Bot Reboot API (Triggered from Team Dashboard when bot is unresponsive)
+        if (req.method === 'POST' && (pathname === '/api/reboot-bot' || pathname === '/api/restart-bot')) {
+            const rebootSigFile = path.join(__dirname, 'reboot_bot.signal');
+            try {
+                fs.writeFileSync(rebootSigFile, new Date().toISOString(), 'utf8');
+                console.log('[Bot Reboot Requested from Team Dashboard] Reboot signal written.');
                 res.writeHead(200);
-                return res.end(JSON.stringify({
-                    status: 'ONLINE',
-                    service: 'PSC Secretary Brain & Field Ops Gateway',
-                    port: WEBHOOK_PORT,
-                    timestamp: new Date().toISOString(),
-                    mobileWebAppUrl: `http://localhost:${WEBHOOK_PORT}/ops`,
-                    memoryStats: {
-                        learnedFactsCount: (mem.learned_facts || []).length,
-                        businessRulesCount: (mem.business_rules || []).length
-                    },
-                    activeOpsCount: (ops.active_operations || []).length
-                }, null, 2));
+                return res.end(JSON.stringify({ 
+                    success: true, 
+                    message: 'ส่งคำสั่งรีบูตระบบบอทเรียบร้อยแล้ว ระบบกำลังเริ่มต้นใหม่ภายใน 2 วินาที' 
+                }));
+            } catch(e) {
+                res.writeHead(500);
+                return res.end(JSON.stringify({ success: false, error: e.message }));
+            }
+        }
+
+        // 3. Gmail Push Webhook Endpoint (Instant Notification to Telegram Bot)
+        if (req.method === 'POST' && (pathname === '/api/gmail-webhook' || pathname === '/api/gmail-push')) {
+            const body = await getBody();
+            const from = body.from || 'ไม่ระบุผู้ส่ง';
+            const subject = body.subject || 'ไม่มีหัวข้อ';
+            const date = body.date ? new Date(body.date).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) : new Date().toLocaleString('th-TH');
+            const snippet = (body.snippet || '').trim();
+            const attNames = body.attachmentNames || [];
+
+            console.log(`[Gmail Push Webhook] New Email from ${from}: ${subject}`);
+
+            let tgMsg = `📬 <b>[มีอีเมลใหม่เข้าถึงเลขาแบบ Real-time]</b> ✨\n` +
+                        `──────────────────\n` +
+                        `👤 <b>ผู้ส่ง:</b> ${from}\n` +
+                        `📌 <b>หัวข้อ:</b> ${subject}\n` +
+                        `⏰ <b>เวลา:</b> ${date}\n`;
+
+            if (attNames.length > 0) {
+                tgMsg += `📎 <b>ไฟล์แนบ (${attNames.length}):</b> ${attNames.join(', ')}\n`;
             }
 
-            // 3. Team Ops Ingestion & Selection Sync (POST /api/team-update)
-            if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
-                const body = await getBody();
-                const { id, farm, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
-
-                const opsData = loadTeamOps();
-                if (!opsData.cards_state) opsData.cards_state = {};
-
-                if (id) {
-                    if (!opsData.cards_state[id]) opsData.cards_state[id] = { id: id };
-                    if (farm !== undefined) opsData.cards_state[id].supplier = farm;
-                    if (truck !== undefined) opsData.cards_state[id].truck = truck;
-                    if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
-                    if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
-                }
-
-                if (farm && product && qty_kg) {
-                    const opId = `OPS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-4)}`;
-                    const newOp = {
-                        id: opId,
-                        timestamp: new Date().toISOString(),
-                        customer: customer || 'โรงงานศาลายา / TNS',
-                        delivery_date: delivery_date || '2026-09-01',
-                        farm: farm,
-                        product: product,
-                        qty_kg: parseFloat(qty_kg),
-                        truck: truck || 'รถ 6 ล้อ',
-                        status: status || 'สั่งของ/สั่งรถแล้ว',
-                        recorder: recorder || 'ทีมงาน PSC',
-                        notes: notes || ''
-                    };
-                    opsData.active_operations.push(newOp);
-                }
-
-                saveTeamOps(opsData);
-
-                res.writeHead(200);
-                return res.end(JSON.stringify({
-                    success: true,
-                    message: 'Updated successfully',
-                    cards_state: opsData.cards_state
-                }, null, 2));
+            if (snippet) {
+                tgMsg += `📝 <b>ข้อความ:</b>\n<i>${snippet.substring(0, 300)}...</i>\n`;
             }
 
-            // 4. Team Card Reset (POST /api/team-reset)
-            if (req.method === 'POST' && pathname === '/api/team-reset') {
-                const body = await getBody();
-                const { id } = body;
-                const opsData = loadTeamOps();
-                if (opsData.cards_state && opsData.cards_state[id]) {
-                    opsData.cards_state[id].loadedReported = false;
-                    saveTeamOps(opsData);
+            tgMsg += `──────────────────\n` +
+                     `⚡ <i>ระบบ Push Notification อัตโนมัติจาก Gmail</i>`;
+
+            sendTelegramNotification(tgMsg);
+
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
+        }
+
+        // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)
+        if (req.method === 'GET' && pathname === '/api/team-status') {
+            const ops = loadTeamOps();
+            
+            // Fetch latest from Google Sheets
+            try {
+                const sheetData = await fetchGoogleSheetsData();
+                if (sheetData && typeof sheetData === 'object') {
+                    if (!ops.cards_state) ops.cards_state = {};
+                    Object.keys(sheetData).forEach(id => {
+                        const item = sheetData[id];
+                        if (item) {
+                            if (!ops.cards_state[id]) ops.cards_state[id] = { id: id };
+                            if (item.supplier) ops.cards_state[id].supplier = item.supplier;
+                            if (item.truck) ops.cards_state[id].truck = item.truck;
+                            if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
+                            if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
+                        }
+                    });
                 }
-                res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, message: `Card ${id} reset successfully` }));
-            }
+            } catch (e) {}
 
-            // 5. Get Team Ops Status & Cards State (GET /api/team-status)
-            if (req.method === 'GET' && pathname === '/api/team-status') {
-                const ops = loadTeamOps();
-                res.writeHead(200);
-                return res.end(JSON.stringify(ops, null, 2));
-            }
+            res.writeHead(200);
+            return res.end(JSON.stringify(ops, null, 2));
+        }
 
-            // 5. Ingest Memory / Learn Fact (POST /api/memory/remember)
-            if (req.method === 'POST' && (pathname === '/api/memory/remember' || pathname === '/api/memory')) {
-                const body = await getBody();
-                const text = body.text || body.fact || body.rule;
-                const category = body.category || 'learned_facts';
-                const notifyTG = body.notify_telegram !== false;
+        // 5. Team Update POST (Syncs to Google Sheets & Updates Memory)
+        
+        // Loading Report POST (From Bot or Web)
+        if (req.method === 'POST' && pathname === '/api/loading-report') {
+            const body = await getBody();
+            recordLoadingReport(body);
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Loading report saved and synced' }));
+        }
 
-                if (!text) {
-                    res.writeHead(400);
-                    return res.end(JSON.stringify({ success: false, error: 'Missing "text" field in payload' }));
-                }
+        if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
+            const body = await getBody();
+            const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
 
-                memoryEngine.rememberItem(text, category);
+            const opsData = loadTeamOps();
+            if (!opsData.cards_state) opsData.cards_state = {};
 
-                if (notifyTG && sendTelegramMsgCallback) {
-                    const icon = (category === 'business_rules') ? '📜' : (category === 'custom_directives') ? '⚡' : '💡';
-                    const categoryTitle = (category === 'business_rules') ? 'กฎการทำงาน' : (category === 'custom_directives') ? 'คำสั่งเฉพาะ' : 'ข้อมูลธุรกิจใหม่';
-                    const tgCard = `📡 [รับข้อมูลเข้าสมองเลขาผ่าน Webhook]\n` +
-                                   `──────────────────\n` +
-                                   `${icon} ประเภท: ${categoryTitle}\n` +
-                                   `📝 เนื้อหาที่บันทึก:\n${text}\n` +
-                                   `──────────────────\n` +
-                                   `💾 บันทึกลงหน่วยความจำถาวร & GEMINI.md เรียบร้อย ✨`;
-                    sendTelegramMsgCallback(tgCard);
-                }
+            const activeSupplier = supplier || farm;
 
-                res.writeHead(200);
-                return res.end(JSON.stringify({
-                    success: true,
-                    message: 'Data ingested into Secretary Brain successfully',
-                    category: category,
-                    savedContent: text
-                }, null, 2));
-            }
+            if (id) {
+                if (!opsData.cards_state[id]) opsData.cards_state[id] = { id: id };
+                if (activeSupplier !== undefined) opsData.cards_state[id].supplier = activeSupplier;
+                if (truck !== undefined) opsData.cards_state[id].truck = truck;
+                if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
+                if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
 
-            // 6. Get/Save LINE Config
-            if (pathname === '/api/line-config') {
-                if (req.method === 'GET') {
-                    const cfg = lineNotifier.loadLineConfig();
-                    res.writeHead(200);
-                    return res.end(JSON.stringify(cfg, null, 2));
-                }
-                if (req.method === 'POST') {
-                    const body = await getBody();
-                    const currentCfg = lineNotifier.loadLineConfig();
-                    const merged = Object.assign(currentCfg, body);
-                    lineNotifier.saveLineConfig(merged);
-                    res.writeHead(200);
-                    return res.end(JSON.stringify({ success: true, message: 'บันทึกการตั้งค่า LINE สำเร็จค่ะ', config: merged }, null, 2));
-                }
-            }
-
-            // 7. Test Send LINE Message
-            if (req.method === 'POST' && pathname === '/api/line-test') {
-                const todayStr = new Date().toISOString().slice(0, 10);
-                const testMsg = lineNotifier.generateD1LineMessage(todayStr);
-                const result = await lineNotifier.sendLineMessage(testMsg);
-                res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, result: result }, null, 2));
-            }
-
-            // 8. LINE Webhook Endpoint (Auto-captures Group ID and replies)
-            if (pathname === '/api/line-webhook' && req.method === 'POST') {
-                const body = await getBody();
-                console.log('[LINE WEBHOOK] Event Received:', JSON.stringify(body));
-
-                const events = body.events || [];
-                for (const ev of events) {
-                    const source = ev.source || {};
-                    const groupId = source.groupId || source.roomId;
-                    const replyToken = ev.replyToken;
-
-                    if (groupId) {
-                        const cfg = lineNotifier.loadLineConfig();
-                        cfg.line_target_group_id = groupId;
-                        lineNotifier.saveLineConfig(cfg);
-                        console.log('>>> [LINE WEBHOOK] Successfully captured PSC Group ID:', groupId);
-
-                        // Send confirmation message to the group
-                        const replyMsg = `🟢 [น้องเลขา PSC เชื่อมต่อกลุ่มทีมงานสำเร็จแล้วค่ะ] ✨\n──────────────────\n📌 บันทึกกลุ่มนี้สำหรับระบบแจ้งเตือนอัตโนมัติเรียบร้อยแล้วค่ะ\n⏰ ทุกเช้าเวลา 08:00 น. ตรง น้องเลขาจะส่งสรุปตารางขึ้นของ D-1 และสถานะจัดซื้อเข้ากลุ่มนี้นะคะ\n──────────────────\n🌐 ดูแดชบอร์ดงานสด:\nhttps://hours-wagner-pacific-kinda.trycloudflare.com/ops`;
-                        lineNotifier.sendLineMessage(replyMsg).catch(e => console.error('Reply err:', e));
+                // Auto-add custom seller/location to database & memory
+                if (activeSupplier && activeSupplier !== '__custom__' && activeSupplier.trim() !== '') {
+                    const s = activeSupplier.trim();
+                    if (!opsData.custom_suppliers.includes(s)) {
+                        opsData.custom_suppliers.push(s);
+                        try { memoryEngine.rememberItem('แหล่งสวน/ผู้ขายใหม่ที่เพิ่มจาก Dashboard: ' + s, 'learned_facts'); } catch(e) {}
                     }
                 }
-
-                res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, message: 'Webhook received' }));
+                // Auto-add custom transport/truck to database & memory
+                if (truck && truck !== '__custom__' && truck.trim() !== '') {
+                    const t = truck.trim();
+                    if (!opsData.custom_trucks.includes(t)) {
+                        opsData.custom_trucks.push(t);
+                        try { memoryEngine.rememberItem('สายรถ/ขนส่งใหม่ที่เพิ่มจาก Dashboard: ' + t, 'learned_facts'); } catch(e) {}
+                    }
+                }
+                
+                // Sync to Google Sheets
+                syncToRender('/api/team-update', body);
+                syncToGoogleSheets({
+                    id: id,
+                    supplier: opsData.cards_state[id].supplier || '',
+                    truck: opsData.cards_state[id].truck || '',
+                    orderChecked: !!opsData.cards_state[id].orderChecked,
+                    truckChecked: !!opsData.cards_state[id].truckChecked
+                });
             }
 
-            // 404 Not Found
-            res.writeHead(404);
-            res.end(JSON.stringify({ error: `Endpoint "${pathname}" not found.` }));
+            if (activeSupplier && product && qty_kg) {
+                const opId = `OPS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-4)}`;
+                const newOp = {
+                    id: opId,
+                    timestamp: new Date().toISOString(),
+                    customer: customer || 'โรงงานศาลายา / TNS',
+                    delivery_date: delivery_date || '2026-09-01',
+                    farm: activeSupplier,
+                    product: product,
+                    qty_kg: parseFloat(qty_kg),
+                    truck: truck || 'รถ 6 ล้อ',
+                    status: status || 'สั่งของ/สั่งรถแล้ว',
+                    recorder: recorder || 'ทีมงาน PSC',
+                    notes: notes || ''
+                };
+                opsData.active_operations.push(newOp);
+            }
 
-        } catch (err) {
-            res.writeHead(500);
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            saveTeamOps(opsData);
+
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                success: true,
+                message: 'Updated successfully and synced to Google Sheets',
+                cards_state: opsData.cards_state
+            }, null, 2));
         }
-    });
 
-    lineNotifier.initDailyLineScheduler();
-    server.listen(WEBHOOK_PORT, '0.0.0.0', () => {
-        console.log(`📡 [Secretary Webhook API] Server listening on http://0.0.0.0:${WEBHOOK_PORT}`);
-    });
+        // 6. Team Reset POST
+        if (req.method === 'POST' && pathname === '/api/team-reset') {
+            const body = await getBody();
+            const { id } = body;
+            const opsData = loadTeamOps();
+            if (opsData.cards_state && opsData.cards_state[id]) {
+                opsData.cards_state[id].loadedReported = false;
+                saveTeamOps(opsData);
+                syncToGoogleSheets(opsData.cards_state[id]);
+                syncToRender('/api/team-reset', { id: id });
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: `Card ${id} reset successfully` }));
+        }
 
+        // 404 Fallback
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: `Endpoint ${pathname} not found` }));
+
+    } catch (err) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+});
+
+let isListening = false;
+function createWebhookServer(cb) {
+    if (!isListening) {
+        isListening = true;
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                console.log(`[WebhookServer] Port ${PORT} already in use, attaching to existing instance.`);
+            } else {
+                console.error('[WebhookServer] Server error:', err);
+            }
+        });
+        server.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 PSC Field Ops Server listening on port ${PORT}`);
+        });
+    }
     return server;
 }
 
-module.exports = { createWebhookServer, WEBHOOK_PORT, loadTeamOps, recordLoadingReport };
+if (require.main === module) {
+    createWebhookServer(null);
+}
+
+module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, saveTeamOps, recordLoadingReport, syncToRender, server };

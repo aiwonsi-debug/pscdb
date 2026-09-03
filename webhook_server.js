@@ -287,6 +287,14 @@ const server = http.createServer(async (req, res) => {
             }, null, 2));
         }
 
+
+        if (req.method === 'POST' && pathname === '/api/stock-update') {
+            const body = await getBody();
+            try { fs.writeFileSync(stockFile, JSON.stringify(body, null, 2), 'utf8'); } catch(e){}
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true }));
+        }
+
         // Real-Time Live Stock Inventory Endpoint
         if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
             let stockData = {
