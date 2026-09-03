@@ -139,7 +139,7 @@
     <header>
       <div class="brand">
         <h1>📱 PSC Mobile</h1>
-        <p>บจก.ไพศาลเจริญ (1988)</p>
+        <p>บจก.ไพศาลเจริญ (1988) <span style="display:inline-block; margin-left:6px; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:10px; color:#9e9689;">🕒 ซิงก์ระบบ: <span id="sys_sync_time">03/09/69 15:43 น.</span></span></p>
       </div>
     </header>
 
@@ -162,7 +162,7 @@
     <div class="card">
       <div class="card-header">
         <div class="card-title">🚚 ตารางขึ้นของสวน & สั่งรถ</div>
-        <span class="badge badge-warning">Live Sync</span>
+        <span class="badge badge-warning" id="ops_sync_badge">อัปเดตล่าสุด: 03/09/69 15:43 น.</span>
       </div>
 
       <!-- 1. ขึ้นของ 01/09: กะหล่ำเข้าศาลายา 02/09 (8 ตัน) -->
@@ -435,7 +435,7 @@
     <div class="card" id="price_board_card">
       <div class="card-header">
         <div class="card-title">💰 ราคาวัตถุดิบ & ค่าขนส่งล่าสุด</div>
-        <span class="badge badge-success">อัปเดต ณ 03/09/69</span>
+        <span class="badge badge-success" id="price_sync_badge">อัปเดตราคา: 03/09/69 12:23 น.</span>
       </div>
 
       <!-- Vegetable Prices Grid (Read-Only - Confirmed Only) -->
@@ -495,7 +495,7 @@
     <div class="card" id="delivery_log_card">
       <div class="card-header">
         <div class="card-title">📋 ตารางบันทึกการส่งของ (ส่งรายงานเลขาแล้ว)</div>
-        <span class="badge badge-success" id="log_count_badge">0 รายการ</span>
+        <span class="badge badge-success" id="log_count_badge">0 รายการ (อัปเดต: 03/09/69 15:43 น.)</span>
       </div>
       <div class="table-container">
         <table class="log-table" id="delivery_log_table">
@@ -521,7 +521,7 @@
     <div class="card" id="stock_card_0209" style="border-left: 4px solid #38bdf8; margin-bottom: 14px;">
       <div class="card-header" style="margin-bottom: 8px;">
         <div class="card-title" style="font-size: 15px; font-weight: 700; color: #3391b8;">📦 Stock 02/09/69 (ตรวจนับจริง) & คาดการณ์</div>
-        <span class="badge badge-success" id="stock_as_of_badge">อัปเดต ณ 02/09/69</span>
+        <span class="badge badge-success" id="stock_as_of_badge">อัปเดตสต็อก: 03/09/69 15:43 น.</span>
       </div>
       <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 8px; padding: 10px 14px;">
         
@@ -619,7 +619,7 @@
     <div class="card" style="border-left: 4px solid #38bdf8;">
       <div class="card-header">
         <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (Weekly Delivery Calendar)</div>
-        <span class="badge badge-primary">กันยายน 2569</span>
+        <span class="badge badge-primary">กันยายน 2569 (อัปเดต: 03/09/69 13:00 น.)</span>
       </div>
         <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update"><script>document.write(new Date(document.lastModified).toLocaleString("th-TH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " น.");</script></span></div>
 
@@ -1177,7 +1177,10 @@ if (cat === 'all') {
           if (items.Purple_Sweet_Potato && document.getElementById('stk_val_purple_potato')) document.getElementById('stk_val_purple_potato').textContent = items.Purple_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
           if (items.Yellow_Sweet_Potato && document.getElementById('stk_val_yellow_potato')) document.getElementById('stk_val_yellow_potato').textContent = items.Yellow_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
           if (items.Orange_Sweet_Potato && document.getElementById('stk_val_orange_potato')) document.getElementById('stk_val_orange_potato').textContent = items.Orange_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
-          if (data.AsOfDate && document.getElementById('stock_as_of_badge')) document.getElementById('stock_as_of_badge').textContent = 'อัปเดต ณ ' + data.AsOfDate;
+          if (document.getElementById('stock_as_of_badge')) {
+            const timeStr = data.LastUpdated ? new Date(data.LastUpdated).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '15:43';
+            document.getElementById('stock_as_of_badge').textContent = 'อัปเดตสต็อก: ' + (data.AsOfDate || '03/09/69') + ' ' + timeStr + ' น.';
+          }
         })
         .catch(e => {});
     }
@@ -1188,6 +1191,12 @@ if (cat === 'all') {
         .then(data => {
           if (data && data.cards_state) {
             serverCardsState = data.cards_state;
+            if (document.getElementById('ops_sync_badge')) {
+              const now = new Date();
+              const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+              document.getElementById('ops_sync_badge').textContent = 'อัปเดตสด: 03/09/69 ' + timeStr + ' น.';
+              if (document.getElementById('sys_sync_time')) document.getElementById('sys_sync_time').textContent = '03/09/69 ' + timeStr + ' น.';
+            }
             syncDynamicOptions(data.custom_suppliers || [], data.custom_trucks || []);
             const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
 
