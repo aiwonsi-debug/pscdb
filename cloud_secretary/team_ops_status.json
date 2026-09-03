@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-01T12:51:36.220Z",
+  "last_updated": "2026-09-03T08:51:06.222Z",
   "active_operations": [
     {
       "id": "OPS-20260901-7833",
@@ -84,7 +84,7 @@
       "timestamp": "2026-09-01T02:56:05.881Z",
       "customer": "TNS",
       "delivery_date": "2026-09-07",
-      "farm": "ป้าผา (เจ้าประจำหอมแดง)",
+      "farm": "ป้าผา (หอมแดง)",
       "product": "หอมแดง",
       "qty_kg": 500,
       "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
@@ -97,7 +97,7 @@
       "timestamp": "2026-09-01T02:56:12.647Z",
       "customer": "TNS",
       "delivery_date": "2026-09-16",
-      "farm": "ป้าอรทัย (เจ้าประจำพริกหวาน)",
+      "farm": "ป้าอรทัย (พริกหวาน)",
       "product": "พริกหวานเขียว",
       "qty_kg": 2000,
       "truck": "ขนส่งบุญประสงค์ / 4 ล้อเหมา",
@@ -110,7 +110,7 @@
       "timestamp": "2026-09-01T02:56:20.713Z",
       "customer": "TNS",
       "delivery_date": "2026-09-21",
-      "farm": "ป้าผา (เจ้าประจำหอมแดง)",
+      "farm": "ป้าผา (หอมแดง)",
       "product": "หอมแดง",
       "qty_kg": 500,
       "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
@@ -308,7 +308,22 @@
       "truck": "6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)",
       "orderChecked": true,
       "truckChecked": true,
-      "loadedReported": false
+      "loadedReported": true,
+      "loadedDate": "02/09/26",
+      "deliveryDate": "03/09/69",
+      "loadedItem": "กะหล่ำปลีเข้า (เฮียหนิง อมพาย แม่สะเรียง)",
+      "loadedWeight": "9,200 kg (รับเข้า 8,725 kg)",
+      "loadedFreight": "13,000 บาท",
+      "loadedPayment": "เก็บปลายทาง 13,000 บาท",
+      "loadedLocation": "โกดัง อมพาย แม่สะเรียง",
+      "receivedYield": 64.8,
+      "receivedSize": "กลาง",
+      "receivedCondition": "สภาพโดยรวมดี แมง+ราเล็กน้อย",
+      "receivedPrice": 3,
+      "intakeDate": "03/09/69",
+      "intakeWeight": "8,725 kg",
+      "transitLoss": "475 kg (5.16%)",
+      "reportedAt": "2026-09-03T08:51:06.222Z"
     },
     "salaya_0809": {
       "id": "salaya_0809",
@@ -320,7 +335,7 @@
     },
     "tns_shallot_0709": {
       "id": "tns_shallot_0709",
-      "supplier": "ป้าผา (เจ้าประจำหอมแดง)",
+      "supplier": "ป้าผา (หอมแดง)",
       "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
       "orderChecked": false,
       "truckChecked": false,
@@ -328,7 +343,7 @@
     },
     "tns_pepper_1609": {
       "id": "tns_pepper_1609",
-      "supplier": "ป้าอรทัย (เจ้าประจำพริกหวาน)",
+      "supplier": "ป้าอรทัย (พริกหวาน)",
       "truck": "ขนส่งบุญประสงค์ / 4 ล้อเหมา",
       "orderChecked": false,
       "truckChecked": false,
@@ -336,7 +351,7 @@
     },
     "tns_shallot_2109": {
       "id": "tns_shallot_2109",
-      "supplier": "ป้าผา (เจ้าประจำหอมแดง)",
+      "supplier": "ป้าผา (หอมแดง)",
       "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
       "orderChecked": false,
       "truckChecked": false,
