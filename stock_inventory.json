@@ -1,12 +1,12 @@
 {
   "AsOfDate": "2026-09-03",
-  "LastUpdated": "2026-09-03T01:28:26.592Z",
+  "LastUpdated": "2026-09-03T08:42:57.022Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
       "StockKg": 6075,
       "Yield": {
-        "AFT": 0.748,
+        "AFT": 0.648,
         "TNS": 0.99
       }
     },
