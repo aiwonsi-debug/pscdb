@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const groundTruth = require('./groundTruthData');
 const { sendMessage } = require('./telegramService');
+const { sendLineMessage } = require('../../line_notifier.js');
 
 const lockFilePath = path.join(__dirname, '../data_locks.json');
 
@@ -57,6 +58,7 @@ async function runScheduledAlerts(currentDateStr = '2026-08-31') {
 ✨ ระบบคลาวด์เลขาอัตโนมัติ PSC`;
 
             console.log(`[Trigger-TNS] ${lockKey}`);
+            sendLineMessage(msg);
             const sent = await sendMessage(msg);
             if (sent) {
               locks[lockKey] = new Date().toISOString();
@@ -99,7 +101,8 @@ async function runScheduledAlerts(currentDateStr = '2026-08-31') {
 ✨ ระบบคลาวด์เลขาอัตโนมัติ PSC`;
 
         console.log(`[Trigger-AFT] ${lockKey}`);
-        const sent = await sendMessage(msg);
+        sendLineMessage(msg);
+            const sent = await sendMessage(msg);
         if (sent) {
           locks[lockKey] = new Date().toISOString();
           sentCount++;
