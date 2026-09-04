@@ -24,9 +24,9 @@
 | **C-01** | **ขาดการตรวจสอบสิทธิ์ Telegram (Auth Bypass):** ใครทักแชทเข้ามา ระบบจะแต่งตั้งเป็น Admin อัตโนมัติ | • ลบระบบ Dynamic Promotion ออกจาก Polling Loop<br>• กำหนด Allowlist ถาวร `ALLOWED_ADMINS = ['1532466397']`<br>• บล็อกทั้งคำสั่งข้อความ (`handleCommand`) และการกดปุ่มเมนู (`handleCallbackQuery`) จากผู้ใช้ที่ไม่ได้รับอนุญาต | `bot.js` | ✅ **PASS** |
 | **C-02** | **สั่งรันคำสั่งเครื่องผ่านแชทได้ (Remote Command Execution):** มีคำสั่ง `/cmd`, `/sh`, `/ps` รันโค้ด PowerShell โดยตรง | • ปิดการทำงานของคำสั่งรัน Shell ทั้งหมดอย่างถาวร<br>• ตัดการเชื่อมต่อ `execSilent` ออกจากคำสั่งกลุ่มนี้ | `bot.js` | ✅ **PASS** |
 | **C-03** | **AGY CLI รันด้วยสิทธิ์สูงสุด:** มีพารามิเตอร์ `--dangerously-skip-permissions` | • นำพารามิเตอร์ดังกล่าวออกจากการ Spawn ของ AGY CLI<br>• จำกัดให้ AI ทำงานภายใต้โหมดความปลอดภัย (Least-Privilege) | `bot.js` | ✅ **PASS** |
-| **C-04** | **รหัสผ่าน/Token ฝังในโค้ด (Hardcoded Secret):** มี Fallback Bot Token เขียนไว้ในซอร์สโค้ด | • นำ Hardcoded Token ออกจากซอร์สโค้ดทั้งหมด<br>• บังคับให้อ่านจาก Environment Variables หรือไฟล์คอนฟิกบนเซิร์ฟเวอร์เท่านั้น | `webhook_server.js` | ✅ **PASS** |
-| **C-05** | **API สาธารณะขาดการป้องกัน (Unauthenticated HTTP Write):** อนุญาต CORS แบบเปิดกว้าง (`*`) | • ปิด Wildcard CORS โดยจำกัดเฉพาะโดเมน `pscdb.onrender.com` และ Localhost<br>• รองรับการตรวจสอบ Authorization Header | `webhook_server.js`<br>`render-dashboard/server.js` | ✅ **PASS** |
-| **C-06** | **สต็อกเสี่ยงต่อการเขียนทับพังทั้งระบบ (Wholesale Overwrite):** `/api/stock-update` ไม่มี Schema Validation | • เพิ่มการตรวจสอบโครงสร้างข้อมูล (Schema Validation) เช็คความถูกต้องของตัวเลขทุกรายการ<br>• ใช้เทคนิค **Atomic Write (temp-file + renameSync)** เพื่อป้องกันปัญหาข้อมูลขาดหายระหว่างเขียนไฟล์ | `webhook_server.js` | ✅ **PASS** |
+| **C-04** | **รหัสผ่าน/Token ฝังในโค้ด (Hardcoded Secret):** มี Fallback Bot Token เขียนไว้ในซอร์สโค้ด และ Git Track ไฟล์ Credentials | • นำ Hardcoded Token และ API Keys ออกจากซอร์สโค้ดทั้งหมด (`bot.js`, `webhook_server.js`, `Auto-PrepareGT.js`, `start_tunnel.js`)<br>• ปลดการ Track และลบไฟล์ `.env`, `line_config.json` ออกจาก Git Index ทั้งหมด พร้อมสร้างไฟล์เทมเพลตตัวอย่าง `.example`<br>• บังคับให้อ่านค่าจาก Environment Variables เท่านั้น | `webhook_server.js`<br>`bot.js`<br>`cloud_secretary/` | ✅ **PASS** |
+| **C-05** | **API สาธารณะขาดการตรวจสอบสิทธิ์ (Unauthenticated HTTP Write):** ปลายทาง HTTP POST อนุญาตให้ใครเขียนข้อมูลก็ได้ | • บังคับใช้ระบบความปลอดภัย **API Key Authentication (`X-PSC-API-KEY`)** ในทุก Endpoint ที่เป็นคำสั่งเขียน (POST): `/api/stock-update`, `/api/team-update`, `/api/loading-report`, `/api/team-reset`, `/api/reboot-bot`, `/api/sync-quota`<br>• หากไม่มี Header หรือ Key ไม่ตรง จะถูกปฏิเสธทันทีด้วยรหัส **HTTP 401 Unauthorized**<br>• ปิด Wildcard CORS จำกัดสิทธิ์เฉพาะ Origin ภายในและโดเมนระบบ | `webhook_server.js`<br>`render-dashboard/server.js`<br>`ops_mobile_web.html` | ✅ **PASS** |
+| **C-06** | **สต็อกเสี่ยงต่อการเขียนทับพังทั้งระบบ (Wholesale Overwrite):** `/api/stock-update` ไม่มี Schema Validation | • เพิ่มการตรวจสอบโครงสร้างข้อมูล (Schema Validation) เช็คความถูกต้องของตัวเลขทุกรายการ<br>• ใช้เทคนิค **Atomic Write (temp-file + renameSync)** เพื่อป้องกันปัญหาข้อมูลขาดหายระหว่างเขียนไฟล์ | `webhook_server.js`<br>`render-dashboard/server.js` | ✅ **PASS** |
 
 ---
 
@@ -61,7 +61,11 @@
 - ตรวจสอบ C-06 (Atomic Stock Write & Schema): ✅ **PASS**
 - ตรวจสอบ H-07/H-08 (Excel Rel Mapping & Fail-Closed): ✅ **PASS**
 - ตรวจสอบ H-11 (Immutable Rules Protection): ✅ **PASS**
-👉 **ผลรวม: ผ่าน 10 / 10 ข้อ (100%)**
+- ตรวจสอบ C-05 (Webhook POST Enforces X-PSC-API-KEY): ✅ **PASS**
+- ตรวจสอบ C-05 (Render Server POST Enforces X-PSC-API-KEY): ✅ **PASS**
+- ตรวจสอบ C-05 (Mobile Ops Client Passes API Key): ✅ **PASS**
+- ตรวจสอบ SEC-01 (.gitignore Excludes Secrets & State Signals): ✅ **PASS**
+👉 **ผลรวม: ผ่าน 14 / 14 ข้อ (100%)**
 
 ### 2. Comprehensive PSC System Audit (`run_system_audit.js`)
 - ตรวจสอบความสมบูรณ์ของระบบความจำ (Memory & Directives): ✅ **PASS**
