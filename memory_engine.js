@@ -203,9 +203,12 @@ function autoLearnFromText(userText) {
     for (const pat of explicitPatterns) {
         const match = t.match(pat);
         if (match && match[1]) {
-            const fact = match[1].trim();
-            if (fact.length >= 3) {
-                rememberItem(fact, fact.includes('ห้าม') || fact.includes('ต้อง') || fact.includes('ทุก') ? 'business_rules' : 'learned_facts');
+            let fact = match[1].trim();
+            // Sanitize against prompt injection / control character attacks
+            fact = fact.replace(/[\r\n\t]+/g, ' ').replace(/["`]/g, "'");
+            if (fact.length >= 3 && fact.length <= 200) {
+                // Fix H-11: Never allow auto-learning to overwrite immutable business rules or system directives
+                rememberItem(fact, 'learned_facts');
                 return fact;
             }
         }
@@ -216,9 +219,10 @@ function autoLearnFromText(userText) {
         (lower.includes('ราคา') || lower.includes('บาท') || lower.includes('ค่ารถ') || lower.includes('yield') || lower.includes('เปอร์เซ็นต์')) &&
         (lower.includes('ปรับ') || lower.includes('เปลี่ยน') || lower.includes('เป็น') || lower.includes('คิด') || lower.includes('กิโล') || lower.includes('กก.'))
     ) {
-        if (t.length >= 8 && t.length <= 150) {
-            rememberItem(t, 'learned_facts');
-            return t;
+        let sanitized = t.replace(/[\r\n\t]+/g, ' ').replace(/["`]/g, "'");
+        if (sanitized.length >= 8 && sanitized.length <= 150) {
+            rememberItem(sanitized, 'learned_facts');
+            return sanitized;
         }
     }
 

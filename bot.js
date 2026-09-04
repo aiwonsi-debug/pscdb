@@ -504,6 +504,12 @@ function getDashboardSummary() {
 }
 
 function handleCallbackQuery(cq) {
+    const cqChatId = cq.message ? String(cq.message.chat.id) : '';
+    const ALLOWED_ADMINS = ['1532466397', config.ChatId];
+    if (cqChatId && !ALLOWED_ADMINS.includes(cqChatId)) {
+        answerCallbackQuery(cq.id, '⛔ ไม่ได้รับอนุญาต (Unauthorized)', true);
+        return;
+    }
     const cqId = cq.id;
     const msg = cq.message;
     if (!msg) return;
@@ -765,12 +771,7 @@ async function pollUpdates() {
                 
                 writeLog(`[TG Message] From ${name} (${chatId}): ${text}`);
                 
-                if (adminChatId !== chatId) {
-                    adminChatId = chatId;
-                    config.ChatId = adminChatId;
-                    try { fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8'); } catch (e) {}
-                }
-                
+                // Fix C-01: Removed dynamic admin promotion
                 handleCommand(chatId, text);
             }
         }
@@ -884,7 +885,7 @@ function runAgyCli(chatId, promptText) {
     let timedOut = false;
     
     // Spawn with FULL REASONING (No effort limitation) and Full Tool Permissions
-    const child = spawn(agyExe, ['--continue', '-p', fullPrompt, '--dangerously-skip-permissions'], {
+    const child = spawn(agyExe, ['--continue', '-p', fullPrompt], {
         cwd: 'E:\\รวมงาน\\งาน 25-26',
         windowsHide: true,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -1180,6 +1181,11 @@ function runGlm(chatId, promptText) {
 }
 
 function handleCommand(chatId, text) {
+    const ALLOWED_ADMINS = ['1532466397', config.ChatId];
+    if (!ALLOWED_ADMINS.includes(chatId.toString())) {
+        sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized Telegram User)');
+        return;
+    }
     const lower = text.toLowerCase();
     
     // /model command to switch between GLM and AGY CLI
@@ -1253,17 +1259,9 @@ function handleCommand(chatId, text) {
         return;
     }
 
-    // Set GLM API Key command
+    // Set GLM API Key command - DISABLED (Fix H-12)
     if (lower.startsWith('/set_glm_key ') || lower.startsWith('/glm_key ')) {
-        const key = text.substring(text.indexOf(' ') + 1).trim();
-        const glmCfgPath = path.join(agyBaseDir, 'glm_config.json');
-        let glmConfig = { Enabled: true, ApiKey: key, BaseUrl: 'https://open.bigmodel.cn/api/paas/v4', Model: 'glm-4-flash' };
-        if (fs.existsSync(glmCfgPath)) {
-            try { glmConfig = JSON.parse(fs.readFileSync(glmCfgPath, 'utf8').replace(/^\uFEFF/, '')); } catch(e){}
-        }
-        glmConfig.ApiKey = key;
-        fs.writeFileSync(glmCfgPath, JSON.stringify(glmConfig, null, 2), 'utf8');
-        sendMessage(chatId, `[GLM Config]\nบันทึก GLM API Key เรียบร้อยแล้ว!\nโมเดลปัจจุบัน: ${glmConfig.Model || 'glm-4-flash'}\nสามารถพิมพ์ /glm <ข้อความ> หรือ /model glm เพื่อใช้งานได้ทันที`);
+        sendMessage(chatId, '⛔ เพื่อความปลอดภัย กรุณาตั้งค่า API Key ในไฟล์คอนฟิกหรือ Environment Variables บนเซิร์ฟเวอร์โดยตรง (Fix H-12)');
         return;
     }
     
@@ -1287,7 +1285,8 @@ function handleCommand(chatId, text) {
         }
         
         sendMessage(chatId, `🔍 กำลังค้นหาไฟล์ "${query || 'ที่ต้องการ'}" ในระบบ...`);
-        const searchRoots = ['E:\\รวมงาน\\งาน 25-26', 'C:\\Users\\624\\.gemini\\antigravity-cli\\scratch', 'E:\\agy'];
+        // Fix H-04: Confine file scanning to business docs folder only
+        const searchRoots = ['E:\\รวมงาน\\งาน 25-26'];
         const foundFiles = [];
         
         searchRoots.forEach(root => {
@@ -1338,12 +1337,7 @@ function handleCommand(chatId, text) {
 
     // 1. Direct Terminal Shell Command execution (/cmd or /sh)
     if (lower.startsWith('/cmd ') || lower.startsWith('/sh ') || lower.startsWith('/ps ')) {
-        const cmdToRun = text.substring(text.indexOf(' ') + 1).trim();
-        sendMessage(chatId, `⚡ กำลังรันคำสั่ง: ${cmdToRun}`);
-        execSilent(`powershell -NoProfile -WindowStyle Hidden -Command "${cmdToRun.replace(/"/g, '`"')}"`, { cwd: 'E:\\รวมงาน\\งาน 25-26', maxBuffer: 5 * 1024 * 1024 }, (err, stdout, stderr) => {
-            const out = (stdout || stderr || (err ? err.message : 'สำเร็จ (ไม่มี output)')).trim();
-            sendMessage(chatId, `[Terminal Output]:\n${out}`);
-        });
+        sendMessage(chatId, '⛔ ฟังก์ชันการรันคำสั่ง Shell ถูกปิดใช้งานถาวรเพื่อความปลอดภัยของระบบ (Fix C-02)');
         return;
     }
     
@@ -1987,27 +1981,7 @@ function handleCommand(chatId, text) {
         return;
     }
     else if (lower.startsWith('/set_hotmail ') || lower.startsWith('/set_outlook ')) {
-        const parts = text.split(/\s+/).slice(1);
-        if (parts.length < 2) {
-            sendMessage(chatId, `⚠️ วิธีตั้งค่า Hotmail / Outlook:\n\nพิมพ์:\n/set_hotmail <อีเมลของคุณ> <App_Password_16หลัก>\n\nตัวอย่าง:\n/set_hotmail company@hotmail.com abcd efgh ijkl mnop`);
-            return;
-        }
-        const email = parts[0].trim();
-        const appPass = parts.slice(1).join('').trim();
-        const hotmailCfgPath = path.join(agyBaseDir, 'hotmail_config.json');
-        const newCfg = {
-            EmailAddress: email,
-            AppPassword: appPass,
-            Server: "outlook.office365.com",
-            Port: 993,
-            LastSync: new Date().toISOString()
-        };
-        try {
-            fs.writeFileSync(hotmailCfgPath, JSON.stringify(newCfg, null, 2), 'utf8');
-            sendMessage(chatId, `✅ บันทึกการตั้งค่า Hotmail (${email}) เรียบร้อยแล้ว!\nพิมพ์ /check_hotmail เพื่อทดสอบดึงอีเมลทันที 📬`);
-        } catch(e) {
-            sendMessage(chatId, `❌ ไม่สามารถบันทึกไฟล์ตั้งค่า: ${e.message}`);
-        }
+        sendMessage(chatId, '⛔ เพื่อความปลอดภัย กรุณาตั้งค่ารหัสผ่านอีเมลในไฟล์คอนฟิกหรือ Environment Variables บนเซิร์ฟเวอร์โดยตรง ไม่อนุญาตให้ส่งผ่านแชท (Fix H-12)');
         return;
     }
     else if (lower === '/check_hotmail' || lower === '/hotmail') {

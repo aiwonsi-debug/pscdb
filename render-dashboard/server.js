@@ -113,12 +113,29 @@ function recordLoadingReport(reportObj) {
 
 function saveTeamOps(data) {
     data.last_updated = new Date().toISOString();
-    try { fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
+    const tmpFile = `${teamOpsFile}.${process.pid}.${Date.now()}.tmp`;
+    try {
+        fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf8');
+        fs.renameSync(tmpFile, teamOpsFile);
+    } catch (e) {
+        try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch(err) {}
+        console.error('[saveTeamOps Cloud Error]:', e.message);
+    }
 }
 
 const server = http.createServer(async (req, res) => {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS Headers: Restrict origin
+    const reqOrigin = req.headers.origin || '';
+    const allowedOrigins = [
+        'https://pscdb.onrender.com',
+        'http://localhost:8080',
+        'http://127.0.0.1:8080'
+    ];
+    if (allowedOrigins.includes(reqOrigin) || reqOrigin.endsWith('.onrender.com')) {
+        res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -130,9 +147,18 @@ const server = http.createServer(async (req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
+    const MAX_BODY_SIZE = 1 * 1024 * 1024;
     const getBody = () => new Promise((resolve, reject) => {
         let body = '';
-        req.on('data', chunk => body += chunk);
+        let length = 0;
+        req.on('data', chunk => {
+            length += chunk.length;
+            if (length > MAX_BODY_SIZE) {
+                req.destroy();
+                return reject(new Error('Payload Too Large: Exceeded 1MB limit'));
+            }
+            body += chunk;
+        });
         req.on('end', () => {
             try {
                 const cleaned = (body || '').replace(/^\uFEFF/, '').trim();

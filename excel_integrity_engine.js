@@ -78,14 +78,38 @@ class ExcelIntegrityEngine {
         return sharedStrings;
     }
 
-    parseSheetMap(wbXml) {
+    parseSheetMap(wbXml, relsXml = '') {
         const sheetMap = [];
         if (!wbXml) return sheetMap;
-        const sMatches = wbXml.match(/<sheet\s+name="([^"]+)"\s+sheetId="([^"]+)"/g) || [];
+
+        // Parse relationships to map rId -> target file (Fix H-07)
+        const relMap = {};
+        if (relsXml) {
+            const relMatches = relsXml.match(/<Relationship\s+[^>]*\/>/g) || [];
+            relMatches.forEach(rm => {
+                const idMatch = rm.match(/Id="([^"]+)"/);
+                const targetMatch = rm.match(/Target="([^"]+)"/);
+                if (idMatch && targetMatch) {
+                    let target = targetMatch[1];
+                    if (!target.startsWith('xl/')) {
+                        target = 'xl/' + target.replace(/^\/?/, '');
+                    }
+                    relMap[idMatch[1]] = target;
+                }
+            });
+        }
+
+        const sMatches = wbXml.match(/<sheet\s+[^>]*\/>/g) || wbXml.match(/<sheet\s+[^>]*>.*?<\/sheet>/g) || [];
         sMatches.forEach((sm, idx) => {
             const nameMatch = sm.match(/name="([^"]+)"/);
+            const rIdMatch = sm.match(/r:id="([^"]+)"/);
             if (nameMatch) {
-                sheetMap.push({ name: nameMatch[1], file: `xl/worksheets/sheet${idx+1}.xml` });
+                const sheetName = nameMatch[1];
+                let targetFile = `xl/worksheets/sheet${idx+1}.xml`;
+                if (rIdMatch && relMap[rIdMatch[1]]) {
+                    targetFile = relMap[rIdMatch[1]];
+                }
+                sheetMap.push({ name: sheetName, file: targetFile });
             }
         });
         return sheetMap;
@@ -97,11 +121,12 @@ class ExcelIntegrityEngine {
     parseAndVerifySheet(filePath, targetSheetName = 'Sep-26') {
         const uncompressed = this.unzipXlsx(filePath);
         const sharedStrings = this.parseSharedStrings(uncompressed['xl/sharedStrings.xml']);
-        const sheetMap = this.parseSheetMap(uncompressed['xl/workbook.xml']);
+        const sheetMap = this.parseSheetMap(uncompressed['xl/workbook.xml'], uncompressed['xl/_rels/workbook.xml.rels']);
 
-        const targetSheet = sheetMap.find(s => s.name.toLowerCase() === targetSheetName.toLowerCase()) || sheetMap[sheetMap.length - 1];
+        // Fix H-08: Fail closed! Never fallback silently to last sheet
+        const targetSheet = sheetMap.find(s => s.name.toLowerCase() === targetSheetName.toLowerCase());
         if (!targetSheet) {
-            throw new Error(`Sheet ${targetSheetName} not found in workbook.`);
+            throw new Error(`[Strict Validation Failure]: Required sheet "${targetSheetName}" not found in ${path.basename(filePath)}. Available: ${sheetMap.map(s => s.name).join(', ')}`);
         }
 
         const sheetXml = uncompressed[targetSheet.file];
