@@ -121,6 +121,10 @@ $($al.Badge)
         if (-not $notified.ContainsKey($al.Key)) {
             if ($botToken -and $chatId) {
                 Send-TGAlert -botToken $botToken -chatId $chatId -message $msg
+                try {
+                    $env:LINE_MSG = $msg
+                    node -e "require('E:/agy/line_notifier.js').sendLineMessage(process.env.LINE_MSG);"
+                } catch {}
                 $notified[$al.Key] = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
             }
         } else {
