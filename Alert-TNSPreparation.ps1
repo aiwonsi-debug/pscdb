@@ -63,7 +63,14 @@ foreach ($order in $tnsOrders) {
     $delivDate = $order.Date
     $daysLeft = ($delivDate - $today).Days
 
-    if ($targetStages -contains $daysLeft) {
+    
+    $isTarget = $targetStages -contains $daysLeft
+    $isShallotSpecial = ($daysLeft -eq 2)
+
+    if ($isTarget -or $isShallotSpecial) {
+        if ($order.Product -eq "หอมแดง" -and $daysLeft -ne 2) { continue }
+        if ($order.Product -ne "หอมแดง" -and $daysLeft -eq 2) { continue }
+
         $key = "TNS_$($order.Product)_$($delivDate.ToString('yyyyMMdd'))_D-$daysLeft"
         
         $stageAction = ""
@@ -73,6 +80,7 @@ foreach ($order in $tnsOrders) {
             10 { $stageBadge = "📞 [ D-10 : เตรียมสั่งวัตถุดิบ (ติดตามและยืนยันยอด) ]"; $stageAction = "เตรียมสั่งวัตถุดิบ: ติดตามยืนยันยอดสั่งซื้อวัตถุดิบกับสวน/ผู้จำหน่าย ตรวจสอบความพร้อมจัดส่ง" }
             5  { $stageBadge = "🚚 [ D-5 : เตรียมสั่งวัตถุดิบ (คอนเฟิร์มวันขึ้นของและรถขนส่ง) ]"; $stageAction = "เตรียมสั่งวัตถุดิบ: ยืนยันการสั่งซื้อ นัดหมายวันขึ้นของ และจองคิวรถขนส่งห้องเย็น" }
             3  { $stageBadge = "🚨 [ D-3 : เตรียมสั่งวัตถุดิบ (สั่งตัดเข้าโรงงานเตรียมส่งมอบ) ]"; $stageAction = "เตรียมสั่งวัตถุดิบ: สั่งตัดและรับเข้าวัตถุดิบเข้าโรงงาน เพื่อเตรียมคัดแต่งบรรจุส่งมอบ TNS" }
+            2  { $stageBadge = "🚨 [ D-2 : แจ้งเตือนสั่งหอมแดงก่อนวันขึ้นของ 1 วัน ]"; $stageAction = "แจ้งเตือนสั่งหอมแดง: ติดต่อป้าผาเพื่อสั่งหอมแดงก่อนขึ้นของพรุ่งนี้" }
         }
 
         $activeAlerts += @{

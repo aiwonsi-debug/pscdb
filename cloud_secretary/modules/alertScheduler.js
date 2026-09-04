@@ -31,9 +31,15 @@ async function runScheduledAlerts(currentDateStr = '2026-08-31') {
     const dDate = new Date(ord.date + 'T00:00:00Z');
     const daysLeft = Math.round((dDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (tnsStages.includes(daysLeft)) {
+    let isTarget = tnsStages.includes(daysLeft);
+    let isShallotSpecial = (daysLeft === 2); // 1 day before loading (D-2 before delivery)
+
+    if (isTarget || isShallotSpecial) {
       for (const item of ord.items) {
         if (specialCrops.includes(item.name)) {
+          // Rule: Shallots alert ONLY at D-2
+          if (item.name === 'หอมแดง' && daysLeft !== 2) continue;
+          if (item.name !== 'หอมแดง' && daysLeft === 2) continue;
           const lockKey = `TNS_${item.name}_${ord.date}_D-${daysLeft}_${currentDateStr}`;
           if (!locks[lockKey]) {
             const formattedDate = ord.date.split('-').reverse().join('/');
@@ -46,7 +52,7 @@ async function runScheduledAlerts(currentDateStr = '2026-08-31') {
 📄 ไฟล์อ้างอิง: ${groundTruth.TNS.fileRef}
 
 🎯 ขั้นตอนปฏิบัติงาน:
-• เตรียมสั่งวัตถุดิบ (จัดหา ประสานงาน และสั่งซื้อวัตถุดิบจากแหล่งสวน/ซัพพลายเออร์)
+• ${item.name === 'หอมแดง' ? '🚨 แจ้งเตือนสั่งหอมแดง (สั่งของก่อนวันขึ้นของ 1 วัน)' : 'เตรียมสั่งวัตถุดิบ (จัดหา ประสานงาน และสั่งซื้อวัตถุดิบ)'}
 ────────────────────
 ✨ ระบบคลาวด์เลขาอัตโนมัติ PSC`;
 
