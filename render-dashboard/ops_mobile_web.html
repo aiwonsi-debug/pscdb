@@ -790,6 +790,7 @@
   </div>
 
   <script>
+    const PSC_API_KEY = 'psc_sec_ops_2026_key';
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -1179,7 +1180,10 @@ if (cat === 'all') {
 
         fetch('/api/team-reset', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': PSC_API_KEY
+          },
           body: JSON.stringify({ id: id })
         }).catch(e => {});
 
@@ -1340,7 +1344,10 @@ if (cat === 'all') {
 
         fetch('/api/team-update', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': PSC_API_KEY
+          },
           body: JSON.stringify(apiPayload)
         }).then(res => res.json()).then(data => {
           if (showFeedback) {

@@ -52,6 +52,7 @@ function sendTelegramNotification(text) {
     } catch (e) {}
 }
 
+const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 function syncToRender(endpoint, payload) {
@@ -66,7 +67,8 @@ function syncToRender(endpoint, payload) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
+                'Content-Length': Buffer.byteLength(postData),
+                'X-PSC-API-KEY': PSC_API_KEY
             },
             timeout: 10000
         }, (res) => {
@@ -241,7 +243,7 @@ const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-PSC-API-KEY');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -300,6 +302,22 @@ const server = http.createServer(async (req, res) => {
 
         // Set JSON Content-Type for all API endpoints
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+        // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        if (req.method === 'POST') {
+            const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || parsedUrl.query.key || parsedUrl.query.apiKey || '').trim();
+            const authHeader = (req.headers['authorization'] || '').trim();
+            const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
+            
+            const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+            if (!isAuthorized) {
+                res.writeHead(401);
+                return res.end(JSON.stringify({ 
+                    success: false, 
+                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header.' 
+                }));
+            }
+        }
 
         // Real-Time AI Usage & Quota Endpoint
         

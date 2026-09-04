@@ -1,6 +1,6 @@
 const https = require('https');
 
-const botToken = process.env.TELEGRAM_BOT_TOKEN || '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM';
+const botToken = process.env.TELEGRAM_BOT_TOKEN || '';
 const chatId = process.env.TELEGRAM_CHAT_ID || '1532466397';
 
 function sendMessage(text) {

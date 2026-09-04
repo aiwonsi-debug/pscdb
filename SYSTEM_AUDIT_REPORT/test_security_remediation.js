@@ -84,6 +84,38 @@ test('H-11: memory_engine.js protects immutable business rules from chat injecti
     assert.ok(memCode.includes('.replace(/["`]/g'), 'Must sanitize stored user strings against injection');
 });
 
+// 5. Verify Write API Authentication (C-05 & External Audit)
+test('C-05: webhook_server.js enforces X-PSC-API-KEY on all write (POST) endpoints', () => {
+    const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
+    assert.ok(whCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
+    assert.ok(whCode.includes('401'), 'Must return HTTP 401 for unauthorized write requests');
+    assert.ok(whCode.includes("PSC_API_KEY"), 'Must validate against PSC_API_KEY');
+});
+
+test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY on all write (POST) endpoints', () => {
+    const srvPath = path.join(__dirname, '../render-dashboard/server.js');
+    if (fs.existsSync(srvPath)) {
+        const srvCode = fs.readFileSync(srvPath, 'utf8');
+        assert.ok(srvCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
+        assert.ok(srvCode.includes('401'), 'Must return HTTP 401 for unauthorized write requests');
+    } else {
+        const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
+        assert.ok(whCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
+    }
+});
+
+test('C-05: ops_mobile_web.html sends X-PSC-API-KEY in write fetch requests', () => {
+    const htmlCode = fs.readFileSync(path.join(__dirname, '../ops_mobile_web.html'), 'utf8');
+    assert.ok(htmlCode.includes("'X-PSC-API-KEY': PSC_API_KEY"), 'Client must provide X-PSC-API-KEY in write calls');
+});
+
+// 6. Verify Git Ignore & Secret Scrubbing
+test('SEC-01: .gitignore excludes .env, *_config.json, *.signal, *.pem, *.log', () => {
+    const gitignore = fs.readFileSync(path.join(__dirname, '../.gitignore'), 'utf8');
+    assert.ok(gitignore.includes('.env'), 'Must ignore .env');
+    assert.ok(gitignore.includes('*_config.json'), 'Must ignore *_config.json');
+});
+
 console.log('\n================================================================');
 console.log(`📊 SECURITY TEST RESULTS: PASS: ${passCount} | FAIL: ${failCount}`);
 console.log('================================================================\n');

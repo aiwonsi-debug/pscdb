@@ -1,7 +1,10 @@
 node_modules/
 *.log
 *.pem
+*.signal
 *_config.json
 .env
+.env*
+!*.example
 ops_backup/
 extracted_po_images/

@@ -13,8 +13,18 @@ const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
-const TG_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM';
-const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1532466397';
+let tgBotToken = process.env.TELEGRAM_BOT_TOKEN || '';
+let tgChatId = process.env.TELEGRAM_CHAT_ID || '1532466397';
+const cfgPath = path.join(__dirname, 'telegram_config.json');
+if ((!tgBotToken || !tgChatId) && fs.existsSync(cfgPath)) {
+    try {
+        const c = JSON.parse(fs.readFileSync(cfgPath, 'utf8').replace(/^\uFEFF/, ''));
+        tgBotToken = tgBotToken || c.BotToken || '';
+        tgChatId = tgChatId || c.ChatId || '1532466397';
+    } catch (e) {}
+}
+const TG_BOT_TOKEN = tgBotToken;
+const TG_CHAT_ID = tgChatId;
 
 function sendTelegramNotification(text) {
     if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
@@ -42,6 +52,7 @@ function sendTelegramNotification(text) {
     } catch (e) {}
 }
 
+const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 function syncToRender(endpoint, payload) {
@@ -56,7 +67,8 @@ function syncToRender(endpoint, payload) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
+                'Content-Length': Buffer.byteLength(postData),
+                'X-PSC-API-KEY': PSC_API_KEY
             },
             timeout: 10000
         }, (res) => {
@@ -207,14 +219,31 @@ function recordLoadingReport(reportObj) {
 
 function saveTeamOps(data) {
     data.last_updated = new Date().toISOString();
-    try { fs.writeFileSync(teamOpsFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
+    const tmpFile = `${teamOpsFile}.${process.pid}.${Date.now()}.tmp`;
+    try {
+        fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf8');
+        fs.renameSync(tmpFile, teamOpsFile);
+    } catch (e) {
+        try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (err) {}
+        console.error('[saveTeamOps Error]:', e.message);
+    }
 }
 
 const server = http.createServer(async (req, res) => {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS Headers: Restrict origin to legitimate hosts and local
+    const reqOrigin = req.headers.origin || '';
+    const allowedOrigins = [
+        'https://pscdb.onrender.com',
+        'http://localhost:8080',
+        'http://127.0.0.1:8080'
+    ];
+    if (allowedOrigins.includes(reqOrigin) || reqOrigin.endsWith('.onrender.com')) {
+        res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-PSC-API-KEY');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -224,9 +253,18 @@ const server = http.createServer(async (req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
+    const MAX_BODY_SIZE = 1 * 1024 * 1024; // 1 MB limit (Fix M-03)
     const getBody = () => new Promise((resolve, reject) => {
         let body = '';
-        req.on('data', chunk => body += chunk);
+        let length = 0;
+        req.on('data', chunk => {
+            length += chunk.length;
+            if (length > MAX_BODY_SIZE) {
+                req.destroy();
+                return reject(new Error('Payload Too Large: Exceeded 1MB limit'));
+            }
+            body += chunk;
+        });
         req.on('end', () => {
             try {
                 const cleaned = (body || '').replace(/^\uFEFF/, '').trim();
@@ -265,6 +303,22 @@ const server = http.createServer(async (req, res) => {
         // Set JSON Content-Type for all API endpoints
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
+        // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        if (req.method === 'POST') {
+            const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || parsedUrl.query.key || parsedUrl.query.apiKey || '').trim();
+            const authHeader = (req.headers['authorization'] || '').trim();
+            const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
+            
+            const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+            if (!isAuthorized) {
+                res.writeHead(401);
+                return res.end(JSON.stringify({ 
+                    success: false, 
+                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header.' 
+                }));
+            }
+        }
+
         // Real-Time AI Usage & Quota Endpoint
         
         // Sync Quota POST (Receive live stats from local machine)
@@ -290,9 +344,33 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'POST' && pathname === '/api/stock-update') {
             const body = await getBody();
-            try { fs.writeFileSync(stockFile, JSON.stringify(body, null, 2), 'utf8'); } catch(e){}
-            res.writeHead(200);
-            return res.end(JSON.stringify({ success: true }));
+            // Schema validation: Require Items object and numeric stock values
+            if (!body || typeof body !== 'object' || !body.Items || typeof body.Items !== 'object') {
+                res.writeHead(400);
+                return res.end(JSON.stringify({ success: false, error: 'Invalid stock update schema. Must contain Items object.' }));
+            }
+            
+            // Validate that Items values contain valid StockKg numbers
+            for (const key of Object.keys(body.Items)) {
+                const itm = body.Items[key];
+                if (!itm || typeof itm !== 'object' || typeof itm.StockKg !== 'number' || isNaN(itm.StockKg)) {
+                    res.writeHead(400);
+                    return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must contain numeric StockKg.` }));
+                }
+            }
+
+            // Atomic file write using temporary file + renameSync to avoid corruption (Fix C-06, H-14)
+            const tmpFile = `${stockFile}.${process.pid}.${Date.now()}.tmp`;
+            try {
+                fs.writeFileSync(tmpFile, JSON.stringify(body, null, 2), 'utf8');
+                fs.renameSync(tmpFile, stockFile);
+                res.writeHead(200);
+                return res.end(JSON.stringify({ success: true, message: 'Stock inventory updated atomically' }));
+            } catch (err) {
+                try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (e) {}
+                res.writeHead(500);
+                return res.end(JSON.stringify({ success: false, error: 'Failed to commit stock update: ' + err.message }));
+            }
         }
 
         // Real-Time Live Stock Inventory Endpoint

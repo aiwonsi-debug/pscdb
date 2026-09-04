@@ -1,4 +1,4 @@
-﻿const http = require('http');
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const lineNotifier = require('./line_notifier.js');
@@ -16,14 +16,26 @@ if (!fs.existsSync(STATUS_FILE)) {
   }, null, 2), 'utf8');
 }
 
+const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
+
 // Start daily 08:00 AM LINE notification scheduler
 lineNotifier.initDailyLineScheduler();
 
 const server = http.createServer((req, res) => {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS Headers: Restrict origins
+  const reqOrigin = req.headers.origin || '';
+  const allowedOrigins = [
+    'https://pscdb.onrender.com',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+  ];
+  if (allowedOrigins.includes(reqOrigin) || reqOrigin.endsWith('.onrender.com')) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-PSC-API-KEY');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -32,6 +44,18 @@ const server = http.createServer((req, res) => {
   }
 
   const urlPath = req.url.split('?')[0];
+
+  // Auth Guard for POST write endpoints
+  if (req.method === 'POST') {
+    const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
+    const authHeader = (req.headers['authorization'] || '').trim();
+    const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
+    const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+    if (!isAuthorized && urlPath !== '/api/line-webhook') {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Unauthorized: Missing or invalid API key' }));
+    }
+  }
 
   // API 1: Get Team Status
   if (urlPath === '/api/team-status' && req.method === 'GET') {

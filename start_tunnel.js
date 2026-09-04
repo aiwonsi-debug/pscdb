@@ -1,4 +1,4 @@
-﻿const { spawn } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -14,7 +14,7 @@ function getTelegramConfig() {
             return JSON.parse(fs.readFileSync(tgConfigPath, 'utf8'));
         } catch (e) {}
     }
-    return { BotToken: '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM', ChatId: '1532466397' };
+    return { BotToken: process.env.TELEGRAM_BOT_TOKEN || '', ChatId: process.env.TELEGRAM_CHAT_ID || '1532466397' };
 }
 
 function sendTGNotification(url) {

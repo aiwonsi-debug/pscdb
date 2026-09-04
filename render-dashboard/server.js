@@ -10,6 +10,8 @@ const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
+const stockFile = path.join(__dirname, 'stock_inventory.json');
+const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
 function syncToGoogleSheets(payload) {
@@ -137,7 +139,7 @@ const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-PSC-API-KEY');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -194,6 +196,22 @@ const server = http.createServer(async (req, res) => {
         // Set JSON Content-Type for all API endpoints
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
+        // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        if (req.method === 'POST') {
+            const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || parsedUrl.query.key || parsedUrl.query.apiKey || '').trim();
+            const authHeader = (req.headers['authorization'] || '').trim();
+            const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
+            
+            const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+            if (!isAuthorized) {
+                res.writeHead(401);
+                return res.end(JSON.stringify({ 
+                    success: false, 
+                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header.' 
+                }));
+            }
+        }
+
         // 2. Real-Time AI Usage & Quota API
         
         // Sync Quota POST (Receive live stats from local machine)
@@ -246,10 +264,36 @@ const server = http.createServer(async (req, res) => {
             }, null, 2));
         }
 
+        // Stock Update POST (Sync from Local Bot)
+        if (req.method === 'POST' && pathname === '/api/stock-update') {
+            const body = await getBody();
+            if (!body || typeof body !== 'object' || !body.Items || typeof body.Items !== 'object') {
+                res.writeHead(400);
+                return res.end(JSON.stringify({ success: false, error: 'Invalid stock update schema. Must contain Items object.' }));
+            }
+            for (const key of Object.keys(body.Items)) {
+                const itm = body.Items[key];
+                if (!itm || typeof itm !== 'object' || typeof itm.StockKg !== 'number' || isNaN(itm.StockKg)) {
+                    res.writeHead(400);
+                    return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must contain numeric StockKg.` }));
+                }
+            }
+            const tmpFile = `${stockFile}.${process.pid}.${Date.now()}.tmp`;
+            try {
+                fs.writeFileSync(tmpFile, JSON.stringify(body, null, 2), 'utf8');
+                fs.renameSync(tmpFile, stockFile);
+                res.writeHead(200);
+                return res.end(JSON.stringify({ success: true, message: 'Stock inventory updated atomically' }));
+            } catch (err) {
+                try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (e) {}
+                res.writeHead(500);
+                return res.end(JSON.stringify({ success: false, error: 'Failed to commit stock update: ' + err.message }));
+            }
+        }
+
         // 4. Team Status GET
-                // Stock Status GET
-        if (req.method === 'GET' && pathname === '/api/stock') {
-            const stockFile = path.join(__dirname, 'stock_inventory.json');
+        // Stock Status GET
+        if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
             let data = { AsOfDate: '2026-09-02', Items: {} };
             if (fs.existsSync(stockFile)) {
                 try { data = JSON.parse(fs.readFileSync(stockFile, 'utf8')); } catch(e) {}

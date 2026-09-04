@@ -727,6 +727,12 @@ async function pollUpdates() {
                     const fileId = doc.file_id;
                     const chatId = String(upd.message.chat.id);
                     
+                    const ALLOWED_ADMINS = ['1532466397', config.ChatId];
+                    if (!ALLOWED_ADMINS.includes(chatId)) {
+                        sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์อัปโหลดหรือแก้ไขไฟล์ในระบบ (Unauthorized)');
+                        continue;
+                    }
+
                     sendMessage(chatId, `📥 กำลังรับไฟล์: ${docName} (${Math.round((doc.file_size || 0)/1024)} KB)...`);
                     
                     tgRequest(`getFile?file_id=${fileId}`).then(fRes => {
@@ -793,7 +799,7 @@ function sendChatAction(chatId, action = 'typing') {
 // 🚀 GROQ FAST FALLBACK ENGINE (AUTO-FAILOVER)
 // ==========================================
 const GROQ_CONFIG = {
-    ApiKey: process.env.GROQ_API_KEY || 'gsk_' + 'AG0CJ82avHjXecJNTPUhWGdyb3FYFg9MwaEOhtJX2C7aqdoEkM6l',
+    ApiKey: process.env.GROQ_API_KEY || '',
     Model: 'qwen/qwen3.8-27b',
     Url: 'https://api.groq.com/openai/v1/chat/completions'
 };

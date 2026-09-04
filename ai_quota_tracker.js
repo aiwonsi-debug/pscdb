@@ -7,6 +7,7 @@ const https = require('https');
 const url = require('url');
 
 const QUOTA_FILE = path.join(__dirname, 'ai_quota_usage.json');
+const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 const DEFAULT_DATA = {
@@ -87,7 +88,8 @@ function syncQuotaToRender(data) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
+        'Content-Length': Buffer.byteLength(postData),
+        'X-PSC-API-KEY': PSC_API_KEY
       },
       timeout: 8000
     }, () => {});

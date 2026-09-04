@@ -246,7 +246,7 @@
           <div class="select-group">
             <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
             <select class="mobile-select" id="sel_supplier_tns_shallot_0709" onchange="onSelectChange('supplier', 'tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')">
-              <option value="ป้าผา (เจ้าประจำหอมแดง)" selected>🧅 ป้าผา (เจ้าประจำหอมแดง TNS)</option>
+              <option value="ป้าผา (หอมแดง)" selected>🧅 ป้าผา (หอมแดง TNS)</option>
               <option value="สวนหอมแดงเชียงใหม่/ลำพูน">🧅 สวนหอมแดงเชียงใหม่/ลำพูน</option>
               <option value="ร้านค้าส่งหอมแดง">🧅 ร้านค้าส่งหอมแดง</option>
               <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
@@ -330,7 +330,7 @@
           <div class="select-group">
             <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
             <select class="mobile-select" id="sel_supplier_tns_pepper_1609" onchange="onSelectChange('supplier', 'tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')">
-              <option value="ป้าอรทัย (เจ้าประจำพริกหวาน)" selected>🫑 ป้าอรทัย (เจ้าประจำพริกหวาน TNS)</option>
+              <option value="ป้าอรทัย (พริกหวาน)" selected>🫑 ป้าอรทัย (พริกหวาน TNS)</option>
               <option value="สวนพริกหวานเครือข่าย">🫑 สวนพริกหวานเครือข่าย</option>
               <option value="ตลาดค้าส่งเกษตร">🏪 ตลาดค้าส่งเกษตร</option>
               <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
@@ -372,7 +372,7 @@
           <div class="select-group">
             <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
             <select class="mobile-select" id="sel_supplier_tns_shallot_2109" onchange="onSelectChange('supplier', 'tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')">
-              <option value="ป้าผา (เจ้าประจำหอมแดง)" selected>🧅 ป้าผา (เจ้าประจำหอมแดง TNS)</option>
+              <option value="ป้าผา (หอมแดง)" selected>🧅 ป้าผา (หอมแดง TNS)</option>
               <option value="สวนหอมแดงเชียงใหม่">🧅 สวนหอมแดงเชียงใหม่</option>
               <option value="ร้านค้าส่งหอมแดง">🧅 ร้านค้าส่งหอมแดง</option>
               <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
@@ -581,6 +581,7 @@
   </div>
 
   <script>
+    const PSC_API_KEY = 'psc_sec_ops_2026_key';
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -831,7 +832,7 @@
           completedList.push({
             id: id,
             meta: ORDERS_META[id],
-            supplier: sItem.supplier || lItem.supplier || 'สวนประจำ',
+            supplier: sItem.supplier || lItem.supplier || 'สวน',
             truck: sItem.truck || lItem.truck || 'รถมาตรฐาน',
             loadedDate: sItem.loadedDate || lItem.loadedDate,
             loadedItem: sItem.loadedItem || lItem.loadedItem,
@@ -890,7 +891,10 @@
 
         fetch('/api/team-reset', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': PSC_API_KEY
+          },
           body: JSON.stringify({ id: id })
         }).catch(e => {});
 
@@ -1020,7 +1024,10 @@
 
         fetch('/api/team-update', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': PSC_API_KEY
+          },
           body: JSON.stringify(apiPayload)
         }).then(res => res.json()).then(data => {
           if (showFeedback) {

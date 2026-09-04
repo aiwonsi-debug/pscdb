@@ -2,7 +2,7 @@ const https = require('https');
 const groundTruth = require('./groundTruthData');
 const { sendMessage } = require('./telegramService');
 
-const botToken = process.env.TELEGRAM_BOT_TOKEN || '8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM';
+const botToken = process.env.TELEGRAM_BOT_TOKEN || '';
 let lastUpdateId = 0;
 
 function pollTelegramUpdates() {
