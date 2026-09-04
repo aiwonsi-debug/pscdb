@@ -11,7 +11,15 @@ const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
-const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
+let envApiKey = (process.env.PSC_API_KEY || '').trim();
+const secCfgPath = path.join(__dirname, 'line_config.json');
+if (!envApiKey && fs.existsSync(secCfgPath)) {
+    try {
+        const sc = JSON.parse(fs.readFileSync(secCfgPath, 'utf8').replace(/^\uFEFF/, ''));
+        envApiKey = (sc.api_key || sc.PSC_API_KEY || '').trim();
+    } catch (e) {}
+}
+const PSC_API_KEY = envApiKey;
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
 function syncToGoogleSheets(payload) {
@@ -202,7 +210,7 @@ const server = http.createServer(async (req, res) => {
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             
-            const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ 

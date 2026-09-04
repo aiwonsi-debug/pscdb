@@ -7,7 +7,15 @@ const https = require('https');
 const url = require('url');
 
 const QUOTA_FILE = path.join(__dirname, 'ai_quota_usage.json');
-const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
+let envApiKey = (process.env.PSC_API_KEY || '').trim();
+const secCfgPath = path.join(__dirname, 'line_config.json');
+if (!envApiKey && fs.existsSync(secCfgPath)) {
+  try {
+    const sc = JSON.parse(fs.readFileSync(secCfgPath, 'utf8').replace(/^\uFEFF/, ''));
+    envApiKey = (sc.api_key || sc.PSC_API_KEY || '').trim();
+  } catch (e) {}
+}
+const PSC_API_KEY = envApiKey;
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 const DEFAULT_DATA = {

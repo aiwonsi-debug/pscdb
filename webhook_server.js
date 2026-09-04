@@ -52,7 +52,15 @@ function sendTelegramNotification(text) {
     } catch (e) {}
 }
 
-const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
+let envApiKey = (process.env.PSC_API_KEY || '').trim();
+const secCfgPath = path.join(__dirname, 'line_config.json');
+if (!envApiKey && fs.existsSync(secCfgPath)) {
+    try {
+        const sc = JSON.parse(fs.readFileSync(secCfgPath, 'utf8').replace(/^\uFEFF/, ''));
+        envApiKey = (sc.api_key || sc.PSC_API_KEY || '').trim();
+    } catch (e) {}
+}
+const PSC_API_KEY = envApiKey;
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 function syncToRender(endpoint, payload) {
@@ -309,7 +317,7 @@ const server = http.createServer(async (req, res) => {
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             
-            const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ 

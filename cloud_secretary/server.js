@@ -16,7 +16,18 @@ if (!fs.existsSync(STATUS_FILE)) {
   }, null, 2), 'utf8');
 }
 
-const PSC_API_KEY = process.env.PSC_API_KEY || 'psc_sec_ops_2026_key';
+let envApiKey = (process.env.PSC_API_KEY || '').trim();
+const secCfgPath = path.join(__dirname, '../line_config.json');
+const localCfgPath = path.join(__dirname, 'line_config.json');
+for (const p of [secCfgPath, localCfgPath]) {
+  if (!envApiKey && fs.existsSync(p)) {
+    try {
+      const sc = JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, ''));
+      envApiKey = (sc.api_key || sc.PSC_API_KEY || '').trim();
+    } catch (e) {}
+  }
+}
+const PSC_API_KEY = envApiKey;
 
 // Start daily 08:00 AM LINE notification scheduler
 lineNotifier.initDailyLineScheduler();
@@ -50,7 +61,7 @@ const server = http.createServer((req, res) => {
     const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
     const authHeader = (req.headers['authorization'] || '').trim();
     const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
-    const isAuthorized = (reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY);
+    const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
     if (!isAuthorized && urlPath !== '/api/line-webhook') {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Unauthorized: Missing or invalid API key' }));

@@ -581,7 +581,7 @@
   </div>
 
   <script>
-    const PSC_API_KEY = 'psc_sec_ops_2026_key';
+    const PSC_API_KEY = (window.PSC_CONFIG && window.PSC_CONFIG.apiKey) || sessionStorage.getItem('PSC_API_KEY') || localStorage.getItem('PSC_API_KEY') || '';
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 

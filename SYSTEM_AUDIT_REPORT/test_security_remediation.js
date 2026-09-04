@@ -48,7 +48,7 @@ test('H-12: bot.js disables chat-based secret writes', () => {
 // 2. Verify C-04, C-05, C-06, H-01, M-03 in webhook_server.js
 test('C-04: webhook_server.js does not contain hardcoded fallback bot token', () => {
     const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
-    assert.ok(!whCode.includes("'8714398918:AAHryAFzpRwmtFSkPnJOsP8U8TO2CQ-yecM'"), 'Must not have hardcoded token in source');
+    assert.ok(!whCode.includes("'your_telegram_bot_token_here'"), 'Must not have hardcoded token in source');
 });
 
 test('H-01: webhook_server.js restricts CORS origins', () => {
@@ -85,28 +85,32 @@ test('H-11: memory_engine.js protects immutable business rules from chat injecti
 });
 
 // 5. Verify Write API Authentication (C-05 & External Audit)
-test('C-05: webhook_server.js enforces X-PSC-API-KEY on all write (POST) endpoints', () => {
+test('C-05: webhook_server.js enforces X-PSC-API-KEY and fails closed without fallback key', () => {
     const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
     assert.ok(whCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
     assert.ok(whCode.includes('401'), 'Must return HTTP 401 for unauthorized write requests');
-    assert.ok(whCode.includes("PSC_API_KEY"), 'Must validate against PSC_API_KEY');
+    assert.ok(whCode.includes("const isAuthorized = PSC_API_KEY &&"), 'Must fail closed when PSC_API_KEY is not set');
+    assert.ok(!whCode.includes("'psc_sec_ops_2026_key'"), 'Must NOT contain hardcoded secret fallback string');
 });
 
-test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY on all write (POST) endpoints', () => {
+test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed without fallback key', () => {
     const srvPath = path.join(__dirname, '../render-dashboard/server.js');
     if (fs.existsSync(srvPath)) {
         const srvCode = fs.readFileSync(srvPath, 'utf8');
         assert.ok(srvCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
         assert.ok(srvCode.includes('401'), 'Must return HTTP 401 for unauthorized write requests');
+        assert.ok(srvCode.includes("const isAuthorized = PSC_API_KEY &&"), 'Must fail closed when PSC_API_KEY is not set');
+        assert.ok(!srvCode.includes("'psc_sec_ops_2026_key'"), 'Must NOT contain hardcoded secret fallback string');
     } else {
         const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
         assert.ok(whCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
     }
 });
 
-test('C-05: ops_mobile_web.html sends X-PSC-API-KEY in write fetch requests', () => {
+test('C-05: ops_mobile_web.html uses dynamic auth and has no hardcoded secret', () => {
     const htmlCode = fs.readFileSync(path.join(__dirname, '../ops_mobile_web.html'), 'utf8');
     assert.ok(htmlCode.includes("'X-PSC-API-KEY': PSC_API_KEY"), 'Client must provide X-PSC-API-KEY in write calls');
+    assert.ok(!htmlCode.includes("'psc_sec_ops_2026_key'"), 'Client must NOT hardcode fallback secret key');
 });
 
 // 6. Verify Git Ignore & Secret Scrubbing
