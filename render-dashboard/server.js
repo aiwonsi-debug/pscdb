@@ -250,6 +250,20 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
             const body = await getBody();
+            
+            // If full ops data payload is provided from local sync
+            if (body && (body.cards_state || body.active_operations)) {
+                let currentOps = loadTeamOps();
+                if (body.cards_state) currentOps.cards_state = Object.assign(currentOps.cards_state || {}, body.cards_state);
+                if (body.active_operations) currentOps.active_operations = body.active_operations;
+                if (body.history_logs) currentOps.history_logs = body.history_logs;
+                if (body.custom_suppliers) currentOps.custom_suppliers = body.custom_suppliers;
+                if (body.custom_trucks) currentOps.custom_trucks = body.custom_trucks;
+                saveTeamOps(currentOps);
+                res.writeHead(200);
+                return res.end(JSON.stringify({ success: true, message: 'Full ops state synced' }));
+            }
+
             const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
 
             const opsData = loadTeamOps();

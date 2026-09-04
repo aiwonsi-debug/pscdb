@@ -1,3 +1,5 @@
+const { calculateYieldPct, yieldPctToFactor, applyStockUpdate, applyYieldUpdate } = require('./business_logic.js');
+const { calculateTransitLoss } = require('./psc_core_logic.js');
 ﻿const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -55,6 +57,60 @@ try {
     console.error('Webhook server init error:', e);
 }
 const logFile = path.join(agyBaseDir, 'secretary_activity.log');
+const backupDir = path.join(agyBaseDir, 'backups', 'stock');
+
+function rotateLogIfNeeded(targetLogPath, maxSizeBytes = 5 * 1024 * 1024) {
+    try {
+        if (fs.existsSync(targetLogPath)) {
+            const stats = fs.statSync(targetLogPath);
+            if (stats.size >= maxSizeBytes) {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const rotatedPath = `${targetLogPath}.${timestamp}.old`;
+                fs.renameSync(targetLogPath, rotatedPath);
+                
+                const dir = path.dirname(targetLogPath);
+                const base = path.basename(targetLogPath);
+                const oldLogs = fs.readdirSync(dir)
+                    .filter(f => f.startsWith(base) && f.endsWith('.old'))
+                    .map(f => ({ name: f, time: fs.statSync(path.join(dir, f)).mtimeMs }))
+                    .sort((a, b) => b.time - a.time);
+                
+                if (oldLogs.length > 5) {
+                    oldLogs.slice(5).forEach(f => {
+                        try { fs.unlinkSync(path.join(dir, f.name)); } catch(e){}
+                    });
+                }
+            }
+        }
+    } catch(e) {}
+}
+
+function backupStockSnapshot(stockObj) {
+    try {
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+        }
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const dailyBackupFile = path.join(backupDir, `stock_inventory_${todayStr}.json`);
+        
+        const tmpDaily = `${dailyBackupFile}.${process.pid}.${Date.now()}.tmp`;
+        fs.writeFileSync(tmpDaily, JSON.stringify(stockObj, null, 2), 'utf8');
+        fs.renameSync(tmpDaily, dailyBackupFile);
+
+        const backups = fs.readdirSync(backupDir)
+            .filter(f => f.startsWith('stock_inventory_') && f.endsWith('.json'))
+            .map(f => ({ name: f, time: fs.statSync(path.join(backupDir, f)).mtimeMs }))
+            .sort((a, b) => b.time - a.time);
+
+        if (backups.length > 30) {
+            backups.slice(30).forEach(f => {
+                try { fs.unlinkSync(path.join(backupDir, f.name)); } catch(e){}
+            });
+        }
+    } catch(e) {
+        console.error('[Backup Error]:', e.message);
+    }
+}
 
 function formatDMY(date = new Date()) {
     const d = new Date(date);
@@ -1418,18 +1474,53 @@ function handleCommand(chatId, text) {
                     let stockUpdated = false;
                     let updatedKeys = [];
 
-                    // Auto-calculate yield if sample given
+                    // Auto-calculate yield if sample given using strict production module
                     let calcYield = result.yield_pct;
-                    if (!calcYield && result.sample_kg && result.peeled_kg && result.sample_kg > 0) {
-                        calcYield = Number(((result.peeled_kg / result.sample_kg) * 100).toFixed(2));
+                    if (!calcYield && result.sample_kg !== null && result.peeled_kg !== null) {
+                        try {
+                            calcYield = calculateYieldPct(result.sample_kg, result.peeled_kg);
+                        } catch (err) {
+                            writeLog('[Yield Calc Warning]: ' + err.message);
+                        }
                     }
+
+                    let persistRequired = false;
+                    const telegramEventId = `telegram:${chatId}:${upd.message ? upd.message.message_id : Date.now()}`;
 
                     if (calcYield && (result.item || '').includes('กะหล่ำ')) {
                         if (!stock.Items.Cabbage) stock.Items.Cabbage = { Name: "กะหล่ำปลี", StockKg: 6075 };
-                        if (!stock.Items.Cabbage.Yield) stock.Items.Cabbage.Yield = {};
-                        stock.Items.Cabbage.Yield.AFT = calcYield / 100;
-                        stockUpdated = true;
-                        updatedKeys.push(`Yield กะหล่ำ AFT = ${calcYield}%`);
+                        
+                        try {
+                            const newYieldFactor = yieldPctToFactor(calcYield);
+                            const prevYieldFactor = (stock.Items.Cabbage.Yield && stock.Items.Cabbage.Yield.AFT !== undefined)
+                                ? stock.Items.Cabbage.Yield.AFT
+                                : 0.60;
+                            
+                            const yieldResult = applyYieldUpdate(stock, {
+                                itemKey: 'Cabbage',
+                                subKey: 'AFT',
+                                newYieldFactor: newYieldFactor,
+                                source: 'Telegram Sample Test Ingestion',
+                                timestamp: new Date().toISOString(),
+                                eventId: `${telegramEventId}:Cabbage_Yield_AFT`
+                            });
+
+                            stock = yieldResult.data;
+                            if (yieldResult.persistRequired) {
+                                persistRequired = true;
+                            }
+
+                            if (yieldResult.yieldChanged) {
+                                stockUpdated = true;
+                                updatedKeys.push(`Yield กะหล่ำ AFT: ${(prevYieldFactor * 100).toFixed(1)}% -> ${calcYield}%`);
+                            } else if (yieldResult.reason === 'duplicate_event') {
+                                writeLog(`[Idempotency Notice]: Yield Event ${telegramEventId}:Cabbage_Yield_AFT already processed. Skipped.`);
+                            } else if (yieldResult.reason === 'same_value') {
+                                writeLog(`[Dedup Notice]: Cabbage Yield value identical (${calcYield}%). Skipped redundant audit.`);
+                            }
+                        } catch (err) {
+                            writeLog('[Yield Update Error]: ' + err.message);
+                        }
                     }
 
                     if (result.stock_inventory) {
@@ -1443,57 +1534,116 @@ function handleCommand(chatId, text) {
                             Yellow_Sweet_Potato: 'มันเหลืองไข่',
                             Orange_Sweet_Potato: 'มันส้ม'
                         };
+                        
                         Object.keys(keyMap).forEach(k => {
                             if (inv[k] !== null && inv[k] !== undefined) {
-                                if (!stock.Items[k]) stock.Items[k] = { Name: keyMap[k], StockKg: 0 };
-                                stock.Items[k].StockKg = inv[k];
-                                stockUpdated = true;
-                                updatedKeys.push(`${keyMap[k]} = ${inv[k].toLocaleString()} kg`);
+                                try {
+                                    const updateResult = applyStockUpdate(stock, {
+                                        itemKey: k,
+                                        newKg: inv[k],
+                                        source: 'Telegram Unified Ingestion',
+                                        timestamp: new Date().toISOString(),
+                                        eventId: `${telegramEventId}:${k}`
+                                    });
+                                    
+                                    stock = updateResult.data;
+                                    if (updateResult.persistRequired) {
+                                        persistRequired = true;
+                                    }
+
+                                    if (updateResult.stockChanged) {
+                                        stockUpdated = true;
+                                        updatedKeys.push(`${keyMap[k]} = ${Number(inv[k]).toLocaleString()} kg`);
+                                    } else if (updateResult.reason === 'duplicate_event') {
+                                        writeLog(`[Idempotency Notice]: Event ${telegramEventId}:${k} already processed. Skipped.`);
+                                    } else if (updateResult.reason === 'same_value') {
+                                        writeLog(`[Dedup Notice]: ${keyMap[k]} value unchanged (${inv[k]}).`);
+                                    }
+                                } catch(err) {
+                                    writeLog(`[Stock Update Error] ${k}: ` + err.message);
+                                }
                             }
                         });
                     }
 
-                    if (stockUpdated) {
+                    if (persistRequired) {
                         stock.LastUpdated = new Date().toISOString();
                         if (result.date) stock.AsOfDate = result.date;
-                        fs.writeFileSync(stockPath, JSON.stringify(stock, null, 2), 'utf8');
-                        try { fs.writeFileSync(path.join(agyBaseDir, 'render-dashboard', 'stock_inventory.json'), JSON.stringify(stock, null, 2), 'utf8'); } catch(e){}
-                        syncToRender('/api/stock-update', stock);
+                        
+                        // Atomic Write with tmp file and renameSync (AUD-02)
+                        const tmpStockPath = `${stockPath}.${process.pid}.${Date.now()}.tmp`;
+                        fs.writeFileSync(tmpStockPath, JSON.stringify(stock, null, 2), 'utf8');
+                        fs.renameSync(tmpStockPath, stockPath);
+                        backupStockSnapshot(stock);
+                        
+                        try {
+                            const renderStockPath = path.join(agyBaseDir, 'render-dashboard', 'stock_inventory.json');
+                            const tmpRenderPath = `${renderStockPath}.${process.pid}.${Date.now()}.tmp`;
+                            fs.writeFileSync(tmpRenderPath, JSON.stringify(stock, null, 2), 'utf8');
+                            fs.renameSync(tmpRenderPath, renderStockPath);
+                        } catch(e){}
+                        
+                        if (stockUpdated) {
+                            syncToRender('/api/stock-update', stock);
+                        }
+                    } else if (result.stock_inventory || calcYield) {
+                        writeLog('[Dedup Notice]: Event already processed or identical to existing database. Skipped disk write and Render sync.');
                     }
 
                     // 2. Process Operations / Intake / Loading Report
-                    let cardId = 'salaya_0309';
-                    const rawText = text;
-                    const dateStr = result.date || '';
-                    if (rawText.includes('หอมแดง')) {
-                        cardId = (dateStr.includes('21') || dateStr.includes('20')) ? 'tns_shallot_2109' : 'tns_shallot_0709';
-                    } else if (rawText.includes('พริก')) {
-                        cardId = 'tns_pepper_1609';
-                    } else if (dateStr.includes('07') || dateStr.includes('08')) {
-                        cardId = 'salaya_0809';
-                    } else if (dateStr.includes('01') || dateStr.includes('02')) {
-                        cardId = 'salaya_0209';
+                    const isIntakeOrLoading = !!(
+                        result.weight_kg || 
+                        result.freight_baht || 
+                        result.location || 
+                        result.condition || 
+                        result.sample_kg || 
+                        result.peeled_kg || 
+                        calcYield ||
+                        rawText.includes('ขึ้นของ') ||
+                        rawText.includes('รับเข้า') ||
+                        rawText.includes('ขึ้นกะหล่ำ') ||
+                        rawText.includes('ขึ้นหอม') ||
+                        rawText.includes('กะหล่ำเข้า')
+                    );
+
+                    if (isIntakeOrLoading) {
+                        let cardId = 'salaya_0309';
+                        const rawTextLower = text.toLowerCase();
+                        const dateStr = result.date || '';
+                        if (rawText.includes('หอมแดง')) {
+                            cardId = (dateStr.includes('21') || dateStr.includes('20')) ? 'tns_shallot_2109' : 'tns_shallot_0709';
+                        } else if (rawText.includes('พริก')) {
+                            cardId = 'tns_pepper_1609';
+                        } else if (dateStr.includes('07') || dateStr.includes('08')) {
+                            cardId = 'salaya_0809';
+                        } else if (dateStr.includes('01') || dateStr.includes('02')) {
+                            cardId = 'salaya_0209';
+                        } else if (dateStr.includes('03')) {
+                            cardId = 'salaya_0309';
+                        }
+
+                        const weightFormatted = result.weight_kg ? (result.weight_kg.toLocaleString() + ' kg') : '';
+                        const freightFormatted = result.freight_baht ? (result.freight_baht.toLocaleString() + ' บาท') : '';
+
+                        const reportObj = {
+                            cardId: cardId,
+                            date: result.date || formatDMY(),
+                            item: result.item ? (`${result.item} (${result.supplier || 'สวน'})`) : 'รับเข้าวัตถุดิบ',
+                            weight: weightFormatted,
+                            freight: freightFormatted,
+                            payment: result.payment || '',
+                            location: result.location || '',
+                            receivedYield: calcYield || null,
+                            receivedPrice: result.price_per_kg || null,
+                            receivedCondition: result.condition || '',
+                            receivedSize: result.size || '',
+                            rawText: text
+                        };
+
+                        recordLoadingReport(reportObj);
+                    } else {
+                        writeLog('[Ops Notice]: Pure stock inventory count detected; skipped shipment loading report overwrite.');
                     }
-
-                    const weightFormatted = result.weight_kg ? (result.weight_kg.toLocaleString() + ' kg') : '';
-                    const freightFormatted = result.freight_baht ? (result.freight_baht.toLocaleString() + ' บาท') : '';
-
-                    const reportObj = {
-                        cardId: cardId,
-                        date: result.date || formatDMY(),
-                        item: result.item ? (`${result.item} (${result.supplier || 'สวน'})`) : 'รับเข้าวัตถุดิบ',
-                        weight: weightFormatted,
-                        freight: freightFormatted,
-                        payment: result.payment || '',
-                        location: result.location || '',
-                        receivedYield: calcYield || null,
-                        receivedPrice: result.price_per_kg || null,
-                        receivedCondition: result.condition || '',
-                        receivedSize: result.size || '',
-                        rawText: text
-                    };
-
-                    recordLoadingReport(reportObj);
 
                     // 3. Update Cabbage Prices Transport Log if relevant
                     if ((result.item || '').includes('กะหล่ำ')) {

@@ -7,19 +7,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #181a1b;
-      --card-bg: #1d2125;
-      --card-border: #35393b;
-      --text-main: #e8e6e3;
-      --text-muted: #9e9689;
-      --primary: #3391b8;
-      --accent-orange: #e85a3c;
+      --bg: #101418;
+      --card-bg: #151b22;
+      --card-border: #203239;
+      --card-border-active: #437d88;
+      --text-main: #d8e2ea;
+      --text-muted: #6e8490;
+      --primary: #35727a;
+      --accent-orange: #e96c4c;
       --success: #2b9348;
       --warning: #d48806;
       --danger: #d93838;
       --line-green: #06c755;
       --salaya-purple: #9d4edd;
       --tns-cyan: #2aa198;
+      --dr-btn-bg: #18222a;
+      --dr-btn-border: #29424c;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text-main); padding: 12px; min-height: 100vh; font-size: 14px; }
@@ -84,12 +87,13 @@
     .order-details { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px; }
     
     /* Interactive Selection Box */
-    .action-box { background: #1d2125; border: 1px solid #35393b; border-radius: 8px; padding: 10px; margin-top: 6px; }
+    .action-box { background: #151b22; border: 1px solid #203239; border-radius: 4px; padding: 10px; margin-top: 6px; }
     .select-group { margin-bottom: 8px; }
     .select-group:last-child { margin-bottom: 0; }
     .select-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; display: block; font-weight: 500; }
     
-    select.mobile-select { width: 100%; background: #141718; border: 1px solid #35393b; color: #f8fafc; padding: 8px 10px; border-radius: 6px; font-size: 12px; outline: none; }
+    select.mobile-select { width: 100%; background: #101418; border: 1px solid #203239; color: #d8e2ea; padding: 8px 10px; border-radius: 3px; font-size: 12px; outline: none; transition: border-color 0.2s; }
+    select.mobile-select:focus { border-color: #437d88; }
     select.mobile-select:focus { border-color: #e85a3c; }
 
     /* Checkbox buttons */
@@ -120,7 +124,7 @@
   
     .main-nav-bar { background: #1d2125; padding: 6px; border-radius: 12px; border: 1px solid var(--card-border); }
     .nav-tab-btn { background: rgba(255,255,255,0.04); border: 1px solid transparent; color: var(--text-muted); padding: 8px 4px; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
-    .nav-tab-btn.active { background: #3391b8; color: #ffffff; font-weight: 700; box-shadow: 0 2px 8px rgba(51, 145, 184, 0.4); }
+    .nav-tab-btn.active { background: #35727a; color: #ffffff; font-weight: 700; border-color: #437d88; box-shadow: 0 2px 8px rgba(53, 114, 122, 0.4); }
     .app-section { display: none; }
     .app-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -135,11 +139,20 @@
       <span>✓</span> บันทึกข้อมูลเรียบร้อย!
     </div>
 
-    <!-- Top Mobile Header -->
-    <header>
-      <div class="brand">
-        <h1>📱 PSC Mobile</h1>
-        <p>บจก.ไพศาลเจริญ (1988) <span style="display:inline-block; margin-left:6px; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:10px; color:#9e9689;">🕒 ซิงก์ระบบ: <span id="sys_sync_time">03/09/69 15:43 น.</span></span></p>
+    <!-- Top Mobile Header (Dark Reader Extension Aesthetic) -->
+    <header style="background:#151b22; border:1px solid #203239; border-radius:6px; padding:12px 14px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="font-size:19px; font-weight:900; color:#e96c4c; letter-spacing:0.8px; text-transform:uppercase; margin:0;">
+          PSC OPERATIONS
+        </h1>
+        <div style="display:grid; grid-template-columns:1fr 1fr; width:110px; height:28px; background:#0d1215; border:1px solid #203239; border-radius:3px; padding:2px; text-align:center;">
+          <div style="background:#35727a; color:#fff; font-size:11px; font-weight:700; border-radius:2px; display:flex; align-items:center; justify-content:center;">On</div>
+          <div style="color:#6e8490; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">Off</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#6e8490; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+        <span>✓ pscdb.onrender.com</span>
+        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#d8e2ea;">03/09/69 15:43 น.</span></span>
       </div>
     </header>
 
@@ -1080,14 +1093,25 @@ if (cat === 'all') {
         const isLoaded = sItem.loadedReported || lItem.loadedReported;
 
         if (isLoaded) {
+          const intakeWeight = sItem.intakeWeight || lItem.intakeWeight || '';
+          let displayWeight = sItem.loadedWeight || lItem.loadedWeight || '';
+          if (!displayWeight && intakeWeight) {
+            displayWeight = (sItem.meta?.qty_kg ? sItem.meta.qty_kg.toLocaleString() + ' kg' : '') + ` (รับเข้า ${intakeWeight})`;
+          } else if (displayWeight && intakeWeight && !displayWeight.includes('รับเข้า')) {
+            displayWeight = `${displayWeight} (รับเข้า ${intakeWeight})`;
+          }
+
           completedList.push({
             id: id,
             meta: ORDERS_META[id],
             supplier: sItem.supplier || lItem.supplier || 'สวน',
             truck: sItem.truck || lItem.truck || 'รถมาตรฐาน',
-            loadedDate: sItem.loadedDate || lItem.loadedDate,
+            loadedDate: sItem.loadedDate || lItem.loadedDate || ORDERS_META[id].pickup_date,
+            deliveryDate: sItem.intakeDate || sItem.deliveryDate || lItem.deliveryDate || ORDERS_META[id].delivery_date,
             loadedItem: sItem.loadedItem || lItem.loadedItem,
-            loadedWeight: sItem.loadedWeight || lItem.loadedWeight,
+            loadedWeight: displayWeight,
+            intakeWeight: intakeWeight,
+            transitLoss: sItem.transitLoss || lItem.transitLoss || '',
             loadedFreight: sItem.loadedFreight || lItem.loadedFreight,
             loadedPayment: sItem.loadedPayment || lItem.loadedPayment,
             loadedLocation: sItem.loadedLocation || lItem.loadedLocation,
@@ -1113,13 +1137,14 @@ if (cat === 'all') {
         
         html += `<tr>
           <td><span style="color:#f59e0b; font-weight:600;">${c.loadedDate || c.meta.pickup_date}</span></td>
-          <td><span style="color:#38bdf8; font-weight:600;">${c.meta.delivery_date}</span></td>
+          <td><span style="color:#38bdf8; font-weight:600;">${c.deliveryDate || c.meta.delivery_date}</span></td>
           <td>
             <span class="log-tag ${tagClass}">${tagText}</span>
             <div style="font-weight:600; margin-top:2px;">${c.loadedItem || c.meta.title}</div>
           </td>
           <td>
             <b style="color:#34d399;">${c.loadedWeight || (c.meta.qty_kg > 0 ? c.meta.qty_kg.toLocaleString() + ' kg' : '-')}</b>
+            ${c.transitLoss ? `<div style="font-size:10px; color:#f87171; margin-top:1px;">สูญเสีย: ${c.transitLoss}</div>` : ''}
             ${c.receivedYield ? `<div style="font-size:10.5px; color:#facc15; margin-top:2px;">Yield: ${c.receivedYield}%</div>` : ''}
             ${c.receivedPrice ? `<div style="font-size:10.5px; color:#38bdf8;">${c.receivedPrice} บ./กก.</div>` : ''}
           </td>

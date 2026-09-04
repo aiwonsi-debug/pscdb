@@ -1,10 +1,10 @@
 {
-  "AsOfDate": "2026-09-03",
-  "LastUpdated": "2026-09-03T08:42:57.022Z",
+  "AsOfDate": "04/09/69",
+  "LastUpdated": "2026-09-04T02:38:11.096Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 6075,
+      "StockKg": 8800,
       "Yield": {
         "AFT": 0.648,
         "TNS": 0.99
@@ -12,7 +12,7 @@
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 26120
+      "StockKg": 25480
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
@@ -34,5 +34,25 @@
       "Name": "มันส้ม",
       "StockKg": 390
     }
-  }
+  },
+  "AuditTrail": [
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 6075,
+      "NewKg": 8800,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Onion_AFT",
+      "ItemName": "หอม AFT",
+      "PreviousKg": 26120,
+      "NewKg": 25480,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    }
+  ]
 }
