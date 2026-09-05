@@ -7,8 +7,7 @@ const nodeExe = process.execPath;
 
 const services = [
     { name: 'telegram-bot', script: path.join(baseDir, 'bot.js') },
-    { name: 'ssh-server', script: path.join(baseDir, 'ssh_server.js') },
-    { name: 'cloudflare-tunnel', script: path.join(baseDir, 'start_tunnel.js') }
+    { name: 'ssh-server', script: path.join(baseDir, 'ssh_server.js') }
 ];
 
 const children = {};

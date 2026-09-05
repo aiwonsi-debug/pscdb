@@ -123,7 +123,7 @@ function generateD1LineMessage(dateStr) {
     - ขิง 150 กก.
 ──────────────────
 🌐 รายละเอียด:
-https://hours-wagner-pacific-kinda.trycloudflare.com/ops`;
+https://pscdb.onrender.com/ops`;
 }
 
 /**
