@@ -241,9 +241,10 @@ function loadTeamOps() {
         custom_suppliers: [],
         custom_trucks: []
     };
-    if (fs.existsSync(teamOpsFile)) {
+    const targetOpsFile = fs.existsSync(teamOpsFile) ? teamOpsFile : (fs.existsSync(teamOpsFile + '.example') ? (teamOpsFile + '.example') : null);
+    if (targetOpsFile) {
         try {
-            data = Object.assign(data, JSON.parse(fs.readFileSync(teamOpsFile, 'utf8')));
+            data = Object.assign(data, JSON.parse(fs.readFileSync(targetOpsFile, 'utf8')));
             if (!data.cards_state) data.cards_state = {};
             if (!data.custom_suppliers) data.custom_suppliers = [];
             if (!data.custom_trucks) data.custom_trucks = [];
@@ -599,9 +600,10 @@ const server = http.createServer(async (req, res) => {
                     Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
                 }
             };
-            if (fs.existsSync(stockFile)) {
+            const targetStockFile = fs.existsSync(stockFile) ? stockFile : (fs.existsSync(stockFile + '.example') ? (stockFile + '.example') : null);
+            if (targetStockFile) {
                 try {
-                    stockData = JSON.parse(fs.readFileSync(stockFile, 'utf8'));
+                    stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));
                 } catch (e) {}
             }
             res.writeHead(200);

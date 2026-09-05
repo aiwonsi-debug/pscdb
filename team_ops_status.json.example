@@ -1,0 +1,17 @@
+{
+  "last_updated": "2026-09-01T00:00:00.000Z",
+  "active_operations": [],
+  "history_logs": [],
+  "cards_state": {
+    "salaya_sample": {
+      "id": "salaya_sample",
+      "supplier": "สวนตัวอย่าง",
+      "truck": "รถขนส่งตัวอย่าง",
+      "orderChecked": false,
+      "truckChecked": false,
+      "loadedReported": false
+    }
+  },
+  "custom_suppliers": [],
+  "custom_trucks": []
+}

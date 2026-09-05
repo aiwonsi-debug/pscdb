@@ -1,0 +1,39 @@
+{
+  "AsOfDate": "01/09/69",
+  "LastUpdated": "2026-09-01T00:00:00.000Z",
+  "Items": {
+    "Cabbage": {
+      "Name": "กะหล่ำปลี",
+      "StockKg": 5000,
+      "Yield": {
+        "AFT": 0.6,
+        "TNS": 0.99
+      }
+    },
+    "Onion_AFT": {
+      "Name": "หอม AFT",
+      "StockKg": 20000
+    },
+    "Onion_Chinese": {
+      "Name": "หอมจีน",
+      "StockKg": 5000
+    },
+    "Carrot": {
+      "Name": "แครอทสวย",
+      "StockKg": 5000
+    },
+    "Purple_Sweet_Potato": {
+      "Name": "มันม่วงหัวเล็ก",
+      "StockKg": 1500
+    },
+    "Yellow_Sweet_Potato": {
+      "Name": "มันเหลืองไข่",
+      "StockKg": 500
+    },
+    "Orange_Sweet_Potato": {
+      "Name": "มันส้ม",
+      "StockKg": 500
+    }
+  },
+  "AuditTrail": []
+}
