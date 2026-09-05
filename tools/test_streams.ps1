@@ -1,3 +1,0 @@
-﻿Write-Host "FROM_WRITE_HOST"
-Write-Output "FROM_WRITE_OUTPUT"
-[Console]::WriteLine("FROM_CONSOLE_WRITELINE")

@@ -111,10 +111,14 @@ test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed w
     }
 });
 
-test('C-05: ops_mobile_web.html uses dynamic auth and has no hardcoded secret', () => {
-    const htmlCode = fs.readFileSync(path.join(__dirname, '../ops_mobile_web.html'), 'utf8');
-    assert.ok(htmlCode.includes("credentials: 'same-origin'") || htmlCode.includes("X-PSC-API-KEY"), 'Client must support authenticated session calls');
-    assert.ok(!htmlCode.includes("'psc_sec_ops_2026_key'"), 'Client must NOT hardcode fallback secret key');
+test('C-05: public/ops.html uses dynamic auth and has no hardcoded secret', () => {
+    const pubHtmlPath = path.join(__dirname, '../public/ops.html');
+    const targetFile = fs.existsSync(pubHtmlPath) ? pubHtmlPath : path.join(__dirname, '../ops_mobile_web.html');
+    const htmlCode = fs.readFileSync(targetFile, 'utf8');
+    const jsCode = fs.existsSync(path.join(__dirname, '../public/js/ops.js')) ? fs.readFileSync(path.join(__dirname, '../public/js/ops.js'), 'utf8') : '';
+    const combined = htmlCode + '\n' + jsCode;
+    assert.ok(combined.includes("credentials: 'same-origin'") || combined.includes("X-PSC-API-KEY"), 'Client must support authenticated session calls');
+    assert.ok(!combined.includes("'psc_sec_ops_2026_key'"), 'Client must NOT hardcode fallback secret key');
 });
 
 test('C-07: GET /api/usage and /api/quota endpoints are protected by authentication', () => {

@@ -20,7 +20,17 @@ function escapeHtml(str) {
 
 
 const PORT = process.env.PORT || 8080;
-const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
+function resolveOpsHtmlPath() {
+    const candidates = [
+        path.join(__dirname, 'public', 'ops.html'),
+        path.join(__dirname, 'ops_mobile_web.html')
+    ];
+    for (const c of candidates) {
+        if (fs.existsSync(c)) return c;
+    }
+    return candidates[0];
+}
+const mobileHtmlFile = resolveOpsHtmlPath();
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
