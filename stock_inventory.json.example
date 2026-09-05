@@ -1,10 +1,10 @@
 {
   "AsOfDate": "05/09/69",
-  "LastUpdated": "2026-09-05T19:01:58.346Z",
+  "LastUpdated": "2026-09-05T19:58:27.543Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 8875,
+      "StockKg": 8800,
       "Yield": {
         "AFT": 0.64,
         "TNS": 0.99
@@ -36,6 +36,12 @@
     }
   },
   "AuditTrail": [
+    {
+      "Timestamp": "2026-09-05T19:58:27.544Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (05/09/69 Stock Audit)"
+    },
     {
       "Timestamp": "2026-09-05T19:01:58.347Z",
       "Item": "Cabbage",
