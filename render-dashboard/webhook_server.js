@@ -77,14 +77,26 @@ if (!PSC_API_KEY && (process.env.NODE_ENV === 'production' || process.env.RENDER
         process.exit(1);
     }
 }
-// Web Client Session Tokens (Option 1: Zero Master Key Exposure)
-// Web UI clients receive short-lived ephemeral session tokens; Master PSC_API_KEY remains strictly on server.
+// Web Client Session Tokens (Persistent Team Session + Zero Master Key Exposure)
+// Team operators receive persistent session tokens (30 days); Master PSC_API_KEY remains strictly server-side.
 const WEB_SESSIONS = new Map();
-const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours (hardened operational TTL)
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days persistent operational session
 
-function generateWebSessionToken() {
+// Team Access Code resolution: dedicated code or fallback to PSC_API_KEY
+const TEAM_ACCESS_CODE = (process.env.TEAM_ACCESS_CODE || process.env.PSC_TEAM_CODE || '').trim();
+
+function verifyTeamOrMasterCode(inputCode) {
+    if (!inputCode) return false;
+    const clean = inputCode.trim();
+    if (TEAM_ACCESS_CODE && clean === TEAM_ACCESS_CODE) return true;
+    if (PSC_API_KEY && clean === PSC_API_KEY) return true;
+    return false;
+}
+
+function generateWebSessionToken(remember = true) {
     const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
-    WEB_SESSIONS.set(token, Date.now() + SESSION_TTL_MS);
+    const ttl = remember ? SESSION_TTL_MS : (24 * 60 * 60 * 1000); // 30 days vs 1 day
+    WEB_SESSIONS.set(token, Date.now() + ttl);
     // Prune expired sessions
     if (WEB_SESSIONS.size > 1000) {
         const now = Date.now();
@@ -378,19 +390,58 @@ const server = http.createServer(async (req, res) => {
                     queryKey = (postBody.access_code || postBody.key || postBody.auth || '').trim();
                 }
 
-                // Authentication Gate: Require existing valid session OR Master PSC_API_KEY to mint new session
-                const canMintSession = PSC_API_KEY && (queryKey === PSC_API_KEY);
+                // Authentication Gate: Require existing valid session OR Team Access Code to mint new session
+                const canMintSession = verifyTeamOrMasterCode(queryKey);
                 const hasValidSession = isValidWebSession(existingSession);
 
                 if (!hasValidSession && !canMintSession) {
                     res.writeHead(401);
-                    return res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>PSC Ops - Access Denied</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0d1117;color:#e6edf3;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .card{background:#161b22;border:1px solid #30363d;padding:24px;border-radius:8px;max-width:360px;text-align:center;} h2{color:#f85149;margin-top:0;} p{font-size:14px;color:#8b949e;line-height:1.5;} input{width:100%;padding:10px;border-radius:6px;border:1px solid #30363d;background:#0d1117;color:#fff;box-sizing:border-box;margin:12px 0;} button{width:100%;padding:10px;border-radius:6px;border:none;background:#238636;color:#fff;font-weight:bold;cursor:pointer;}</style></head><body><div class="card"><h2>🔒 Authentication Required</h2><p>PSC Field Operations Web UI requires operator authentication before issuing an active session.</p><form method="POST" action="/ops"><input type="password" name="auth" placeholder="Enter Access Key" required /><button type="submit">Unlock Session</button></form></div></body></html>');
+                    return res.end(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PSC Field Operations - Team Access</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background:#0a0e17; color:#e6edf3; font-family:'Prompt',-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; box-sizing:border-box; }
+    .card { background:#111827; border:1px solid #1f2937; padding:28px 24px; border-radius:14px; width:100%; max-width:360px; box-shadow:0 12px 30px rgba(0,0,0,0.6); text-align:center; }
+    .badge { display:inline-block; background:rgba(16,185,129,0.15); color:#10b981; font-weight:600; font-size:12px; padding:4px 10px; border-radius:20px; margin-bottom:12px; }
+    h2 { color:#fff; font-size:20px; font-weight:700; margin:0 0 6px 0; }
+    p { font-size:13px; color:#9ca3af; line-height:1.5; margin:0 0 20px 0; }
+    .input-box { width:100%; padding:12px 14px; border-radius:8px; border:1px solid #374151; background:#0b1120; color:#fff; font-size:15px; font-family:inherit; box-sizing:border-box; outline:none; transition:border-color 0.2s; }
+    .input-box:focus { border-color:#10b981; }
+    .remember-row { display:flex; align-items:center; justify-content:flex-start; gap:8px; margin:14px 0 20px 0; font-size:13px; color:#cbd5e1; cursor:pointer; }
+    .remember-row input { accent-color:#10b981; width:16px; height:16px; margin:0; cursor:pointer; }
+    button { width:100%; padding:13px; border-radius:8px; border:none; background:#10b981; color:#fff; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; transition:background 0.2s; }
+    button:hover { background:#059669; }
+    .subtext { margin-top:16px; font-size:11.5px; color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">🌱 PSC Field Operations</span>
+    <h2>Team Access (Authentication Required)</h2>
+    <p>กรอกรหัสทีมงานเพื่อเริ่มใช้งาน Dashboard บนอุปกรณ์นี้ (เข้าสู่ระบบครั้งเดียว จำเซสชัน 30 วัน)</p>
+    <form method="POST" action="/ops">
+      <input type="password" name="auth" class="input-box" placeholder="Team Access Code" required autofocus />
+      <label class="remember-row">
+        <input type="checkbox" name="remember" value="true" checked />
+        <span>จำอุปกรณ์นี้ (30 วัน ไม่ต้องกรอกซ้ำ)</span>
+      </label>
+      <button type="submit">เข้าสู่ระบบ Dashboard</button>
+    </form>
+    <div class="subtext">🔒 HttpOnly Session Cookie Protection • Zero Secret in DOM</div>
+  </div>
+</body>
+</html>`);
                 }
 
                 // If authenticating via key or renewing valid session
-                const sessionToken = hasValidSession ? existingSession : generateWebSessionToken();
+                const sessionToken = hasValidSession ? existingSession : generateWebSessionToken(true);
                 const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
-                const cookieFlags = `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
+                const maxAgeSec = 30 * 24 * 60 * 60; // 30 days
+                const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
                 res.setHeader('Set-Cookie', cookieFlags);
                 res.writeHead(200);
                 const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
@@ -410,16 +461,17 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST' && (pathname === '/api/login' || pathname === '/auth/session')) {
             const body = await getBody();
             const accessKey = (body.access_code || body.key || body.auth || '').trim();
-            if (PSC_API_KEY && accessKey === PSC_API_KEY) {
-                const sessionToken = generateWebSessionToken();
+            if (verifyTeamOrMasterCode(accessKey)) {
+                const sessionToken = generateWebSessionToken(true);
                 const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
-                const cookieFlags = `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
+                const maxAgeSec = 30 * 24 * 60 * 60; // 30 days
+                const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
                 res.setHeader('Set-Cookie', cookieFlags);
                 res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, message: 'Session authenticated' }));
+                return res.end(JSON.stringify({ success: true, message: 'Session authenticated for 30 days' }));
             } else {
                 res.writeHead(401);
-                return res.end(JSON.stringify({ success: false, error: 'Invalid access key' }));
+                return res.end(JSON.stringify({ success: false, error: 'Invalid access code' }));
             }
         }
 
