@@ -790,7 +790,7 @@
   </div>
 
   <script>
-    const PSC_API_KEY = '__PSC_API_KEY_PLACEHOLDER__';
+    const PSC_API_KEY = ''; // Managed automatically via HttpOnly Cookie (Zero Key in DOM)
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -1344,9 +1344,9 @@ if (cat === 'all') {
 
         fetch('/api/team-update', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 
-            'Content-Type': 'application/json',
-            'X-PSC-API-KEY': PSC_API_KEY
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(apiPayload)
         }).then(res => res.json()).then(data => {

@@ -18,9 +18,13 @@ if (!fs.existsSync(STATUS_FILE)) {
 }
 
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
+if (!PSC_API_KEY && process.env.NODE_ENV === 'production') {
+    console.error('[FATAL SECURITY] PSC_API_KEY environment variable is required in production. Refusing to start.');
+    process.exit(1);
+}
 // Web Client Session Tokens (Option 1: Zero Master Key Exposure)
 const WEB_SESSIONS = new Map();
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours (hardened operational TTL)
 
 function generateWebSessionToken() {
     const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
@@ -32,6 +36,21 @@ function generateWebSessionToken() {
         }
     }
     return token;
+}
+
+
+function parseCookies(req) {
+    const list = {};
+    const rc = req.headers.cookie;
+    if (rc) {
+        rc.split(';').forEach(cookie => {
+            const parts = cookie.split('=');
+            if (parts.length >= 2) {
+                list[parts.shift().trim()] = decodeURI(parts.join('='));
+            }
+        });
+    }
+    return list;
 }
 
 function isValidWebSession(token) {
@@ -77,7 +96,9 @@ const server = http.createServer((req, res) => {
     const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
     const authHeader = (req.headers['authorization'] || '').trim();
     const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
-    const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken));
+    const cookies = parseCookies(req);
+    const cookieSession = cookies['psc_session'] || '';
+    const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken) || isValidWebSession(cookieSession));
     if (!isAuthorized && urlPath !== '/api/line-webhook') {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Unauthorized: Missing or invalid API key' }));
@@ -206,9 +227,10 @@ const server = http.createServer((req, res) => {
     const target = fs.existsSync(OPS_HTML_FILE) ? OPS_HTML_FILE : TEAM_HTML_FILE;
     if (fs.existsSync(target)) {
       const sessionToken = generateWebSessionToken();
-      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
+      const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
+      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      const html = fs.readFileSync(target, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, sessionToken);
+      const html = fs.readFileSync(target, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, '');
       res.end(html);
       return;
     }
@@ -219,9 +241,10 @@ const server = http.createServer((req, res) => {
     const htmlPath = fs.existsSync(TEAM_HTML_FILE) ? TEAM_HTML_FILE : OPS_HTML_FILE;
     if (fs.existsSync(htmlPath)) {
       const sessionToken = generateWebSessionToken();
-      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
+      const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
+      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      const html = fs.readFileSync(htmlPath, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, sessionToken);
+      const html = fs.readFileSync(htmlPath, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, '');
       res.end(html);
       return;
     }

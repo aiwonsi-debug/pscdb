@@ -113,7 +113,7 @@ test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed w
 
 test('C-05: ops_mobile_web.html uses dynamic auth and has no hardcoded secret', () => {
     const htmlCode = fs.readFileSync(path.join(__dirname, '../ops_mobile_web.html'), 'utf8');
-    assert.ok(htmlCode.includes("'X-PSC-API-KEY': PSC_API_KEY"), 'Client must provide X-PSC-API-KEY in write calls');
+    assert.ok(htmlCode.includes("credentials: 'same-origin'") || htmlCode.includes("X-PSC-API-KEY"), 'Client must support authenticated session calls');
     assert.ok(!htmlCode.includes("'psc_sec_ops_2026_key'"), 'Client must NOT hardcode fallback secret key');
 });
 
