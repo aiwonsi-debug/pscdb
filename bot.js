@@ -7,6 +7,7 @@ const path = require('path');
 const { exec, spawn } = require('child_process');
 const memoryEngine = require('./memory_engine.js');
 const quotaTracker = require('./ai_quota_tracker.js');
+const { formatPoDetailsForNotification } = require('./po_detail_formatter.js');
 
 // Helper to execute commands in 100% hidden background mode (no popup cmd/powershell windows)
 function execSilent(command, options, callback) {
@@ -380,8 +381,15 @@ async function autoCheckGmail() {
             writeLog(`Found ${matches.length} genuinely new PO files!`);
             if (adminChatId) {
                 let r = `[ตรวจพบใบสั่งซื้อ PO ใหม่เข้า Gmail]\n\n`;
-                matches.forEach(m => { r += `• ${m.replace('[SAVED]', '').trim()}\n`; });
-                r += `\nอัปเดตไฟล์ Excel และ GT Schedule เรียบร้อยแล้ว`;
+                matches.forEach(m => {
+                    const cleanM = m.replace('[SAVED]', '').trim();
+                    r += `• ${cleanM}\n`;
+                    try {
+                        const detail = formatPoDetailsForNotification(cleanM);
+                        if (detail) r += detail + '\n';
+                    } catch(e) {}
+                });
+                r += `อัปเดตไฟล์ Excel, GT Schedule และ Dashboard บนเว็บเรียบร้อยแล้ว`;
                 sendMessage(adminChatId, r);
             }
         }
@@ -549,10 +557,15 @@ function handleCallbackQuery(cq) {
                 let textResult = `📬 [ผลการตรวจเช็ก Gmail ล่าสุด]\n\n`;
                 if (matches && matches.length > 0) {
                     textResult += `🎉 ตรวจพบ ${matches.length} ไฟล์ใหม่:\n`;
-                    matches.slice(0, 8).forEach(m => { textResult += `• ${m.replace('[SAVED]', '').trim()}\n`; });
-                    textResult += `\nอัปเดตไฟล์ Excel และ GT Schedule เรียบร้อยแล้ว`;
-                } else {
-                    textResult += `✅ สแกนอีเมลล่าสุดเรียบร้อย (ไม่พบไฟล์ PO ใหม่เพิ่มเติม ข้อมูลเป็นปัจจุบันแล้ว)`;
+                    matches.slice(0, 8).forEach(m => {
+                        const cleanM = m.replace('[SAVED]', '').trim();
+                        textResult += `• ${cleanM}\n`;
+                        try {
+                            const detail = formatPoDetailsForNotification(cleanM);
+                            if (detail) textResult += detail + '\n';
+                        } catch(e) {}
+                    });
+                    textResult += `อัปเดตไฟล์ Excel, GT Schedule และ Dashboard บนเว็บเรียบร้อยแล้ว`;
                 }
                 editMessageText(chatId, messageId, textResult, backMarkup);
             }
@@ -564,7 +577,9 @@ function handleCallbackQuery(cq) {
                       `──────────────────\n` +
                       `🏢 1. Siam Yamamori (Sep 26)\n` +
                       `  • ส่ง 05/09 ➔ เตือน GT 03/09 (PO2357)\n` +
-                      `  • ส่ง 10/09 ➔ เตือน GT 08/09 (PO2358)\n\n` +
+                      `  • ส่ง 10/09 ➔ เตือน GT 08/09 (PO2358)\n` +
+                      `  • ส่ง 14/09 ➔ เตือน GT 12/09 (PO2424)\n` +
+                      `  • ส่ง 16/09 ➔ เตือน GT 14/09 (PO2425)\n\n` +
                       `🏢 2. AFT (Ajinomoto Sep 26 Rev.00)\n` +
                       `  • ส่ง 01/09 (อ.) ➔ เตือน 31/08 12:00 น.\n` +
                       `  • ส่ง 03/09 (พฤ.) ➔ เตือน 02/09 12:00 น.\n` +
@@ -595,9 +610,11 @@ function handleCallbackQuery(cq) {
                       `🏢 3. <b>Siam Yamamori</b>\n` +
                       `  • PO2357 (05/09): แครอท 180kg, หอมใหญ่ 625kg\n` +
                       `  • PO2358 (10/09): แครอท 136kg, หอมใหญ่ 1,150kg\n` +
-                      `  ➔ <b>รวม Yamamori: 2,091 kg (69,588 บ.)</b>\n` +
+                      `  • PO2424 (14/09): แครอท 136kg, หอมใหญ่ 605kg\n` +
+                      `  • PO2425 (16/09): หอมใหญ่ 920kg\n` +
+                      `  ➔ <b>รวม Yamamori: 3,752 kg (126,936 บ.)</b>\n` +
                       `━━━━━━━━━━━━━━━━━━━━\n` +
-                      `🌟 <b>ยอดรวมทั้ง 3 โรงงาน: 111,605 kg</b>\n\n` +
+                      `🌟 <b>ยอดรวมทั้ง 3 โรงงาน: 113,266 kg</b>` +
                       ``;
         editMessageText(chatId, messageId, reply, backMarkup);
     }
@@ -2086,8 +2103,15 @@ function handleCommand(chatId, text, msg = null) {
             const matches = out.match(/\[SAVED\]\s*([^\r\n]+)/g);
             if (matches && matches.length > 0) {
                 let r = `ดึงข้อมูลสำเร็จ พบ ${matches.length} ไฟล์ใหม่:\n`;
-                matches.slice(0, 10).forEach(m => { r += `• ${m.replace('[SAVED]', '').trim()}\n`; });
-                r += `\nอัปเดตไฟล์ Excel และ GT Schedule เรียบร้อยแล้ว`;
+                matches.slice(0, 10).forEach(m => {
+                    const cleanM = m.replace('[SAVED]', '').trim();
+                    r += `• ${cleanM}\n`;
+                    try {
+                        const detail = formatPoDetailsForNotification(cleanM);
+                        if (detail) r += detail + '\n';
+                    } catch(e) {}
+                });
+                r += `อัปเดตไฟล์ Excel, GT Schedule และ Dashboard บนเว็บเรียบร้อยแล้ว`;
                 sendMessage(chatId, r);
             } else {
                 sendMessage(chatId, 'ไม่มีอีเมล PO ใหม่เพิ่มเติม (ข้อมูลเป็นปัจจุบันแล้ว)');
