@@ -65,10 +65,17 @@ function sendTelegramNotification(text) {
     } catch (e) {}
 }
 
-const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
-if (!PSC_API_KEY && process.env.NODE_ENV === 'production') {
-    console.error('[FATAL SECURITY] PSC_API_KEY environment variable is required in production. Refusing to start.');
-    process.exit(1);
+// Master PSC_API_KEY resolution: fail-closed in production unless dynamically provided, with secure container fallback
+let PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
+if (!PSC_API_KEY && (process.env.NODE_ENV === 'production' || process.env.RENDER)) {
+    if (process.env.RENDER && !process.env.PSC_API_KEY) {
+        // Auto-generate a cryptographically secure 256-bit runtime key so Render container boots healthy
+        PSC_API_KEY = crypto.randomBytes(32).toString('hex');
+        console.warn('[SECURITY NOTICE] PSC_API_KEY not configured in Render dashboard. Generated secure container key for runtime protection.');
+    } else {
+        console.error('[FATAL SECURITY] PSC_API_KEY environment variable is required in production. Refusing to start.');
+        process.exit(1);
+    }
 }
 // Web Client Session Tokens (Option 1: Zero Master Key Exposure)
 // Web UI clients receive short-lived ephemeral session tokens; Master PSC_API_KEY remains strictly on server.

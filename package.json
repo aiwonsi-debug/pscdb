@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node webhook_server.js"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "pdf-parse": "^2.4.5",
     "pdf2json": "^3.1.4",
     "ssh2": "^1.17.0",
