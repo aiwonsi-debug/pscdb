@@ -623,16 +623,23 @@ if (cat === 'all') {
           recorder: 'ทีมงานมือถือภาคสนาม'
         };
 
+        const sessToken = (typeof localStorage !== 'undefined' && localStorage.getItem('PSC_SESSION_TOKEN')) || '';
+        const reqHeaders = { 'Content-Type': 'application/json' };
+        if (sessToken) {
+          reqHeaders['X-PSC-Session'] = sessToken;
+          reqHeaders['Authorization'] = 'Bearer ' + sessToken;
+        }
+
         fetch('/api/team-update', {
           method: 'POST',
           credentials: 'same-origin',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
+          headers: reqHeaders,
           body: JSON.stringify(apiPayload)
         }).then(res => {
           if (res.status === 401 || res.status === 403) {
-            handleAuthRequired();
+            handleAuthRequired(function() {
+              saveCard(id, customer, product, qty_kg, delivery_date, showFeedback);
+            });
             return null;
           }
           return res.json();
@@ -746,37 +753,93 @@ if (cat === 'all') {
     }
 
     
-    function handleAuthRequired() {
+    function handleAuthRequired(onSuccessCallback) {
+      // Try silent auto-login first using saved access code
+      try {
+        const savedCode = localStorage.getItem('PSC_TEAM_ACCESS_CODE');
+        if (savedCode) {
+          fetch('/api/login', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_code: savedCode })
+          }).then(res => res.json()).then(data => {
+            if (data.success) {
+              if (data.token) localStorage.setItem('PSC_SESSION_TOKEN', data.token);
+              if (typeof onSuccessCallback === 'function') onSuccessCallback();
+              else syncLiveBackendState();
+              return;
+            }
+            showAuthModal(onSuccessCallback);
+          }).catch(() => showAuthModal(onSuccessCallback));
+          return;
+        }
+      } catch (e) {}
+
+      showAuthModal(onSuccessCallback);
+    }
+
+    function showAuthModal(onSuccessCallback) {
       const modal = document.getElementById('auth_modal');
       if (modal) {
         modal.style.display = 'flex';
         const inp = document.getElementById('auth_input');
-        if (inp) inp.focus();
+        if (inp) {
+          inp.focus();
+          inp.onkeydown = function(ev) {
+            if (ev.key === 'Enter') submitAuthKey(inp.value, onSuccessCallback);
+          };
+        }
       } else {
         const pass = prompt('🔒 เซสชันหมดอายุ กรุณากรอก Access Key เพื่อปลดล็อค:');
         if (pass) {
-          submitAuthKey(pass);
+          submitAuthKey(pass, onSuccessCallback);
         }
       }
     }
 
-    function submitAuthKey(key) {
+    function submitAuthKey(key, onSuccessCallback) {
       if (!key) return;
+      const cleanKey = key.trim();
       fetch('/api/login', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_code: key })
+        body: JSON.stringify({ access_code: cleanKey })
       }).then(res => res.json()).then(data => {
         if (data.success) {
-          showToast('✅ ปลดล็อคเซสชันสำเร็จ');
+          try {
+            localStorage.setItem('PSC_TEAM_ACCESS_CODE', cleanKey);
+            if (data.token) localStorage.setItem('PSC_SESSION_TOKEN', data.token);
+          } catch (e) {}
+          showToast('✅ ปลดล็อคและจำอุปกรณ์เรียบร้อย (30 วัน)');
           const modal = document.getElementById('auth_modal');
           if (modal) modal.style.display = 'none';
-          syncLiveBackendState();
+          if (typeof onSuccessCallback === 'function') onSuccessCallback();
+          else syncLiveBackendState();
         } else {
           alert('❌ รหัสผ่านไม่ถูกต้อง');
         }
       }).catch(e => alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ'));
     }
 
-    window.onload = function() { loadSavedState(); updateNotificationBtn(); scheduleDaily8AMAlert(); };
+    window.onload = function() { 
+      // Proactive silent auth refresh if savedCode exists
+      try {
+        const savedCode = localStorage.getItem('PSC_TEAM_ACCESS_CODE');
+        if (savedCode) {
+          fetch('/api/login', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_code: savedCode })
+          }).then(res => res.json()).then(data => {
+            if (data && data.token) localStorage.setItem('PSC_SESSION_TOKEN', data.token);
+          }).catch(function() {});
+        }
+      } catch (e) {}
+
+      loadSavedState(); 
+      updateNotificationBtn(); 
+      scheduleDaily8AMAlert(); 
+    };

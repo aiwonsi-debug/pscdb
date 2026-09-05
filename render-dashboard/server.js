@@ -87,13 +87,15 @@ if (!PSC_API_KEY && (process.env.NODE_ENV === 'production' || process.env.RENDER
         process.exit(1);
     }
 }
-// Web Client Session Tokens (Persistent Team Session + Zero Master Key Exposure)
-// Team operators receive persistent session tokens (30 days); Master PSC_API_KEY remains strictly server-side.
-const WEB_SESSIONS = new Map();
+// Web Client Session Tokens (Stateless HMAC-SHA256 Signed - Survives Server & Container Restarts)
+// Team operators receive persistent signed tokens (30 days); Zero master key exposure.
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days persistent operational session
 
 // Team Access Code resolution: dedicated code or fallback to PSC_API_KEY
 const TEAM_ACCESS_CODE = (process.env.TEAM_ACCESS_CODE || process.env.PSC_TEAM_CODE || '9624').trim();
+
+// Session Secret: Derived from persistent environment or deterministic team secret
+const SESSION_SECRET = (process.env.SESSION_SECRET || process.env.PSC_SESSION_SECRET || ('psc_hmac_secret_' + TEAM_ACCESS_CODE + '_sec2026')).trim();
 
 function verifyTeamOrMasterCode(inputCode) {
     if (!inputCode) return false;
@@ -104,19 +106,15 @@ function verifyTeamOrMasterCode(inputCode) {
 }
 
 function generateWebSessionToken(remember = true) {
-    const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
-    const ttl = remember ? SESSION_TTL_MS : (24 * 60 * 60 * 1000); // 30 days vs 1 day
-    WEB_SESSIONS.set(token, Date.now() + ttl);
-    // Prune expired sessions
-    if (WEB_SESSIONS.size > 1000) {
-        const now = Date.now();
-        for (const [t, exp] of WEB_SESSIONS.entries()) {
-            if (exp < now) WEB_SESSIONS.delete(t);
-        }
-    }
-    return token;
+    const ttl = remember ? SESSION_TTL_MS : (24 * 60 * 60 * 1000);
+    const payloadObj = {
+        exp: Date.now() + ttl,
+        rnd: crypto.randomBytes(8).toString('hex')
+    };
+    const payloadStr = Buffer.from(JSON.stringify(payloadObj)).toString('base64url');
+    const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payloadStr).digest('base64url');
+    return `psc_v2_${payloadStr}.${sig}`;
 }
-
 
 function parseCookies(req) {
     const list = {};
@@ -133,13 +131,22 @@ function parseCookies(req) {
 }
 
 function isValidWebSession(token) {
-    if (!token || !WEB_SESSIONS.has(token)) return false;
-    const expires = WEB_SESSIONS.get(token);
-    if (Date.now() > expires) {
-        WEB_SESSIONS.delete(token);
-        return false;
+    if (!token || typeof token !== 'string') return false;
+    // Support v2 HMAC signed token (survives any restart)
+    if (token.startsWith('psc_v2_')) {
+        const parts = token.slice(7).split('.');
+        if (parts.length !== 2) return false;
+        const [payloadStr, sig] = parts;
+        const expectedSig = crypto.createHmac('sha256', SESSION_SECRET).update(payloadStr).digest('base64url');
+        if (sig !== expectedSig) return false;
+        try {
+            const data = JSON.parse(Buffer.from(payloadStr, 'base64url').toString('utf8'));
+            return typeof data.exp === 'number' && Date.now() < data.exp;
+        } catch (e) {
+            return false;
+        }
     }
-    return true;
+    return false;
 }
 
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
@@ -462,8 +469,8 @@ const server = http.createServer(async (req, res) => {
     <span class="badge">🌱 PSC Field Operations</span>
     <h2>Team Access (Authentication Required)</h2>
     <p>กรอกรหัสทีมงานเพื่อเริ่มใช้งาน Dashboard บนอุปกรณ์นี้ (เข้าสู่ระบบครั้งเดียว จำเซสชัน 30 วัน)</p>
-    <form method="POST" action="/ops">
-      <input type="password" name="auth" class="input-box" placeholder="Team Access Code" required autofocus />
+    <form id="login_form" method="POST" action="/ops">
+      <input type="password" id="auth_code_input" name="auth" class="input-box" placeholder="Team Access Code" required autofocus />
       <label class="remember-row">
         <input type="checkbox" name="remember" value="true" checked />
         <span>จำอุปกรณ์นี้ (30 วัน ไม่ต้องกรอกซ้ำ)</span>
@@ -472,6 +479,18 @@ const server = http.createServer(async (req, res) => {
     </form>
     <div class="subtext">🔒 HttpOnly Session Cookie Protection • Zero Secret in DOM</div>
   </div>
+  <script>
+    (function() {
+      try {
+        var savedCode = localStorage.getItem('PSC_TEAM_ACCESS_CODE');
+        if (savedCode) {
+          var inp = document.getElementById('auth_code_input');
+          if (inp) inp.value = savedCode;
+          document.getElementById('login_form').submit();
+        }
+      } catch (e) {}
+    })();
+  </script>
 </body>
 </html>`);
                 }
@@ -507,7 +526,11 @@ const server = http.createServer(async (req, res) => {
                 const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
                 res.setHeader('Set-Cookie', cookieFlags);
                 res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, message: 'Session authenticated for 30 days' }));
+                return res.end(JSON.stringify({ 
+                    success: true, 
+                    token: sessionToken, 
+                    message: 'Session authenticated for 30 days' 
+                }));
             } else {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ success: false, error: 'Invalid access code' }));
@@ -524,10 +547,11 @@ const server = http.createServer(async (req, res) => {
             const cookies = parseCookies(req);
             const cookieSession = cookies['psc_session'] || '';
 
-            // Header auth strictly checks Master PSC_API_KEY only (Header cannot use session token)
+            // Header auth checks Master PSC_API_KEY
             isMasterAuth = !!(PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)));
-            // Cookie auth strictly checks valid Web Session only
-            isSessionAuth = isValidWebSession(cookieSession);
+            // Session auth checks Cookie or Bearer/Header token
+            const headerSession = (req.headers['x-psc-session'] || '').trim();
+            isSessionAuth = isValidWebSession(cookieSession) || isValidWebSession(bearerToken) || isValidWebSession(headerSession);
 
             const isAuthorized = PSC_API_KEY && (isMasterAuth || isSessionAuth);
             if (!isAuthorized) {
