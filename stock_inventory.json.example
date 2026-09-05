@@ -1,6 +1,6 @@
 {
   "AsOfDate": "05/09/69",
-  "LastUpdated": "2026-09-05T19:58:27.543Z",
+  "LastUpdated": "2026-09-05T20:00:46.896Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
@@ -97,5 +97,35 @@
   ],
   "ProcessedEvents": [
     "telegram:1532466397:1319:Cabbage_Yield_AFT"
+  ],
+  "RecentAudits": [
+    {
+      "AsOfDate": "05/09/69",
+      "Label": "ตรวจนับจริง 05/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-05T19:58:27.000Z",
+      "Items": {
+        "Cabbage": 8800,
+        "Onion_AFT": 25480,
+        "Onion_Chinese": 7010,
+        "Carrot": 4090,
+        "Purple_Sweet_Potato": 1690,
+        "Yellow_Sweet_Potato": 342,
+        "Orange_Sweet_Potato": 390
+      }
+    },
+    {
+      "AsOfDate": "02/09/69",
+      "Label": "ตรวจนับจริง 02/09/69 (รอบก่อนหน้า)",
+      "Timestamp": "2026-09-02T10:00:00.000Z",
+      "Items": {
+        "Cabbage": 2575,
+        "Onion_AFT": 26120,
+        "Onion_Chinese": 3560,
+        "Carrot": 5840,
+        "Purple_Sweet_Potato": 1690,
+        "Yellow_Sweet_Potato": 342,
+        "Orange_Sweet_Potato": 390
+      }
+    }
   ]
 }

@@ -446,6 +446,50 @@ if (cat === 'all') {
               document.getElementById('stock_card_title').textContent = '📦 สต็อกตรวจนับจริงล่าสุด (' + asOf + ') & คาดการณ์';
             }
           }
+
+          // Dynamic 2 Recent Audits Comparison
+          if (data.RecentAudits && data.RecentAudits.length >= 2) {
+            const cur = data.RecentAudits[0];
+            const prev = data.RecentAudits[1];
+            if (document.getElementById('audit_compare_label')) {
+              document.getElementById('audit_compare_label').textContent = cur.AsOfDate + ' เทียบกับ ' + prev.AsOfDate;
+            }
+            const tbody = document.getElementById('stock_compare_tbody');
+            if (tbody) {
+              const skuMeta = [
+                { key: 'Cabbage', name: '🥬 กะหล่ำปลี' },
+                { key: 'Onion_AFT', name: '🧅 หอม AFT' },
+                { key: 'Onion_Chinese', name: '🧅 หอมจีน' },
+                { key: 'Carrot', name: '🥕 แครอทสวย' },
+                { key: 'Purple_Sweet_Potato', name: '🍠 มันม่วงหัวเล็ก' },
+                { key: 'Yellow_Sweet_Potato', name: '🥔 มันเหลืองไข่' },
+                { key: 'Orange_Sweet_Potato', name: '🥔 มันส้ม' }
+              ];
+              let rowsHtml = '';
+              skuMeta.forEach((sku, idx) => {
+                const cVal = cur.Items[sku.key] || 0;
+                const pVal = prev.Items[sku.key] || 0;
+                const diff = cVal - pVal;
+                let diffStr = '0 กก.';
+                let diffColor = '#94a3b8';
+                if (diff > 0) {
+                  diffStr = '+' + diff.toLocaleString() + ' กก.';
+                  diffColor = '#10b981';
+                } else if (diff < 0) {
+                  diffStr = diff.toLocaleString() + ' กก.';
+                  diffColor = '#f59e0b';
+                }
+                const bBorder = idx < skuMeta.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.04);' : '';
+                rowsHtml += `<tr style="${bBorder}">
+                  <td style="padding:6px 8px;">${sku.name}</td>
+                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">${pVal.toLocaleString()} กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">${cVal.toLocaleString()} กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:${diffColor};">${diffStr}</td>
+                </tr>`;
+              });
+              tbody.innerHTML = rowsHtml;
+            }
+          }
         })
         .catch(e => {});
     }
