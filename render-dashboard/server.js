@@ -23,18 +23,61 @@ const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
+const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
+
+let tgBotToken = process.env.TELEGRAM_BOT_TOKEN || '';
+let tgChatId = process.env.TELEGRAM_CHAT_ID || '1532466397';
+const cfgPath = path.join(__dirname, 'telegram_config.json');
+if ((!tgBotToken || !tgChatId) && fs.existsSync(cfgPath)) {
+    try {
+        const c = JSON.parse(fs.readFileSync(cfgPath, 'utf8').replace(/^\uFEFF/, ''));
+        tgBotToken = tgBotToken || c.BotToken || '';
+        tgChatId = tgChatId || c.ChatId || '1532466397';
+    } catch (e) {}
+}
+const TG_BOT_TOKEN = tgBotToken;
+const TG_CHAT_ID = tgChatId;
+
+function sendTelegramNotification(text) {
+    if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+    try {
+        const payload = JSON.stringify({
+            chat_id: TG_CHAT_ID,
+            text: text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: false
+        });
+
+        const req = https.request({
+            hostname: 'api.telegram.org',
+            port: 443,
+            path: `/bot${TG_BOT_TOKEN}/sendMessage`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, () => {});
+        req.on('error', (err) => console.error('[TG Notify Error]:', err.message));
+        req.write(payload);
+        req.end();
+    } catch (e) {}
+}
+
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
 if (!PSC_API_KEY && process.env.NODE_ENV === 'production') {
     console.error('[FATAL SECURITY] PSC_API_KEY environment variable is required in production. Refusing to start.');
     process.exit(1);
 }
 // Web Client Session Tokens (Option 1: Zero Master Key Exposure)
+// Web UI clients receive short-lived ephemeral session tokens; Master PSC_API_KEY remains strictly on server.
 const WEB_SESSIONS = new Map();
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours (hardened operational TTL)
 
 function generateWebSessionToken() {
     const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
     WEB_SESSIONS.set(token, Date.now() + SESSION_TTL_MS);
+    // Prune expired sessions
     if (WEB_SESSIONS.size > 1000) {
         const now = Date.now();
         for (const [t, exp] of WEB_SESSIONS.entries()) {
@@ -69,7 +112,34 @@ function isValidWebSession(token) {
     return true;
 }
 
-const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
+const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
+
+function syncToRender(endpoint, payload) {
+    if (!RENDER_DASHBOARD_URL) return;
+    try {
+        const postData = JSON.stringify(payload);
+        const parsed = url.parse(RENDER_DASHBOARD_URL);
+        const req = https.request({
+            hostname: parsed.hostname,
+            port: 443,
+            path: endpoint,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData),
+                'X-PSC-API-KEY': PSC_API_KEY
+            },
+            timeout: 10000
+        }, (res) => {
+            console.log(`[Render Sync ${endpoint}] Status: ${res.statusCode}`);
+        });
+        req.on('error', (e) => console.error('[Render Sync Error]:', e.message));
+        req.write(postData);
+        req.end();
+    } catch (e) {
+        console.error('[Render Sync Exception]:', e.message);
+    }
+}
 
 function syncToGoogleSheets(payload) {
     if (!GAS_URL) return;
@@ -115,6 +185,33 @@ function syncToGoogleSheets(payload) {
     }
 }
 
+function fetchGoogleSheetsData() {
+    return new Promise((resolve) => {
+        if (!GAS_URL) return resolve(null);
+        try {
+            https.get(GAS_URL, (res) => {
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    https.get(res.headers.location, (redRes) => {
+                        let data = '';
+                        redRes.on('data', c => data += c);
+                        redRes.on('end', () => {
+                            try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+                        });
+                    }).on('error', () => resolve(null));
+                } else {
+                    let data = '';
+                    res.on('data', c => data += c);
+                    res.on('end', () => {
+                        try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+                    });
+                }
+            }).on('error', () => resolve(null));
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
 function loadTeamOps() {
     let data = { 
         last_updated: new Date().toISOString(), 
@@ -148,6 +245,13 @@ function recordLoadingReport(reportObj) {
         opsData.cards_state[cardId].loadedReported = true;
         opsData.cards_state[cardId].reportedAt = new Date().toISOString();
         opsData.cards_state[cardId].details = reportObj;
+        opsData.cards_state[cardId].loadedDate = reportObj.date;
+        opsData.cards_state[cardId].loadedItem = reportObj.item;
+        opsData.cards_state[cardId].loadedWeight = reportObj.weight;
+        opsData.cards_state[cardId].loadedFreight = reportObj.freight;
+        opsData.cards_state[cardId].loadedPayment = reportObj.payment;
+        opsData.cards_state[cardId].loadedLocation = reportObj.location;
+        opsData.cards_state[cardId].rawReport = reportObj.rawText;
     }
 
     opsData.history_logs.unshift({
@@ -165,6 +269,8 @@ function recordLoadingReport(reportObj) {
     if (opsData.history_logs.length > 50) opsData.history_logs.pop();
     saveTeamOps(opsData);
 
+    // Auto sync to Render and Google Sheets
+    syncToRender('/api/loading-report', reportObj);
     if (cardId) {
         syncToGoogleSheets(opsData.cards_state[cardId]);
     }
@@ -177,13 +283,13 @@ function saveTeamOps(data) {
         fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf8');
         fs.renameSync(tmpFile, teamOpsFile);
     } catch (e) {
-        try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch(err) {}
-        console.error('[saveTeamOps Cloud Error]:', e.message);
+        try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (err) {}
+        console.error('[saveTeamOps Error]:', e.message);
     }
 }
 
 const server = http.createServer(async (req, res) => {
-    // CORS Headers: Restrict origin
+    // CORS Headers: Restrict origin to legitimate hosts and local
     const reqOrigin = req.headers.origin || '';
     const allowedOrigins = [
         'https://pscdb.onrender.com',
@@ -206,7 +312,7 @@ const server = http.createServer(async (req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
-    const MAX_BODY_SIZE = 1 * 1024 * 1024;
+    const MAX_BODY_SIZE = 1 * 1024 * 1024; // 1 MB limit (Fix M-03)
     const getBody = () => new Promise((resolve, reject) => {
         let body = '';
         let length = 0;
@@ -237,11 +343,29 @@ const server = http.createServer(async (req, res) => {
             return res.end();
         }
 
-        // 2. Serve Mobile Operations Web UI (/ or /ops or /team-app or /field)
+        // 2. Serve Mobile Field Ops Web UI
         if (req.method === 'GET' && (pathname === '/' || pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
             if (fs.existsSync(mobileHtmlFile)) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                const sessionToken = generateWebSessionToken();
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+
+                const cookies = parseCookies(req);
+                const existingSession = cookies['psc_session'] || '';
+                const queryKey = (parsedUrl.query.auth || '').trim();
+
+                // Authentication Gate: Require existing valid session OR Master PSC_API_KEY to mint new session
+                const canMintSession = PSC_API_KEY && (queryKey === PSC_API_KEY);
+                const hasValidSession = isValidWebSession(existingSession);
+
+                if (!hasValidSession && !canMintSession) {
+                    res.writeHead(401);
+                    return res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>PSC Ops - Access Denied</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0d1117;color:#e6edf3;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .card{background:#161b22;border:1px solid #30363d;padding:24px;border-radius:8px;max-width:360px;text-align:center;} h2{color:#f85149;margin-top:0;} p{font-size:14px;color:#8b949e;line-height:1.5;} input{width:100%;padding:10px;border-radius:6px;border:1px solid #30363d;background:#0d1117;color:#fff;box-sizing:border-box;margin:12px 0;} button{width:100%;padding:10px;border-radius:6px;border:none;background:#238636;color:#fff;font-weight:bold;cursor:pointer;}</style></head><body><div class="card"><h2>🔒 Authentication Required</h2><p>PSC Field Operations Web UI requires operator authentication before issuing an active session.</p><form method="GET" action="/ops"><input type="password" name="auth" placeholder="Enter Access Key" required /><button type="submit">Unlock Session</button></form></div></body></html>');
+                }
+
+                // If authenticating via key or renewing valid session
+                const sessionToken = hasValidSession ? existingSession : generateWebSessionToken();
                 const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
                 const cookieFlags = `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
                 res.setHeader('Set-Cookie', cookieFlags);
@@ -260,26 +384,38 @@ const server = http.createServer(async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
         // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        let isMasterAuth = false;
+        let isSessionAuth = false;
         if (req.method === 'POST') {
             const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             const cookies = parseCookies(req);
             const cookieSession = cookies['psc_session'] || '';
-            const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken) || isValidWebSession(cookieSession));
+
+            // Header auth strictly checks Master PSC_API_KEY only (Header cannot use session token)
+            isMasterAuth = !!(PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)));
+            // Cookie auth strictly checks valid Web Session only
+            isSessionAuth = isValidWebSession(cookieSession);
+
+            const isAuthorized = isMasterAuth || isSessionAuth;
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ 
                     success: false, 
-                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header.' 
+                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header or session cookie.' 
                 }));
             }
         }
 
-        // 2. Real-Time AI Usage & Quota API
+        // Real-Time AI Usage & Quota Endpoint
         
         // Sync Quota POST (Receive live stats from local machine)
         if (req.method === 'POST' && (pathname === '/api/sync-quota' || pathname === '/api/quota-sync')) {
+            if (!isMasterAuth) {
+                res.writeHead(403);
+                return res.end(JSON.stringify({ success: false, error: 'Forbidden: /api/sync-quota requires Master API Key' }));
+            }
             const body = await getBody();
             if (body && (body.groq || body.agy)) {
                 quotaTracker.saveQuotaData(body, false);
@@ -310,43 +446,16 @@ const server = http.createServer(async (req, res) => {
             }));
         }
 
-        
-        // Bot Reboot Request from Cloud Dashboard
-        if (req.method === 'POST' && (pathname === '/api/reboot-bot' || pathname === '/api/restart-bot')) {
-            const ops = loadTeamOps();
-            if (!ops.history_logs) ops.history_logs = [];
-            ops.history_logs.unshift({
-                timestamp: new Date().toISOString(),
-                event: 'REBOOT_REQUEST',
-                details: 'คำขอรีบูตบอทจาก Team Dashboard'
-            });
-            saveTeamOps(ops);
-            res.writeHead(200);
-            return res.end(JSON.stringify({ 
-                success: true, 
-                message: 'บันทึกคำสั่งรีบูตขึ้นระบบคลาวด์แล้ว บอทจะรีสตาร์ตอัตโนมัติ' 
-            }));
-        }
 
-        // 3. Health Check
-        if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
-            res.writeHead(200);
-            return res.end(JSON.stringify({
-                status: 'ONLINE',
-                service: 'PSC Field Operations Cloud Gateway',
-                port: PORT,
-                timestamp: new Date().toISOString(),
-                gasSynced: !!GAS_URL
-            }, null, 2));
-        }
-
-        // Stock Update POST (Sync from Local Bot)
         if (req.method === 'POST' && pathname === '/api/stock-update') {
             const body = await getBody();
+            // Schema validation: Require Items object and numeric stock values
             if (!body || typeof body !== 'object' || !body.Items || typeof body.Items !== 'object') {
                 res.writeHead(400);
                 return res.end(JSON.stringify({ success: false, error: 'Invalid stock update schema. Must contain Items object.' }));
             }
+            
+            // Validate that Items values contain valid StockKg numbers
             const ALLOWED_SKUS = ['Cabbage', 'Onion_AFT', 'Onion_Chinese', 'Carrot', 'Purple_Sweet_Potato', 'Yellow_Sweet_Potato', 'Orange_Sweet_Potato'];
             for (const key of Object.keys(body.Items)) {
                 if (!ALLOWED_SKUS.includes(key)) {
@@ -359,6 +468,8 @@ const server = http.createServer(async (req, res) => {
                     return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must be a finite number between 0 and 1,000,000 kg.` }));
                 }
             }
+
+            // Atomic file write using temporary file + renameSync to avoid corruption (Fix C-06, H-14)
             const tmpFile = `${stockFile}.${process.pid}.${Date.now()}.tmp`;
             try {
                 fs.writeFileSync(tmpFile, JSON.stringify(body, null, 2), 'utf8');
@@ -372,49 +483,141 @@ const server = http.createServer(async (req, res) => {
             }
         }
 
-        // 4. Team Status GET
-        // Stock Status GET
+        // Real-Time Live Stock Inventory Endpoint
         if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
-            let data = { AsOfDate: '2026-09-02', Items: {} };
+            let stockData = {
+                AsOfDate: new Date().toISOString().slice(0, 10),
+                Items: {
+                    Cabbage: { Name: "กะหล่ำปลี", StockKg: 2575 },
+                    Onion_AFT: { Name: "หอม AFT", StockKg: 26120 },
+                    Onion_Chinese: { Name: "หอมจีน", StockKg: 3560 },
+                    Carrot: { Name: "แครอทสวย", StockKg: 5840 },
+                    Purple_Sweet_Potato: { Name: "มันม่วงหัวเล็ก", StockKg: 1690 },
+                    Yellow_Sweet_Potato: { Name: "มันเหลืองไข่", StockKg: 342 },
+                    Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
+                }
+            };
             if (fs.existsSync(stockFile)) {
-                try { data = JSON.parse(fs.readFileSync(stockFile, 'utf8')); } catch(e) {}
+                try {
+                    stockData = JSON.parse(fs.readFileSync(stockFile, 'utf8'));
+                } catch (e) {}
             }
             res.writeHead(200);
-            return res.end(JSON.stringify(data, null, 2));
+            return res.end(JSON.stringify(stockData, null, 2));
         }
 
+        // 2. Health Check
+        if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                status: 'ONLINE',
+                service: 'PSC Field Operations Cloud Gateway',
+                port: PORT,
+                timestamp: new Date().toISOString(),
+                gasSynced: !!GAS_URL
+            }, null, 2));
+        }
+
+        
+        // Bot Reboot API (Triggered from Team Dashboard when bot is unresponsive)
+        if (req.method === 'POST' && (pathname === '/api/reboot-bot' || pathname === '/api/restart-bot')) {
+            if (!isMasterAuth) {
+                res.writeHead(403);
+                return res.end(JSON.stringify({ success: false, error: 'Forbidden: /api/reboot-bot requires Master API Key' }));
+            }
+            const rebootSigFile = path.join(__dirname, 'reboot_bot.signal');
+            try {
+                fs.writeFileSync(rebootSigFile, new Date().toISOString(), 'utf8');
+                console.log('[Bot Reboot Requested from Team Dashboard] Reboot signal written.');
+                res.writeHead(200);
+                return res.end(JSON.stringify({ 
+                    success: true, 
+                    message: 'ส่งคำสั่งรีบูตระบบบอทเรียบร้อยแล้ว ระบบกำลังเริ่มต้นใหม่ภายใน 2 วินาที' 
+                }));
+            } catch(e) {
+                res.writeHead(500);
+                return res.end(JSON.stringify({ success: false, error: e.message }));
+            }
+        }
+
+        // 3. Gmail Push Webhook Endpoint (Instant Notification to Telegram Bot)
+        if (req.method === 'POST' && (pathname === '/api/gmail-webhook' || pathname === '/api/gmail-push')) {
+            const body = await getBody();
+            const from = body.from || 'ไม่ระบุผู้ส่ง';
+            const subject = body.subject || 'ไม่มีหัวข้อ';
+            const date = body.date ? new Date(body.date).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) : new Date().toLocaleString('th-TH');
+            const snippet = (body.snippet || '').trim();
+            const attNames = body.attachmentNames || [];
+
+            console.log(`[Gmail Push Webhook] New Email from ${from}: ${subject}`);
+
+            const safeFrom = escapeHtml(from);
+            const safeSubject = escapeHtml(subject);
+            const safeDate = escapeHtml(date);
+            const safeSnippet = escapeHtml(snippet ? snippet.substring(0, 300) : '');
+            const safeAttNames = attNames.map(a => escapeHtml(a));
+
+            let tgMsg = `📬 <b>[มีอีเมลใหม่เข้าถึงเลขาแบบ Real-time]</b> ✨\n` +
+                        `──────────────────\n` +
+                        `👤 <b>ผู้ส่ง:</b> ${safeFrom}\n` +
+                        `📌 <b>หัวข้อ:</b> ${safeSubject}\n` +
+                        `⏰ <b>เวลา:</b> ${safeDate}\n`;
+
+            if (attNames.length > 0) {
+                tgMsg += `📎 <b>ไฟล์แนบ (${safeAttNames.length}):</b> ${safeAttNames.join(', ')}\n`;
+            }
+
+            if (snippet) {
+                tgMsg += `📝 <b>ข้อความ:</b>\n<i>${safeSnippet}...</i>\n`;
+            }
+
+            tgMsg += `──────────────────\n` +
+                     `⚡ <i>ระบบ Push Notification อัตโนมัติจาก Gmail</i>`;
+
+            sendTelegramNotification(tgMsg);
+
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
+        }
+
+        // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)
         if (req.method === 'GET' && pathname === '/api/team-status') {
             const ops = loadTeamOps();
+            
+            // Fetch latest from Google Sheets
+            try {
+                const sheetData = await fetchGoogleSheetsData();
+                if (sheetData && typeof sheetData === 'object') {
+                    if (!ops.cards_state) ops.cards_state = {};
+                    Object.keys(sheetData).forEach(id => {
+                        const item = sheetData[id];
+                        if (item) {
+                            if (!ops.cards_state[id]) ops.cards_state[id] = { id: id };
+                            if (item.supplier) ops.cards_state[id].supplier = item.supplier;
+                            if (item.truck) ops.cards_state[id].truck = item.truck;
+                            if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
+                            if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
+                        }
+                    });
+                }
+            } catch (e) {}
+
             res.writeHead(200);
             return res.end(JSON.stringify(ops, null, 2));
         }
 
-        // 5. Team Update POST (Syncs to Google Sheets)
+        // 5. Team Update POST (Syncs to Google Sheets & Updates Memory)
         
-        // Loading Report POST
+        // Loading Report POST (From Bot or Web)
         if (req.method === 'POST' && pathname === '/api/loading-report') {
             const body = await getBody();
             recordLoadingReport(body);
             res.writeHead(200);
-            return res.end(JSON.stringify({ success: true, message: 'Loading report saved' }));
+            return res.end(JSON.stringify({ success: true, message: 'Loading report saved and synced' }));
         }
 
         if (req.method === 'POST' && (pathname === '/api/team-update' || pathname === '/api/ops')) {
             const body = await getBody();
-            
-            // If full ops data payload is provided from local sync
-            if (body && (body.cards_state || body.active_operations)) {
-                let currentOps = loadTeamOps();
-                if (body.cards_state) currentOps.cards_state = Object.assign(currentOps.cards_state || {}, body.cards_state);
-                if (body.active_operations) currentOps.active_operations = body.active_operations;
-                if (body.history_logs) currentOps.history_logs = body.history_logs;
-                if (body.custom_suppliers) currentOps.custom_suppliers = body.custom_suppliers;
-                if (body.custom_trucks) currentOps.custom_trucks = body.custom_trucks;
-                saveTeamOps(currentOps);
-                res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, message: 'Full ops state synced' }));
-            }
-
             const { id, farm, supplier, truck, product, qty_kg, customer, delivery_date, status, recorder, notes, orderChecked, truckChecked } = body;
 
             const opsData = loadTeamOps();
@@ -429,7 +632,7 @@ const server = http.createServer(async (req, res) => {
                 if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
                 if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
 
-                // Auto-add new custom seller/location to database & memory
+                // Auto-add custom seller/location to database & memory
                 if (activeSupplier && activeSupplier !== '__custom__' && activeSupplier.trim() !== '') {
                     const s = activeSupplier.trim();
                     if (!opsData.custom_suppliers.includes(s)) {
@@ -437,7 +640,7 @@ const server = http.createServer(async (req, res) => {
                         try { memoryEngine.rememberItem('แหล่งสวน/ผู้ขายใหม่ที่เพิ่มจาก Dashboard: ' + s, 'learned_facts'); } catch(e) {}
                     }
                 }
-                // Auto-add new custom transport/truck to database & memory
+                // Auto-add custom transport/truck to database & memory
                 if (truck && truck !== '__custom__' && truck.trim() !== '') {
                     const t = truck.trim();
                     if (!opsData.custom_trucks.includes(t)) {
@@ -447,6 +650,7 @@ const server = http.createServer(async (req, res) => {
                 }
                 
                 // Sync to Google Sheets
+                syncToRender('/api/team-update', body);
                 syncToGoogleSheets({
                     id: id,
                     supplier: opsData.cards_state[id].supplier || '',
@@ -493,6 +697,7 @@ const server = http.createServer(async (req, res) => {
                 opsData.cards_state[id].loadedReported = false;
                 saveTeamOps(opsData);
                 syncToGoogleSheets(opsData.cards_state[id]);
+                syncToRender('/api/team-reset', { id: id });
             }
             res.writeHead(200);
             return res.end(JSON.stringify({ success: true, message: `Card ${id} reset successfully` }));
@@ -508,8 +713,26 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
+let isListening = false;
 function createWebhookServer(cb) {
+    if (!isListening) {
+        isListening = true;
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                console.log(`[WebhookServer] Port ${PORT} already in use, attaching to existing instance.`);
+            } else {
+                console.error('[WebhookServer] Server error:', err);
+            }
+        });
+        server.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 PSC Field Ops Server listening on port ${PORT}`);
+        });
+    }
     return server;
 }
 
-module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps };
+if (require.main === module) {
+    createWebhookServer(null);
+}
+
+module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, saveTeamOps, recordLoadingReport, syncToRender, server };

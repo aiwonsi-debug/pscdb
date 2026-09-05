@@ -350,7 +350,22 @@ const server = http.createServer(async (req, res) => {
                 res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
                 res.setHeader('Pragma', 'no-cache');
                 res.setHeader('Expires', '0');
-                const sessionToken = generateWebSessionToken();
+
+                const cookies = parseCookies(req);
+                const existingSession = cookies['psc_session'] || '';
+                const queryKey = (parsedUrl.query.auth || '').trim();
+
+                // Authentication Gate: Require existing valid session OR Master PSC_API_KEY to mint new session
+                const canMintSession = PSC_API_KEY && (queryKey === PSC_API_KEY);
+                const hasValidSession = isValidWebSession(existingSession);
+
+                if (!hasValidSession && !canMintSession) {
+                    res.writeHead(401);
+                    return res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>PSC Ops - Access Denied</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0d1117;color:#e6edf3;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .card{background:#161b22;border:1px solid #30363d;padding:24px;border-radius:8px;max-width:360px;text-align:center;} h2{color:#f85149;margin-top:0;} p{font-size:14px;color:#8b949e;line-height:1.5;} input{width:100%;padding:10px;border-radius:6px;border:1px solid #30363d;background:#0d1117;color:#fff;box-sizing:border-box;margin:12px 0;} button{width:100%;padding:10px;border-radius:6px;border:none;background:#238636;color:#fff;font-weight:bold;cursor:pointer;}</style></head><body><div class="card"><h2>🔒 Authentication Required</h2><p>PSC Field Operations Web UI requires operator authentication before issuing an active session.</p><form method="GET" action="/ops"><input type="password" name="auth" placeholder="Enter Access Key" required /><button type="submit">Unlock Session</button></form></div></body></html>');
+                }
+
+                // If authenticating via key or renewing valid session
+                const sessionToken = hasValidSession ? existingSession : generateWebSessionToken();
                 const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
                 const cookieFlags = `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
                 res.setHeader('Set-Cookie', cookieFlags);
@@ -369,18 +384,26 @@ const server = http.createServer(async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
         // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        let isMasterAuth = false;
+        let isSessionAuth = false;
         if (req.method === 'POST') {
             const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             const cookies = parseCookies(req);
             const cookieSession = cookies['psc_session'] || '';
-            const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken) || isValidWebSession(cookieSession));
+
+            // Header auth strictly checks Master PSC_API_KEY only (Header cannot use session token)
+            isMasterAuth = !!(PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)));
+            // Cookie auth strictly checks valid Web Session only
+            isSessionAuth = isValidWebSession(cookieSession);
+
+            const isAuthorized = isMasterAuth || isSessionAuth;
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ 
                     success: false, 
-                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header.' 
+                    error: 'Unauthorized: Missing or invalid API key. Provide valid X-PSC-API-KEY header or session cookie.' 
                 }));
             }
         }
@@ -389,6 +412,10 @@ const server = http.createServer(async (req, res) => {
         
         // Sync Quota POST (Receive live stats from local machine)
         if (req.method === 'POST' && (pathname === '/api/sync-quota' || pathname === '/api/quota-sync')) {
+            if (!isMasterAuth) {
+                res.writeHead(403);
+                return res.end(JSON.stringify({ success: false, error: 'Forbidden: /api/sync-quota requires Master API Key' }));
+            }
             const body = await getBody();
             if (body && (body.groq || body.agy)) {
                 quotaTracker.saveQuotaData(body, false);
@@ -494,6 +521,10 @@ const server = http.createServer(async (req, res) => {
         
         // Bot Reboot API (Triggered from Team Dashboard when bot is unresponsive)
         if (req.method === 'POST' && (pathname === '/api/reboot-bot' || pathname === '/api/restart-bot')) {
+            if (!isMasterAuth) {
+                res.writeHead(403);
+                return res.end(JSON.stringify({ success: false, error: 'Forbidden: /api/reboot-bot requires Master API Key' }));
+            }
             const rebootSigFile = path.join(__dirname, 'reboot_bot.signal');
             try {
                 fs.writeFileSync(rebootSigFile, new Date().toISOString(), 'utf8');

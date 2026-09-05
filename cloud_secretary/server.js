@@ -98,7 +98,9 @@ const server = http.createServer((req, res) => {
     const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
     const cookies = parseCookies(req);
     const cookieSession = cookies['psc_session'] || '';
-    const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken) || isValidWebSession(cookieSession));
+    const isMasterAuth = !!(PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)));
+            const isSessionAuth = isValidWebSession(cookieSession);
+            const isAuthorized = isMasterAuth || isSessionAuth;
     if (!isAuthorized && urlPath !== '/api/line-webhook') {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Unauthorized: Missing or invalid API key' }));
@@ -222,29 +224,31 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Serve Mobile Ops Web App (/ops, /field, /team-app)
-  if (urlPath === '/ops' || urlPath === '/field' || urlPath === '/team-app') {
-    const target = fs.existsSync(OPS_HTML_FILE) ? OPS_HTML_FILE : TEAM_HTML_FILE;
+  // Serve Mobile Ops Web App & Dashboard
+  if (urlPath === '/ops' || urlPath === '/field' || urlPath === '/team-app' || urlPath === '/' || urlPath === '/team' || urlPath === '/dashboard') {
+    const target = (urlPath === '/ops' || urlPath === '/field' || urlPath === '/team-app')
+      ? (fs.existsSync(OPS_HTML_FILE) ? OPS_HTML_FILE : TEAM_HTML_FILE)
+      : (fs.existsSync(TEAM_HTML_FILE) ? TEAM_HTML_FILE : OPS_HTML_FILE);
+
     if (fs.existsSync(target)) {
-      const sessionToken = generateWebSessionToken();
+      const cookies = parseCookies(req);
+      const existingSession = cookies['psc_session'] || '';
+      const parsedQuery = require('url').parse(req.url, true).query;
+      const queryKey = (parsedQuery.auth || '').trim();
+
+      const canMintSession = PSC_API_KEY && (queryKey === PSC_API_KEY);
+      const hasValidSession = isValidWebSession(existingSession);
+
+      if (!hasValidSession && !canMintSession) {
+        res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>PSC Ops - Access Denied</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0d1117;color:#e6edf3;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .card{background:#161b22;border:1px solid #30363d;padding:24px;border-radius:8px;max-width:360px;text-align:center;} h2{color:#f85149;margin-top:0;} p{font-size:14px;color:#8b949e;line-height:1.5;} input{width:100%;padding:10px;border-radius:6px;border:1px solid #30363d;background:#0d1117;color:#fff;box-sizing:border-box;margin:12px 0;} button{width:100%;padding:10px;border-radius:6px;border:none;background:#238636;color:#fff;font-weight:bold;cursor:pointer;}</style></head><body><div class="card"><h2>🔒 Authentication Required</h2><p>PSC Operations Web UI requires operator authentication before issuing an active session.</p><form method="GET" action="' + urlPath + '"><input type="password" name="auth" placeholder="Enter Access Key" required /><button type="submit">Unlock Session</button></form></div></body></html>');
+      }
+
+      const sessionToken = hasValidSession ? existingSession : generateWebSessionToken();
       const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
-      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`);
+      res.setHeader('Set-Cookie', 'psc_session=' + sessionToken + '; Path=/; HttpOnly; SameSite=Lax' + (isHttps ? '; Secure' : ''));
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       const html = fs.readFileSync(target, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, '');
-      res.end(html);
-      return;
-    }
-  }
-
-  // Serve Dashboard HTML (/, /team, /dashboard)
-  if (urlPath === '/' || urlPath === '/team' || urlPath === '/dashboard') {
-    const htmlPath = fs.existsSync(TEAM_HTML_FILE) ? TEAM_HTML_FILE : OPS_HTML_FILE;
-    if (fs.existsSync(htmlPath)) {
-      const sessionToken = generateWebSessionToken();
-      const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
-      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`);
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      const html = fs.readFileSync(htmlPath, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, '');
       res.end(html);
       return;
     }

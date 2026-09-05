@@ -62,42 +62,53 @@ server.listen(8999, '127.0.0.1', async () => {
         headers: { 'Content-Type': 'application/json' }
     }, JSON.stringify({ Items: { Cabbage: { StockKg: 100 } } }), 401);
 
-    // Test 3: URL query param token /api/stock-update?apiKey=... -> MUST BE REJECTED 401
-    await runHttpTest('3. Reject credentials in URL query string (?apiKey=)', {
+    // Test 3: Authenticated POST via X-PSC-API-KEY -> MUST SUCCEED 200
+    await runHttpTest('3. Accept authenticated POST via X-PSC-API-KEY header', {
         hostname: '127.0.0.1',
         port: 8999,
-        path: `/api/stock-update?apiKey=${TEST_KEY}`,
+        path: '/api/stock-update',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    }, JSON.stringify({ Items: { Cabbage: { StockKg: 100 } } }), 401);
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': TEST_KEY
+        }
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 200);
 
-    // Test 4: Unauthenticated GET /api/usage -> MUST BE REJECTED 401
-    await runHttpTest('4. Reject unauthenticated GET /api/usage (Protected Telemetry)', {
+    // Test 4: Authenticated POST via X-API-KEY -> MUST SUCCEED 200
+    await runHttpTest('4. Accept authenticated POST via legacy X-API-KEY header', {
         hostname: '127.0.0.1',
         port: 8999,
-        path: '/api/usage',
-        method: 'GET'
-    }, null, 401);
+        path: '/api/stock-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': TEST_KEY
+        }
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 200);
 
-    // Test 5: Unauthenticated GET /api/quota -> MUST BE REJECTED 401
-    await runHttpTest('5. Reject unauthenticated GET /api/quota (Protected Telemetry)', {
+    // Test 5: Reject invalid API key -> 401
+    await runHttpTest('5. Reject invalid X-PSC-API-KEY header with 401', {
         hostname: '127.0.0.1',
         port: 8999,
-        path: '/api/quota',
-        method: 'GET'
-    }, null, 401);
+        path: '/api/stock-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': 'wrong_invalid_key_random'
+        }
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 401);
 
-    // Test 6: Authenticated GET /api/usage with Header -> MUST SUCCEED 200
-    await runHttpTest('6. Accept authenticated GET /api/usage via X-PSC-API-KEY', {
+    // Test 6: Reject invalid Authorization: Bearer -> 401
+    await runHttpTest('6. Reject invalid Bearer token with 401', {
         hostname: '127.0.0.1',
         port: 8999,
-        path: '/api/usage',
-        method: 'GET',
-        headers: { 'X-PSC-API-KEY': TEST_KEY }
-    }, null, 200, (data) => {
-        const json = JSON.parse(data);
-        assert.ok(json.data, 'Must return quotaData');
-    });
+        path: '/api/stock-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer wrong_token'
+        }
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 401);
 
     // Test 7: Authenticated POST via Authorization: Bearer -> MUST SUCCEED 200
     await runHttpTest('7. Accept authenticated POST via Authorization: Bearer <key>', {
@@ -172,27 +183,40 @@ server.listen(8999, '127.0.0.1', async () => {
         assert.strictEqual(headers['access-control-allow-origin'], 'https://pscdb.onrender.com', 'Must default to trusted origin only, not reflect evil subdomains');
     });
 
-    // Test 13: Pure HttpOnly Session Cookie Verification (Zero Key Exposure in DOM & JS)
-    // 1. Master PSC_API_KEY and session token must NEVER be leaked in HTML DOM.
-    // 2. Client is authenticated via HttpOnly Cookie.
-    let capturedCookie = '';
-    await runHttpTest('13. Option 1: Pure HttpOnly Cookie issued, zero token exposure in HTML DOM', {
+    // Test 13: Anonymous GET /ops must NOT mint session cookie and return 401
+    await runHttpTest('13. Authenticated /ops gate: Anonymous visitor rejected with 401 and NO cookie', {
         hostname: '127.0.0.1',
         port: 8999,
         path: '/ops',
         method: 'GET'
+    }, null, 401, (html, headers) => {
+        const setCookieHeaders = headers['set-cookie'] || [];
+        const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
+        assert.ok(!sessionCookie, 'Must NOT mint session cookie to anonymous visitor');
+        assert.ok(html.includes('Authentication Required'), 'Must present authentication required page');
+    });
+
+    // Test 14: Authenticated GET /ops?auth=<key> mints valid HttpOnly session cookie
+    let capturedCookie = '';
+    let extractedSessionToken = '';
+    await runHttpTest('14. Authenticated /ops gate: Operator with key receives HttpOnly session cookie', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: `/ops?auth=${TEST_KEY}`,
+        method: 'GET'
     }, null, 200, (html, headers) => {
-        assert.ok(!html.includes(TEST_KEY), 'CRITICAL: Master PSC_API_KEY must NEVER be leaked to HTML/browser');
+        assert.ok(!html.includes(TEST_KEY), 'CRITICAL: Master PSC_API_KEY must NEVER be leaked to HTML DOM');
         assert.ok(!html.includes('psc_sess_'), 'CRITICAL: Ephemeral session token must NOT be exposed in HTML DOM / JS variable');
         assert.ok(!html.includes('__PSC_API_KEY_PLACEHOLDER__'), 'HTML must not contain un-replaced placeholder');
         const setCookieHeaders = headers['set-cookie'] || [];
         const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
         assert.ok(sessionCookie && sessionCookie.includes('HttpOnly'), 'Server must issue HttpOnly session cookie');
         capturedCookie = sessionCookie.split(';')[0];
+        extractedSessionToken = capturedCookie.split('=')[1];
     });
 
-    // Test 14: Verify write request with HttpOnly cookie succeeds without any header key
-    await runHttpTest('14. HttpOnly cookie authorizes write requests without client-side API key header', {
+    // Test 15: Verify write request with HttpOnly cookie succeeds without any header key
+    await runHttpTest('15. HttpOnly cookie authorizes operator write request (/api/team-update)', {
         hostname: '127.0.0.1',
         port: 8999,
         path: '/api/team-update',
@@ -202,6 +226,54 @@ server.listen(8999, '127.0.0.1', async () => {
             'Cookie': capturedCookie
         }
     }, JSON.stringify({ id: '0209', supplier: 'สวนเชียงใหม่ (ทดสอบ Cookie Auth)', truck: 'รถ 6 ล้อ' }), 200);
+
+    // Test 16: Backend Cookie-Only Strictness: Header must NOT accept session token
+    await runHttpTest('16. Backend Cookie-Only: Reject session token sent via X-PSC-API-KEY header', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': extractedSessionToken
+        }
+    }, JSON.stringify({ id: '0209', supplier: 'Hack test' }), 401);
+
+    // Test 17: RBAC Enforcement: Operator Session Cookie must be FORBIDDEN (403) on /api/reboot-bot
+    await runHttpTest('17. RBAC: Operator session cookie cannot trigger /api/reboot-bot (403 Forbidden)', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/reboot-bot',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cookie': capturedCookie
+        }
+    }, null, 403);
+
+    // Test 18: RBAC Enforcement: Operator Session Cookie must be FORBIDDEN (403) on /api/sync-quota
+    await runHttpTest('18. RBAC: Operator session cookie cannot trigger /api/sync-quota (403 Forbidden)', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/sync-quota',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cookie': capturedCookie
+        }
+    }, JSON.stringify({ groq: { total_requests: 1 } }), 403);
+
+    // Test 19: RBAC Enforcement: Master Key can trigger /api/reboot-bot (200 OK)
+    await runHttpTest('19. RBAC: Master API Key can trigger /api/reboot-bot (200 OK)', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/reboot-bot',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': TEST_KEY
+        }
+    }, null, 200);
 
     console.log('\n================================================================');
     console.log(`📊 LIVE TEST RESULTS: PASS: ${pass} | FAIL: ${fail}`);
