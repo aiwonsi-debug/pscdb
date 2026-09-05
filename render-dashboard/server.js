@@ -185,7 +185,9 @@ const server = http.createServer(async (req, res) => {
             if (fs.existsSync(mobileHtmlFile)) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.writeHead(200);
-                return res.end(fs.readFileSync(mobileHtmlFile, 'utf8'));
+                let htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8');
+                htmlContent = htmlContent.replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+                return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.writeHead(200);
@@ -280,11 +282,16 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(400);
                 return res.end(JSON.stringify({ success: false, error: 'Invalid stock update schema. Must contain Items object.' }));
             }
+            const ALLOWED_SKUS = ['Cabbage', 'Onion_AFT', 'Onion_Chinese', 'Carrot', 'Purple_Sweet_Potato', 'Yellow_Sweet_Potato', 'Orange_Sweet_Potato'];
             for (const key of Object.keys(body.Items)) {
-                const itm = body.Items[key];
-                if (!itm || typeof itm !== 'object' || typeof itm.StockKg !== 'number' || isNaN(itm.StockKg)) {
+                if (!ALLOWED_SKUS.includes(key)) {
                     res.writeHead(400);
-                    return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must contain numeric StockKg.` }));
+                    return res.end(JSON.stringify({ success: false, error: `Invalid stock SKU: '${key}'. Allowed SKUs: ${ALLOWED_SKUS.join(', ')}` }));
+                }
+                const itm = body.Items[key];
+                if (!itm || typeof itm !== 'object' || typeof itm.StockKg !== 'number' || isNaN(itm.StockKg) || !Number.isFinite(itm.StockKg) || itm.StockKg < 0 || itm.StockKg > 1000000) {
+                    res.writeHead(400);
+                    return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must be a finite number between 0 and 1,000,000 kg.` }));
                 }
             }
             const tmpFile = `${stockFile}.${process.pid}.${Date.now()}.tmp`;

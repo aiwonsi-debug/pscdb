@@ -631,7 +631,7 @@
     <!-- SECTION: WEEKLY DELIVERY CALENDAR FOR EACH CUSTOMER -->
     <div class="card" style="border-left: 4px solid #38bdf8;">
       <div class="card-header">
-        <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (Weekly Delivery Calendar)</div>
+        <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (กำหนดการจัดส่งตามคำสั่งซื้อยืนยัน)</div>
         <span class="badge badge-primary">กันยายน 2569 (อัปเดต: 03/09/69 13:00 น.)</span>
       </div>
         <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update"><script>document.write(new Date(document.lastModified).toLocaleString("th-TH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " น.");</script></span></div>
@@ -790,7 +790,7 @@
   </div>
 
   <script>
-    const PSC_API_KEY = (window.PSC_CONFIG && window.PSC_CONFIG.apiKey) || sessionStorage.getItem('PSC_API_KEY') || localStorage.getItem('PSC_API_KEY') || '';
+    const PSC_API_KEY = 'PSC_API_KEY_INJECT' !== 'PSC_API_KEY_' + 'INJECT' ? 'PSC_API_KEY_INJECT' : ((window.PSC_CONFIG && window.PSC_CONFIG.apiKey) || sessionStorage.getItem('PSC_API_KEY') || localStorage.getItem('PSC_API_KEY') || '');
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 

@@ -6,6 +6,16 @@ const fs = require('fs');
 const path = require('path');
 const quotaTracker = require('./ai_quota_tracker.js');
 
+function escapeHtml(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
@@ -292,7 +302,9 @@ const server = http.createServer(async (req, res) => {
                 res.setHeader('Pragma', 'no-cache');
                 res.setHeader('Expires', '0');
                 res.writeHead(200);
-                return res.end(fs.readFileSync(mobileHtmlFile, 'utf8'));
+                let htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8');
+                htmlContent = htmlContent.replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+                return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.writeHead(200);
@@ -360,11 +372,16 @@ const server = http.createServer(async (req, res) => {
             }
             
             // Validate that Items values contain valid StockKg numbers
+            const ALLOWED_SKUS = ['Cabbage', 'Onion_AFT', 'Onion_Chinese', 'Carrot', 'Purple_Sweet_Potato', 'Yellow_Sweet_Potato', 'Orange_Sweet_Potato'];
             for (const key of Object.keys(body.Items)) {
-                const itm = body.Items[key];
-                if (!itm || typeof itm !== 'object' || typeof itm.StockKg !== 'number' || isNaN(itm.StockKg)) {
+                if (!ALLOWED_SKUS.includes(key)) {
                     res.writeHead(400);
-                    return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must contain numeric StockKg.` }));
+                    return res.end(JSON.stringify({ success: false, error: `Invalid stock SKU: '${key}'. Allowed SKUs: ${ALLOWED_SKUS.join(', ')}` }));
+                }
+                const itm = body.Items[key];
+                if (!itm || typeof itm !== 'object' || typeof itm.StockKg !== 'number' || isNaN(itm.StockKg) || !Number.isFinite(itm.StockKg) || itm.StockKg < 0 || itm.StockKg > 1000000) {
+                    res.writeHead(400);
+                    return res.end(JSON.stringify({ success: false, error: `Invalid stock item value for '${key}'. Must be a finite number between 0 and 1,000,000 kg.` }));
                 }
             }
 
@@ -446,18 +463,24 @@ const server = http.createServer(async (req, res) => {
 
             console.log(`[Gmail Push Webhook] New Email from ${from}: ${subject}`);
 
+            const safeFrom = escapeHtml(from);
+            const safeSubject = escapeHtml(subject);
+            const safeDate = escapeHtml(date);
+            const safeSnippet = escapeHtml(snippet ? snippet.substring(0, 300) : '');
+            const safeAttNames = attNames.map(a => escapeHtml(a));
+
             let tgMsg = `📬 <b>[มีอีเมลใหม่เข้าถึงเลขาแบบ Real-time]</b> ✨\n` +
                         `──────────────────\n` +
-                        `👤 <b>ผู้ส่ง:</b> ${from}\n` +
-                        `📌 <b>หัวข้อ:</b> ${subject}\n` +
-                        `⏰ <b>เวลา:</b> ${date}\n`;
+                        `👤 <b>ผู้ส่ง:</b> ${safeFrom}\n` +
+                        `📌 <b>หัวข้อ:</b> ${safeSubject}\n` +
+                        `⏰ <b>เวลา:</b> ${safeDate}\n`;
 
-            if (attNames.length > 0) {
-                tgMsg += `📎 <b>ไฟล์แนบ (${attNames.length}):</b> ${attNames.join(', ')}\n`;
+            if (safeAttNames.length > 0) {
+                tgMsg += `📎 <b>ไฟล์แนบ (${safeAttNames.length}):</b> ${safeAttNames.join(', ')}\n`;
             }
 
-            if (snippet) {
-                tgMsg += `📝 <b>ข้อความ:</b>\n<i>${snippet.substring(0, 300)}...</i>\n`;
+            if (safeSnippet) {
+                tgMsg += `📝 <b>ข้อความ:</b>\n<i>${safeSnippet}...</i>\n`;
             }
 
             tgMsg += `──────────────────\n` +

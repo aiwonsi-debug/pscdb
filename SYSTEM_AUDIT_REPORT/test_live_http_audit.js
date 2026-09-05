@@ -111,7 +111,7 @@ server.listen(8999, '127.0.0.1', async () => {
         }
     }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 200);
 
-    // Test 8: Reject Invalid Stock Schema even when authenticated -> 400 Bad Request
+    // Test 8: Reject Malformed Stock Schema -> 400 Bad Request
     await runHttpTest('8. Schema validation: Reject malformed payload with 400', {
         hostname: '127.0.0.1',
         port: 8999,
@@ -123,8 +123,44 @@ server.listen(8999, '127.0.0.1', async () => {
         }
     }, JSON.stringify({ invalid: 'schema' }), 400);
 
-    // Test 9: Strict CORS check: attacker.evil.onrender.com must NOT receive custom origin reflection
-    await runHttpTest('9. Strict CORS: untrusted origin does not get reflected', {
+    // Test 9: Reject Infinity in StockKg -> 400 Bad Request
+    await runHttpTest('9. Schema validation: Reject Infinity in StockKg with 400', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/stock-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': TEST_KEY
+        }
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 999999999999 } } }), 400);
+
+    // Test 10: Reject Negative StockKg -> 400 Bad Request
+    await runHttpTest('10. Schema validation: Reject negative StockKg with 400', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/stock-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': TEST_KEY
+        }
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: -10 } } }), 400);
+
+    // Test 11: Reject Unknown SKU -> 400 Bad Request
+    await runHttpTest('11. Schema validation: Reject unknown SKU with 400', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/stock-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': TEST_KEY
+        }
+    }, JSON.stringify({ Items: { MaliciousSKU: { StockKg: 100 } } }), 400);
+
+    // Test 12: Strict CORS check: attacker.evil.onrender.com must NOT receive custom origin reflection
+    await runHttpTest('12. Strict CORS: untrusted origin does not get reflected', {
         hostname: '127.0.0.1',
         port: 8999,
         path: '/api/stock',
@@ -134,6 +170,17 @@ server.listen(8999, '127.0.0.1', async () => {
         }
     }, null, 200, (data, headers) => {
         assert.strictEqual(headers['access-control-allow-origin'], 'https://pscdb.onrender.com', 'Must default to trusted origin only, not reflect evil subdomains');
+    });
+
+    // Test 13: Dynamic key injection in /ops HTML serving
+    await runHttpTest('13. Serve-time dynamic key injection replaces placeholder in HTML', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/ops',
+        method: 'GET'
+    }, null, 200, (html) => {
+        assert.ok(html.includes(TEST_KEY), 'HTML served must contain injected runtime key');
+        assert.ok(!html.includes('psc_sec_ops_2026_key'), 'HTML served must never contain hardcoded fallback key');
     });
 
     console.log('\n================================================================');
