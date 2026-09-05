@@ -407,7 +407,7 @@ const server = http.createServer(async (req, res) => {
 
             if (staticPath && fs.existsSync(staticPath)) {
                 res.setHeader('Content-Type', mimeType);
-                res.setHeader('Cache-Control', 'public, max-age=86400');
+                res.setHeader('Cache-Control', 'no-cache, must-revalidate');
                 res.writeHead(200);
                 return res.end(fs.readFileSync(staticPath));
             }
