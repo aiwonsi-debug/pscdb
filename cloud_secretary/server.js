@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const lineNotifier = require('./line_notifier.js');
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const STATUS_FILE = path.join(__dirname, 'team_ops_status.json');
 const OPS_HTML_FILE = 'E:/agy/ops_mobile_web.html';
 const TEAM_HTML_FILE = path.join(__dirname, 'team_dashboard.html');
