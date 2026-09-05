@@ -791,7 +791,7 @@
   </div>
 
   <script>
-    const PSC_API_KEY = ''; // Managed automatically via HttpOnly Cookie (Zero Key in DOM)
+    // Client Session Auth via HttpOnly Cookie (No API Key in DOM)
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -859,8 +859,8 @@
       // Sound removed
       if ('Notification' in window && Notification.permission === 'granted') {
         sendMobileNotification(
-          '🚨 [เตือนค้าง 08:00 น.] เตรียมขึ้นของรอบพรุ่งนี้ (02/09/69)',
-          '🥬 กะหล่ำปลี 9.2 ตัน เข้าศาลายา 03/09 - อย่าลืมสั่งตัดผักและจองรถ 6 ล้อล่วงหน้านะคะ (ข้อความนี้จะค้างบนจอจนกว่าจะแตะเปิด)',
+          '🔔 [ทดสอบการแจ้งเตือน] ระบบแจ้งเตือนภาคสนาม PSC',
+          'ระบบแจ้งเตือนภาคสนาม PSC พร้อมทำงานและปักหมุดแจ้งเตือนล่วงหน้าเมื่อมีรอบขึ้นของค่ะ',
           'test_d1_persistent',
           true
         );
@@ -874,11 +874,29 @@
     function playEmergencySirenAlert() {}
 
     function shareAlertToLine() {
-      const lineMsg = '🚨 [แจ้งเตือนเตรียมขึ้นของล่วงหน้า 1 วัน D-1]\n' +
-        '📅 รอบขึ้นของ: 02/09/69 (พรุ่งนี้)\n' +
-        '🥬 สินค้า: กะหล่ำปลี 9,200 กก. (9.2 ตัน) เข้าโรงงานศาลายา 03/09/69\n' +
-        '📌 สิ่งที่ต้องทำวันนี้: คอนเฟิร์มตัดผักกับสวน (เจ๊อารีย์/เฮียหนิง) และจองรถ 6 ล้อล่วงหน้า 1 วันค่ะ\n' +
-        '🌐 ดูตารางและสถานะสด: https://hours-wagner-pacific-kinda.trycloudflare.com/ops';
+      const currentOrigin = window.location.origin || 'https://pscdb.onrender.com';
+      let nextOrderText = 'กะหล่ำปลี / ผักสดตามรอบคำสั่งซื้อยืนยัน';
+      let nextDateText = 'ตามรอบปฏิทินส่งมอบ';
+      
+      // Determine nearest uncompleted order dynamically
+      if (typeof ORDERS_META !== 'undefined') {
+        const orderKeys = Object.keys(ORDERS_META);
+        for (const k of orderKeys) {
+          const isDone = serverCardsState && serverCardsState[k] && serverCardsState[k].loadedReported;
+          if (!isDone) {
+            const m = ORDERS_META[k];
+            nextOrderText = `${m.title || m.product} เข้า${m.customer}`;
+            nextDateText = `${m.pickup_date} (ส่ง ${m.delivery_date})`;
+            break;
+          }
+        }
+      }
+
+      const lineMsg = '🚨 [แจ้งเตือนเตรียมขึ้นของล่วงหน้า D-1]\n' +
+        '📅 รอบขึ้นของ: ' + nextDateText + '\n' +
+        '🥬 รายการ: ' + nextOrderText + '\n' +
+        '📌 สิ่งที่ต้องทำ: คอนเฟิร์มตัดผักกับสวนและจองรถขนส่งล่วงหน้าค่ะ\n' +
+        '🌐 ดูตารางและสถานะสด: ' + currentOrigin + '/ops';
       
       const lineUrl = 'https://line.me/R/msg/text/?' + encodeURIComponent(lineMsg);
       window.open(lineUrl, '_blank');
