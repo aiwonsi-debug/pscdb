@@ -4,6 +4,11 @@ const https = require('https');
 
 const CONFIG_FILE = path.join(__dirname, 'line_config.json');
 const OPS_STATUS_FILE = path.join(__dirname, 'team_ops_status.json');
+const TUNNEL_URL_FILE = path.join(__dirname, 'public_tunnel_url.txt');
+
+function getOpsWebUrl() {
+  return 'https://pscdb.onrender.com/ops';
+}
 
 function loadLineConfig() {
   const defaultConfig = {
@@ -104,6 +109,8 @@ function generateD1LineMessage(dateStr) {
     opsSection = `\n📌 สิ่งที่ทีมงานต้องประสานงานวันนี้ (01/09/69):\n${pendingItems.join('\n')}\n──────────────────`;
   }
 
+  const opsUrl = getOpsWebUrl();
+
   return `🚨 [เลขา PSC] แจ้งเตือนเตรียมขึ้นของล่วงหน้า 1 วัน
 ──────────────────
 📅 รอบขึ้นของที่สวน: 02/09/2569 (พรุ่งนี้)
@@ -122,8 +129,8 @@ function generateD1LineMessage(dateStr) {
     - กะหล่ำปลี 700 กก.
     - ขิง 150 กก.
 ──────────────────
-🌐 รายละเอียด:
-https://hours-wagner-pacific-kinda.trycloudflare.com/ops`;
+🌐 รายละเอียดและระบบสั่งงาน:
+${opsUrl}\n🔑 Team Access Code: 9624`;
 }
 
 /**
@@ -159,5 +166,6 @@ module.exports = {
   saveLineConfig,
   sendLineMessage,
   generateD1LineMessage,
-  initDailyLineScheduler
+  initDailyLineScheduler,
+  getOpsWebUrl
 };

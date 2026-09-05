@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const parser = require('./tns_order_parser.js');
@@ -72,19 +72,21 @@ function sendTGMessage(token, chat, text) {
   });
 }
 
+const lineNotifier = require('./line_notifier.js');
+
 async function runTNSAlerts() {
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
   const todayStr = today.toISOString().split('T')[0];
   
-  // Strict 4 Alert Stages: D-20, D-10, D-5, D-3
-  const targetStages = [20, 10, 5, 3];
+  // Alert Stages: D-20, D-10, D-5, D-3, D-2, D-1
+  const targetStages = [20, 10, 5, 3, 2, 1];
   const specialCrops = ['หอมแดง', 'พริกหวาน', 'ผักชีใหญ่', 'มะละกอ'];
 
   console.log('=== TNS SPECIAL CROPS ALERT ENGINE (SEP ORDER PSC PARSER) ===');
   console.log('Current Date:', todayStr);
   console.log('Special Crops (4 ชนิด): หอมแดง, พริกหวาน, ผักชีใหญ่, มะละกอ');
-  console.log('Alert Stages: D-20, D-10, D-5, D-3 | Action: "เตรียมสั่งวัตถุดิบ"');
+  console.log('Alert Stages: D-20, D-10, D-5, D-3, D-2, D-1 | Action: "เตรียมสั่งวัตถุดิบ"');
 
   // Load Real Data dynamically from SEP Order PSC.xlsx
   const tnsFile = parser.findLatestTNSFile();
@@ -118,7 +120,15 @@ async function runTNSAlerts() {
       }
 
       const formattedDelivery = ord.date.split('-').reverse().join('/');
-      const message = `🔔 <b>[แจ้งเตือนจัดเตรียมวัตถุดิบ - TNS]</b>
+      const isUrgent = daysLeft <= 2;
+      const stageHeader = isUrgent ? `🚨 [แจ้งเตือนสั่งวัตถุดิบด่วน - TNS]` : `🔔 [แจ้งเตือนจัดเตรียมวัตถุดิบ - TNS]`;
+      const actionText = (ord.product === 'หอมแดง' && isUrgent)
+        ? `• <b>สั่งหอมแดงด่วน:</b> ประสานงานสวน/ผู้จัดส่ง สั่งซื้อหอมแดงทันทีเพื่อเตรียมส่งมอบตามกำหนด`
+        : `• <b>เตรียมสั่งวัตถุดิบ</b> (จัดหา ประสานงาน และสั่งซื้อวัตถุดิบจากแหล่งสวน/ซัพพลายเออร์)`;
+
+      const opsWebUrl = lineNotifier.getOpsWebUrl ? lineNotifier.getOpsWebUrl() : 'https://pscdb.onrender.com/ops';
+
+      const messageTG = `${stageHeader}
 กำหนดแจ้งเตือน: ล่วงหน้า ${daysLeft} วัน (D-${daysLeft})
 
 🏢 <b>ลูกค้า:</b> TNS (Thai Nisshin Seifun)
@@ -127,17 +137,52 @@ async function runTNSAlerts() {
 📁 <b>ข้อมูลอ้างอิง:</b> ${ord.sheet || 'SEP Order PSC.xlsx'}
 
 🎯 <b>ขั้นตอนปฏิบัติงาน:</b>
-• <b>เตรียมสั่งวัตถุดิบ</b> (จัดหา ประสานงาน และสั่งซื้อวัตถุดิบจากแหล่งสวน/ซัพพลายเออร์)
+${actionText}
+────────────────────
+🌐 <b>ระบบสั่งงานและติดตาม:</b>
+<a href="${opsWebUrl}">${opsWebUrl}</a>
 ────────────────────
 ✨ <i>ระบบแจ้งเตือนอัตโนมัติ บจก.ไพศาลเจริญ (1988)</i>`;
 
-      console.log('\n----------------------------------------');
-      console.log(message);
+      const plainActionText = (ord.product === 'หอมแดง' && isUrgent)
+        ? `• สั่งหอมแดงด่วน: ประสานงานสวน/ผู้จัดส่ง สั่งซื้อหอมแดงทันทีเพื่อเตรียมส่งมอบตามกำหนด`
+        : `• เตรียมสั่งวัตถุดิบ (จัดหา ประสานงาน และสั่งซื้อวัตถุดิบจากแหล่งสวน/ซัพพลายเออร์)`;
 
-      const sent = await sendTGMessage(botToken, chatId, message);
-      if (sent) {
+      const messageLINE = `${stageHeader}
+กำหนดแจ้งเตือน: ล่วงหน้า ${daysLeft} วัน (D-${daysLeft})
+──────────────────
+🏢 ลูกค้า: TNS (Thai Nisshin Seifun)
+📦 รายการสินค้า: ${ord.product} ${ord.qty.toLocaleString()} ${ord.unit}
+📅 กำหนดส่งมอบ: ${formattedDelivery} (อีก ${daysLeft} วัน)
+📁 ข้อมูลอ้างอิง: ${ord.sheet || 'SEP Order PSC.xlsx'}
+
+🎯 ขั้นตอนปฏิบัติงาน:
+${plainActionText}
+──────────────────
+🌐 เข้าใช้งานระบบเว็บ / ติดตามงาน:
+${opsWebUrl}
+🔑 Team Access Code: 9624 (กรอกครั้งเดียว จำเซสชัน 30 วัน)
+──────────────────
+✨ ระบบแจ้งเตือนอัตโนมัติ บจก.ไพศาลเจริญ (1988)`;
+
+      console.log('\n----------------------------------------');
+      console.log(messageTG);
+
+      // Send to Telegram
+      const sentTG = await sendTGMessage(botToken, chatId, messageTG);
+      
+      // Send to LINE Group
+      let sentLINE = false;
+      try {
+        const lineRes = await lineNotifier.sendLineMessage(messageLINE);
+        sentLINE = lineRes && lineRes.success;
+      } catch (err) {
+        console.error('LINE Send Error:', err.message);
+      }
+
+      if (sentTG || sentLINE) {
         notified[eventKey] = todayStr;
-        console.log(`✅ Alert sent successfully for ${eventKey}`);
+        console.log(`✅ Alert sent successfully for ${eventKey} (TG: ${sentTG}, LINE: ${sentLINE})`);
       }
     }
   }

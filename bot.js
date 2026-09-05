@@ -1771,7 +1771,7 @@ function handleCommand(chatId, text) {
                                      (result.weight_kg ? `• น้ำหนัก: ${result.weight_kg.toLocaleString()} kg\n` : '') +
                                      (calcYield ? `• Yield: ${calcYield}%\n` : '') +
                                      (result.condition ? `• สภาพ: ${result.condition}\n` : '') +
-                                     `\n🌐 ดูรายละเอียดสด: https://pscdb.onrender.com`;
+                                     `\n🌐 ดูรายละเอียดสด: https://pscdb.onrender.com/ops\n🔑 Team Access Code: 9624 (กรอกครั้งเดียว จำเซสชัน 30 วัน)`;
                     lineNotifier.sendLineMessage(lineText).catch(e => {});
 
                 } catch(e) {
