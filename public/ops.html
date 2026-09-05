@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PSC Mobile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/ops.css">
+  <!-- Fallback inlined style preserved if served directly without static asset pipeline -->
+</head>
+<body>
+  <div class="container">
+    
+    <div id="toast" class="toast">
+      <span>✓</span> บันทึกข้อมูลเรียบร้อย!
+    </div>
+
+    <!-- Top Mobile Header (Dark Reader Extension Aesthetic) -->
+    <header style="background:#151b22; border:1px solid #203239; border-radius:6px; padding:12px 14px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="font-size:19px; font-weight:900; color:#e96c4c; letter-spacing:0.8px; text-transform:uppercase; margin:0;">
+          PSC OPERATIONS
+        </h1>
+        <div style="display:grid; grid-template-columns:1fr 1fr; width:110px; height:28px; background:#0d1215; border:1px solid #203239; border-radius:3px; padding:2px; text-align:center;">
+          <div style="background:#35727a; color:#fff; font-size:11px; font-weight:700; border-radius:2px; display:flex; align-items:center; justify-content:center;">On</div>
+          <div style="color:#6e8490; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">Off</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#6e8490; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+        <span>✓ pscdb.onrender.com</span>
+        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#d8e2ea;">05/09/69 17:00 น.</span></span>
+      </div>
+    </header>
+
+    <!-- Unified App Navigation Bar -->
+    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px;">
+      <button class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
+      <button class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
+      <button class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
+    </div>
+
+    <!-- Sub Filter Tabs for Ops Tab -->
+    <div class="filter-tabs" id="ops_sub_filters">
+      <div class="tab-btn active" onclick="filterCategory('all', this)">🌟 ทุกรายการ</div>
+      <div class="tab-btn" onclick="filterCategory('salaya', this)">🟣 กะหล่ำศาลายา</div>
+      <div class="tab-btn" onclick="filterCategory('tns', this)">🔵 TNS ผัก</div>
+    </div>
+
+<div id="sec_ops" class="app-section active">
+<!-- SECTION: ORDER CARDS (STRICT CHRONOLOGICAL ORDER WITH CUSTOM TYPING SUPPORT) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🚚 ตารางขึ้นของสวน & สั่งรถ</div>
+        <span class="badge badge-warning" id="ops_sync_badge">อัปเดตล่าสุด: 05/09/69 17:00 น.</span>
+      </div>
+
+      <!-- 1. ขึ้นของ 01/09: กะหล่ำเข้าศาลายา 02/09 (8 ตัน) -->
+      <div class="order-card salaya cat-salaya" id="card_salaya_0209">
+        <div class="order-header">
+          <span class="order-title">🥬 1. กะหล่ำปลี 8 ตัน (เข้าโรงงานศาลายา 02/09)</span>
+          <span class="badge badge-salaya">เข้าศาลายา 02/09 (วันนี้)</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#94a3b8; font-weight:600;">01/09/69 (เมื่อวาน)</span> ➔ <b>เข้าศาลายา:</b> 02/09/69 (วันนี้ - 8,000 กก.)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_salaya_0209" onchange="onSelectChange('supplier', 'salaya_0209', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-02')">
+              <option value="เฮียหนิง (โกดังฮอด - 3.00 บ.)" selected>🌿 เฮียหนิง โกดังฮอด (3.00 บ./กก.)</option>
+              <option value="เฮียหนิง (โกดังอมพาย - 3.00 บ.)">🌿 เฮียหนิง โกดังอมพาย (3.00 บ./กก.)</option>
+              <option value="เจ๊อารีย์ (แม่แจ่ม/บ่อสลี - 3.00 บ.)">🌿 เจ๊อารีย์ แม่แจ่ม/บ่อสลี (3.00 บ./กก.)</option>
+              <option value="เฮียบุญชู (3.50 บ.)">🌿 เฮียบุญชู (3.50 บ./กก.)</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_salaya_0209" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_0209', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-02')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_salaya_0209" onchange="onSelectChange('truck', 'salaya_0209', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-02')">
+              <option value="6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)" selected>🚛 6 ล้อ เฮียหนิง (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เฮียหนิง (อมพาย 13,000 บ.)">🚛 6 ล้อ เฮียหนิง (อมพาย แม่สะเรียง 13,000 บ.)</option>
+              <option value="6 ล้อ พี่อั๋น (ฮอด 12,000 บ.)">🚛 6 ล้อ พี่อั๋น (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ.)">🚛 6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ. - 1.75 บ./กก.)</option>
+              <option value="6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)">🚛 6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)</option>
+              <option value="รถ 4 ล้อ (2 คัน)">🛻 รถ 4 ล้อ (2 คัน)</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_salaya_0209" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_0209', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-02')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_salaya_0209">
+              <input type="checkbox" id="chk_order_salaya_0209" onchange="toggleCard('salaya_0209', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-02')"> สั่งของ 8 ตันแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_salaya_0209">
+              <input type="checkbox" id="chk_truck_salaya_0209" onchange="toggleCard('salaya_0209', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-02')"> สั่งรถ 6 ล้อแล้ว
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ขึ้นของ 02/09: กะหล่ำเข้าศาลายา 03/09 (9.2 ตัน) -->
+      <div class="order-card urgent salaya cat-salaya" id="card_salaya_0309">
+        <div class="order-header">
+          <span class="order-title">🥬 2. กะหล่ำปลี 9.2 ตัน (เข้าโรงงานศาลายา 03/09)</span>
+          <span class="badge badge-danger">ขึ้นของ 02/09 (วันนี้) 🚨</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">02/09/69 (วันนี้)</span> ➔ <b>เข้าศาลายา:</b> 03/09/69 (พรุ่งนี้ - 9,200 กก.)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_salaya_0309" onchange="onSelectChange('supplier', 'salaya_0309', 'โรงงานศาลายา', 'กะหล่ำปลี', 9200, '2026-09-03')">
+              <option value="เจ๊อารีย์ (แม่แจ่ม/บ่อสลี - 3.00 บ.)" selected>🌿 เจ๊อารีย์ แม่แจ่ม/บ่อสลี (3.00 บ./กก.)</option>
+              <option value="เฮียหนิง (โกดังฮอด - 3.00 บ.)">🌿 เฮียหนิง โกดังฮอด (3.00 บ./กก.)</option>
+              <option value="เฮียหนิง (โกดังอมพาย - 3.00 บ.)">🌿 เฮียหนิง โกดังอมพาย (3.00 บ./กก.)</option>
+              <option value="เฮียบุญชู (3.50 บ.)">🌿 เฮียบุญชู (3.50 บ./กก.)</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_salaya_0309" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_0309', 'โรงงานศาลายา', 'กะหล่ำปลี', 9200, '2026-09-03')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_salaya_0309" onchange="onSelectChange('truck', 'salaya_0309', 'โรงงานศาลายา', 'กะหล่ำปลี', 9200, '2026-09-03')">
+              <option value="6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)">🚛 6 ล้อ เฮียหนิง (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เฮียหนิง (อมพาย 13,000 บ.)">🚛 6 ล้อ เฮียหนิง (อมพาย แม่สะเรียง 13,000 บ.)</option>
+              <option value="6 ล้อ พี่อั๋น (ฮอด 12,000 บ.)">🚛 6 ล้อ พี่อั๋น (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ.)" selected>🚛 6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ. - 1.75 บ./กก.)</option>
+              <option value="6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)">🚛 6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)</option>
+              <option value="รถ 4 ล้อ (2 คัน)">🛻 รถ 4 ล้อ (2 คัน)</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_salaya_0309" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_0309', 'โรงงานศาลายา', 'กะหล่ำปลี', 9200, '2026-09-03')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_salaya_0309">
+              <input type="checkbox" id="chk_order_salaya_0309" onchange="toggleCard('salaya_0309', 'โรงงานศาลายา', 'กะหล่ำปลี', 9200, '2026-09-03')"> สั่งของ 9.2 ตันแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_salaya_0309">
+              <input type="checkbox" id="chk_truck_salaya_0309" onchange="toggleCard('salaya_0309', 'โรงงานศาลายา', 'กะหล่ำปลี', 9200, '2026-09-03')"> สั่งรถ 6 ล้อแล้ว
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. ขึ้นของ 06/09: TNS หอมแดง 07/09 (500 kg ป้าผา) -->
+      <div class="order-card tns cat-tns" id="card_tns_shallot_0709">
+        <div class="order-header">
+          <span class="order-title">🧅 3. TNS: หอมแดง 500 kg (ส่ง 07/09)</span>
+          <span class="badge badge-tns">ขึ้นของ 06/09</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">06/09/69</span> ➔ <b>ส่งมอบ TNS:</b> 07/09/69 (500 กก.)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_tns_shallot_0709" onchange="onSelectChange('supplier', 'tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')">
+              <option value="ป้าผา (หอมแดง)" selected>🧅 ป้าผา (หอมแดง TNS)</option>
+              <option value="สวนหอมแดงเชียงใหม่/ลำพูน">🧅 สวนหอมแดงเชียงใหม่/ลำพูน</option>
+              <option value="ร้านค้าส่งหอมแดง">🧅 ร้านค้าส่งหอมแดง</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_tns_shallot_0709" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_tns_shallot_0709" onchange="onSelectChange('truck', 'tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')">
+              <option value="ส่งนิ่มซี่เส็ง สาขาท่าลี่" selected>📦 ขนส่งนิ่มซี่เส็ง (สาขาท่าลี่)</option>
+              <option value="ฝากขึ้น 6 ล้อ ศาลายา">🚛 ฝากขึ้นรวมกับเที่ยวรถ 6 ล้อ ศาลายา</option>
+              <option value="รถกระบะ 4 ล้อ">🛻 รถกระบะ 4 ล้อ</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_tns_shallot_0709" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_tns_shallot_0709">
+              <input type="checkbox" id="chk_order_tns_shallot_0709" onchange="toggleCard('tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')"> สั่งป้าผาแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_tns_shallot_0709">
+              <input type="checkbox" id="chk_truck_tns_shallot_0709" onchange="toggleCard('tns_shallot_0709', 'TNS', 'หอมแดง', 500, '2026-09-07')"> ส่งนิ่มซี่เส็งแล้ว
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. ขึ้นของ 09/09: กะหล่ำเข้าศาลายา 10/09 (8 ตัน - เลื่อนจาก 08/09) -->
+      <div class="order-card salaya cat-salaya" id="card_salaya_0809">
+        <div class="order-header">
+          <span class="order-title">🥬 4. กะหล่ำปลี 8 ตัน (เข้าโรงงานศาลายา 10/09)</span>
+          <span class="badge badge-salaya">ขึ้นของ 09/09</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">09/09/69</span> ➔ <b>เข้าศาลายา:</b> 10/09/69 (8,000 กก. - เลื่อนจาก 08/09)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_salaya_0809" onchange="onSelectChange('supplier', 'salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')">
+              <option value="เฮียหนิง (โกดังฮอด - 3.00 บ.)" selected>🌿 เฮียหนิง โกดังฮอด (3.00 บ./กก.)</option>
+              <option value="เฮียหนิง (โกดังอมพาย - 3.00 บ.)">🌿 เฮียหนิง โกดังอมพาย (3.00 บ./กก.)</option>
+              <option value="เจ๊อารีย์ (แม่แจ่ม/บ่อสลี - 3.00 บ.)">🌿 เจ๊อารีย์ แม่แจ่ม/บ่อสลี (3.00 บ./กก.)</option>
+              <option value="เฮียบุญชู (3.00 บ.)">🌿 เฮียบุญชู (3.00 บ./กก.)</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_salaya_0809" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_salaya_0809" onchange="onSelectChange('truck', 'salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')">
+              <option value="6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)" selected>🚛 6 ล้อ เฮียหนิง (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เฮียหนิง (อมพาย 13,000 บ.)">🚛 6 ล้อ เฮียหนิง (อมพาย แม่สะเรียง 13,000 บ.)</option>
+              <option value="6 ล้อ พี่อั๋น (ฮอด 12,000 บ.)">🚛 6 ล้อ พี่อั๋น (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ.)">🚛 6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ. - 1.75 บ./กก.)</option>
+              <option value="6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)">🚛 6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)</option>
+              <option value="รถ 4 ล้อ (2 คัน)">🛻 รถ 4 ล้อ (2 คัน)</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_salaya_0809" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_salaya_0809">
+              <input type="checkbox" id="chk_order_salaya_0809" onchange="toggleCard('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')"> สั่งของ 8 ตันแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_salaya_0809">
+              <input type="checkbox" id="chk_truck_salaya_0809" onchange="toggleCard('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')"> สั่งรถ 6 ล้อแล้ว
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. ขึ้นของ 15/09: TNS พริกหวานเขียว 16/09 (2,000 kg ป้าอรทัย) -->
+      <div class="order-card tns cat-tns" id="card_tns_pepper_1609">
+        <div class="order-header">
+          <span class="order-title">🫑 5. TNS: พริกหวานเขียว 2,000 kg (ส่ง 16/09)</span>
+          <span class="badge badge-tns">ขึ้นของ 15/09</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">15/09/69</span> ➔ <b>ส่งมอบ TNS:</b> 16/09/69 (2,000 กก. - สวนป้าอรทัย)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_tns_pepper_1609" onchange="onSelectChange('supplier', 'tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')">
+              <option value="ป้าอรทัย (พริกหวาน)" selected>🫑 ป้าอรทัย (พริกหวาน TNS)</option>
+              <option value="สวนพริกหวานเครือข่าย">🫑 สวนพริกหวานเครือข่าย</option>
+              <option value="ตลาดค้าส่งเกษตร">🏪 ตลาดค้าส่งเกษตร</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_tns_pepper_1609" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_tns_pepper_1609" onchange="onSelectChange('truck', 'tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')">
+              <option value="ขนส่งบุญประสงค์" selected>🚚 ขนส่งบุญประสงค์ (ประจำ)</option>
+              <option value="จ้างรถ 4 ล้อเล็ก (เหมาเที่ยว)">🛻 จ้างรถ 4 ล้อเล็ก (เหมาเที่ยวเมื่อปริมาณมาก)</option>
+              <option value="6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)">🚛 6 ล้อ พี่อั๋น (เชียงดาว 13k)</option>
+              <option value="6 ล้อ เฮียหนิง">🚛 6 ล้อ เฮียหนิง</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_tns_pepper_1609" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_tns_pepper_1609">
+              <input type="checkbox" id="chk_order_tns_pepper_1609" onchange="toggleCard('tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')"> สั่งป้าอรทัยแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_tns_pepper_1609">
+              <input type="checkbox" id="chk_truck_tns_pepper_1609" onchange="toggleCard('tns_pepper_1609', 'TNS', 'พริกหวานเขียว', 2000, '2026-09-16')"> จองขนส่ง/รถแล้ว
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. ขึ้นของ 20/09: TNS หอมแดง 21/09 (500 kg ป้าผา) -->
+      <div class="order-card tns cat-tns" id="card_tns_shallot_2109">
+        <div class="order-header">
+          <span class="order-title">🧅 6. TNS: หอมแดง 500 kg (ส่ง 21/09)</span>
+          <span class="badge badge-tns">ขึ้นของ 20/09</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">20/09/69</span> ➔ <b>ส่งมอบ TNS:</b> 21/09/69 (500 กก.)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_tns_shallot_2109" onchange="onSelectChange('supplier', 'tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')">
+              <option value="ป้าผา (หอมแดง)" selected>🧅 ป้าผา (หอมแดง TNS)</option>
+              <option value="สวนหอมแดงเชียงใหม่">🧅 สวนหอมแดงเชียงใหม่</option>
+              <option value="ร้านค้าส่งหอมแดง">🧅 ร้านค้าส่งหอมแดง</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_tns_shallot_2109" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_tns_shallot_2109" onchange="onSelectChange('truck', 'tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')">
+              <option value="ส่งนิ่มซี่เส็ง สาขาท่าลี่" selected>📦 ขนส่งนิ่มซี่เส็ง (สาขาท่าลี่)</option>
+              <option value="ฝากขึ้น 6 ล้อ ศาลายา">🚛 ฝากขึ้นกับ 6 ล้อ ประจำรอบ</option>
+              <option value="รถ 4 ล้อ 4 ตัน">🛻 รถ 4 ล้อ 4 ตัน</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_tns_shallot_2109" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_tns_shallot_2109">
+              <input type="checkbox" id="chk_order_tns_shallot_2109" onchange="toggleCard('tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')"> สั่งป้าผาแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_tns_shallot_2109">
+              <input type="checkbox" id="chk_truck_tns_shallot_2109" onchange="toggleCard('tns_shallot_2109', 'TNS', 'หอมแดง', 500, '2026-09-21')"> ส่งนิ่มซี่เส็งแล้ว
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    
+    </div>
+
+<!-- SECTION: STOCK & PRICES -->
+<div id="sec_stock" class="app-section">
+<!-- SECTION: LIVE PRICE UPDATE & FREIGHT (READ-ONLY DISPLAY) -->
+    <div class="card" id="price_board_card">
+      <div class="card-header">
+        <div class="card-title">💰 ราคาวัตถุดิบ & ค่าขนส่งล่าสุด</div>
+        <span class="badge badge-success" id="price_sync_badge">อัปเดตราคา: 05/09/69 17:00 น.</span>
+      </div>
+
+      <!-- Vegetable Prices Grid (Read-Only - Confirmed Only) -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
+          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (ฮอด/เฮียหนิง):</span>
+          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_ning">3.00 บ./กก.</span>
+        </div>
+
+        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
+          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (อมพาย/เฮียหนิง):</span>
+          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_ompai">3.00 บ./กก.</span>
+        </div>
+
+        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
+          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (แม่แจ่ม/เจ๊อารีย์):</span>
+          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_aree">3.00 บ./กก.</span>
+        </div>
+
+        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
+          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (เฮียบุญชู):</span>
+          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_boonchu">3.00 บ./กก.</span>
+        </div>
+      </div>
+
+      <!-- Freight Summary Grid (Read-Only) -->
+      <div style="background:rgba(255,255,255,0.02); border:1px solid #23334d; border-radius:8px; padding:10px;">
+        <div style="font-size:12px; font-weight:600; color:#38bdf8; margin-bottom:6px;">🚛 อัตราค่าขนส่งมาตรฐาน (ก.ย. 69):</div>
+        <div class="stock-row">
+          <span>• 6 ล้อ ฮอด (เฮียหนิง 8 ตัน):</span>
+          <span style="color:#f8fafc; font-weight:600;">12,000 บ. (1.50 บ./กก.)</span>
+        </div>
+        <div class="stock-row">
+          <span>• 6 ล้อ อมพาย แม่สะเรียง (เฮียหนิง 8 ตัน):</span>
+          <span style="color:#f8fafc; font-weight:600;">13,000 บ. (1.63 บ./กก.)</span>
+        </div>
+        <div class="stock-row">
+          <span>• 6 ล้อ ฮอด (พี่อั๋น 8 ตัน):</span>
+          <span style="color:#f8fafc; font-weight:600;">12,000 บ. (1.50 บ./กก.)</span>
+        </div>
+        <div class="stock-row">
+          <span>• 6 ล้อ เชียงดาว/แม่เหาะ (พี่อั๋น 8 ตัน):</span>
+          <span style="color:#f8fafc; font-weight:600;">13,000 บ. (1.63 บ./กก.)</span>
+        </div>
+        <div class="stock-row">
+          <span>• 6 ล้อ แม่แจ่ม (เจ๊อารีย์ 8 ตัน):</span>
+          <span style="color:#f8fafc; font-weight:600;">14,000 บ. (1.75 บ./กก.)</span>
+        </div>
+        <div class="stock-row">
+          <span>• 4 ล้อ ฮอด (4 ตัน) / แม่แจ่ม:</span>
+          <span style="color:#f8fafc; font-weight:600;">7,000 บ. / 7,500 บ.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: COMPLETED DELIVERY LOG TABLE -->
+    <div class="card" id="delivery_log_card">
+      <div class="card-header">
+        <div class="card-title">📋 ตารางบันทึกการส่งของ (ส่งรายงานเลขาแล้ว)</div>
+        <span class="badge badge-success" id="log_count_badge">0 รายการ (อัปเดต: 05/09/69 17:00 น.)</span>
+      </div>
+      <div class="table-container">
+        <table class="log-table" id="delivery_log_table">
+          <thead>
+            <tr>
+              <th>🌾 วันขึ้นของ</th>
+              <th>🏢 ถึงปลายทาง</th>
+              <th>รายการ / สวน</th>
+              <th>น้ำหนักสุทธิ</th>
+              <th>ค่ารถ & การชำระ</th>
+              <th>สถานที่ขึ้นของ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="delivery_log_tbody">
+            <!-- Dynamic Completed Delivery Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+<!-- SECTION: EXACT STOCK 02/09/69 & RUNWAY FORECAST -->
+    <div class="card" id="stock_card_0209" style="border-left: 4px solid #38bdf8; margin-bottom: 14px;">
+      <div class="card-header" style="margin-bottom: 8px;">
+        <div class="card-title" style="font-size: 15px; font-weight: 700; color: #3391b8;">📦 Stock 02/09/69 (ตรวจนับจริง) & คาดการณ์</div>
+        <span class="badge badge-success" id="stock_as_of_badge">อัปเดตสต็อก: 05/09/69 17:00 น.</span>
+      </div>
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 8px; padding: 10px 14px;">
+        
+        <!-- 1. กะหล่ำ -->
+        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🥬 <b>กะหล่ำปลี</b></span>
+            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_cabbage">2,575 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #3391b8; font-weight: 600;">~15/09/69 (มีรอบเติม 8 ตันต่อเนื่อง 02/09, 03/09, 10/09 [เลื่อนจาก 08/09])</span>
+          </div>
+        </div>
+
+        <!-- 2. หอม AFT -->
+        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🧅 <b>หอม AFT</b></span>
+            <span style="font-weight: 700; color: #10b981; font-size: 14px;" id="stk_val_onion_aft">26,120 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #10b981; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
+          </div>
+        </div>
+
+        <!-- 3. หอมจีน -->
+        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🧅 <b>หอมจีน</b></span>
+            <span style="font-weight: 700; color: #48bb78; font-size: 14px;" id="stk_val_onion_chinese">3,560 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #48bb78; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
+          </div>
+        </div>
+
+        <!-- 4. แครอทสวย (สต็อกเติมแล้ว 5,840 kg) -->
+        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🥕 <b>แครอทสวย</b></span>
+            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_carrot">5,840 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #10b981; font-weight: 600;">~10/09/69 (สต็อกเข้าเติมแล้ว ปลอดภัยส่งได้ต่อเนื่อง)</span>
+          </div>
+        </div>
+
+        <!-- 5. มันม่วงหัวเล็ก -->
+        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🍠 <b>มันม่วงหัวเล็ก</b></span>
+            <span style="font-weight: 700; color: #a78bfa; font-size: 14px;" id="stk_val_purple_potato">1,690 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #a78bfa; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
+          </div>
+        </div>
+
+        <!-- 6. มันเหลืองไข่ -->
+        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🥔 <b>มันเหลืองไข่</b></span>
+            <span style="font-weight: 700; color: #facc15; font-size: 14px;" id="stk_val_yellow_potato">342 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #facc15; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
+          </div>
+        </div>
+
+        <!-- 7. มันส้ม -->
+        <div style="padding: 8px 0 2px 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13.5px;">🥔 <b>มันส้ม</b></span>
+            <span style="font-weight: 700; color: #fb923c; font-size: 14px;" id="stk_val_orange_potato">390 กก.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
+            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #fb923c; font-weight: 600;">30/09/69 (เพียงพอตลอดทั้งเดือน)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+</div>
+
+<!-- SECTION 4: SECRETARY & PO KNOWLEDGE BASE -->
+<div id="sec_sec" class="app-section">
+    <!-- SECTION: WEEKLY DELIVERY CALENDAR FOR EACH CUSTOMER -->
+    <div class="card" style="border-left: 4px solid #38bdf8;">
+      <div class="card-header">
+        <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (กำหนดการจัดส่งตามคำสั่งซื้อยืนยัน)</div>
+        <span class="badge badge-primary">กันยายน 2569 (อัปเดต: 05/09/69 17:00 น.)</span>
+      </div>
+        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update">  <script src="/js/ops.js"></script>
+
+  <!-- Auth Unlock Modal -->
+  <div id="auth_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#161b22; border:1px solid #30363d; padding:24px; border-radius:12px; width:90%; max-width:340px; text-align:center;">
+      <div style="display:inline-block; background:rgba(16,185,129,0.15); color:#10b981; font-weight:600; font-size:11px; padding:3px 8px; border-radius:12px; margin-bottom:8px;">🌱 PSC Field Ops</div>
+      <h3 style="color:#fff; margin:0 0 6px 0; font-size:18px;">Team Access</h3>
+      <p style="color:#9ca3af; font-size:12.5px; margin:0 0 14px 0;">กรอก Team Access Code เพื่อเริ่มหรือต่ออายุการใช้งาน (จำเซสชัน 30 วัน)</p>
+      <input type="password" id="auth_input" placeholder="Team Access Code" style="width:100%; padding:11px; border-radius:8px; border:1px solid #374151; background:#0b1120; color:#fff; font-size:14px; box-sizing:border-box; margin-bottom:14px;" />
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button onclick="document.getElementById('auth_modal').style.display='none'" style="padding:10px; border-radius:6px; border:1px solid #30363d; background:#21262d; color:#c9d1d9; font-weight:600; cursor:pointer;">ยกเลิก</button>
+        <button onclick="submitAuthKey(document.getElementById('auth_input').value)" style="padding:10px; border-radius:6px; border:none; background:#238636; color:#fff; font-weight:600; cursor:pointer;">ปลดล็อค</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

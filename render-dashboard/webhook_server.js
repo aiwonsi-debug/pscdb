@@ -374,6 +374,30 @@ const server = http.createServer(async (req, res) => {
             return res.end();
         }
 
+        // 1.1 Serve Static Frontend Assets (/css/*, /js/*, /favicon.ico)
+        if (req.method === 'GET') {
+            const publicDir = path.join(__dirname, 'public');
+            let staticPath = null;
+            let mimeType = 'text/plain; charset=utf-8';
+            if (pathname.startsWith('/css/') && pathname.endsWith('.css')) {
+                staticPath = path.join(publicDir, pathname);
+                mimeType = 'text/css; charset=utf-8';
+            } else if (pathname.startsWith('/js/') && pathname.endsWith('.js')) {
+                staticPath = path.join(publicDir, pathname);
+                mimeType = 'application/javascript; charset=utf-8';
+            } else if (pathname === '/favicon.ico') {
+                res.writeHead(204);
+                return res.end();
+            }
+
+            if (staticPath && fs.existsSync(staticPath)) {
+                res.setHeader('Content-Type', mimeType);
+                res.setHeader('Cache-Control', 'public, max-age=86400');
+                res.writeHead(200);
+                return res.end(fs.readFileSync(staticPath));
+            }
+        }
+
         // 2. Serve Mobile Field Ops Web UI
         if ((req.method === 'GET' || req.method === 'POST') && (pathname === '/' || pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
             if (fs.existsSync(mobileHtmlFile)) {
