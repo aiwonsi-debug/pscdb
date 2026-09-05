@@ -1,3 +1,4 @@
+const querystring = require('querystring');
 const crypto = require('crypto');
 const memoryEngine = require('./memory_engine.js');
 const http = require('http');
@@ -327,10 +328,21 @@ const server = http.createServer(async (req, res) => {
         req.on('end', () => {
             try {
                 const cleaned = (body || '').replace(/^\uFEFF/, '').trim();
-                resolve(cleaned ? JSON.parse(cleaned) : {});
+                const contentType = (req.headers['content-type'] || '').split(';')[0].toLowerCase().trim();
+                if (contentType === 'application/x-www-form-urlencoded') {
+                    return resolve(querystring.parse(cleaned || ''));
+                }
+                if (contentType === 'application/json' || !contentType) {
+                    return resolve(cleaned ? JSON.parse(cleaned) : {});
+                }
+                // Fallback attempt: if body starts with { try JSON, else parse as form
+                if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+                    return resolve(JSON.parse(cleaned));
+                }
+                resolve(querystring.parse(cleaned));
             } catch (e) {
-                console.error('[getBody JSON Parse Error]:', e.message, 'Raw length:', body ? body.length : 0);
-                reject(new Error('Invalid JSON payload: ' + e.message));
+                console.error('[getBody Parse Error]:', e.message, 'Raw length:', body ? body.length : 0);
+                reject(new Error('Invalid payload: ' + e.message));
             }
         });
         req.on('error', reject);
@@ -353,10 +365,10 @@ const server = http.createServer(async (req, res) => {
 
                 const cookies = parseCookies(req);
                 const existingSession = cookies['psc_session'] || '';
-                let queryKey = (parsedUrl.query.auth || '').trim();
+                let queryKey = '';
                 if (req.method === 'POST') {
                     const postBody = await getBody();
-                    queryKey = queryKey || (postBody.access_code || postBody.key || postBody.auth || '').trim();
+                    queryKey = (postBody.access_code || postBody.key || postBody.auth || '').trim();
                 }
 
                 // Authentication Gate: Require existing valid session OR Master PSC_API_KEY to mint new session

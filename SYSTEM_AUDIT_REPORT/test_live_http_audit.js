@@ -197,15 +197,18 @@ server.listen(8999, '127.0.0.1', async () => {
         assert.ok(html.includes('Authentication Required'), 'Must present authentication required page');
     });
 
-    // Test 14: Authenticated GET /ops?auth=<key> mints valid HttpOnly session cookie
+    // Test 14: Authenticated POST /ops with form data mints valid HttpOnly session cookie
     let capturedCookie = '';
     let extractedSessionToken = '';
-    await runHttpTest('14. Authenticated /ops gate: Operator with key receives HttpOnly session cookie', {
+    await runHttpTest('14. Authenticated /ops gate: Operator with form auth receives HttpOnly session cookie', {
         hostname: '127.0.0.1',
         port: 8999,
-        path: `/ops?auth=${TEST_KEY}`,
-        method: 'GET'
-    }, null, 200, (html, headers) => {
+        path: '/ops',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    }, `auth=${TEST_KEY}`, 200, (html, headers) => {
         assert.ok(!html.includes(TEST_KEY), 'CRITICAL: Master PSC_API_KEY must NEVER be leaked to HTML DOM');
         assert.ok(!html.includes('psc_sess_'), 'CRITICAL: Ephemeral session token must NOT be exposed in HTML DOM / JS variable');
         assert.ok(!html.includes('__PSC_API_KEY_PLACEHOLDER__'), 'HTML must not contain un-replaced placeholder');
@@ -312,6 +315,135 @@ server.listen(8999, '127.0.0.1', async () => {
         const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
         assert.ok(sessionCookie && sessionCookie.includes('HttpOnly'), 'POST /api/login must issue HttpOnly session cookie');
     });
+
+    // Test 23: GET /ops?auth=MASTER_KEY -> MUST BE REJECTED 401 with NO Set-Cookie (Zero Secret in URL)
+    await runHttpTest('23. Zero Secret in URL: Reject GET /ops?auth=MASTER_KEY with 401 and NO Set-Cookie', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: `/ops?auth=${TEST_KEY}`,
+        method: 'GET'
+    }, null, 401, (html, headers) => {
+        const setCookieHeaders = headers['set-cookie'] || [];
+        const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
+        assert.ok(!sessionCookie, 'Must NOT issue session cookie for URL query key authentication');
+    });
+
+    // Test 24: POST /ops application/x-www-form-urlencoded -> 200 + psc_session cookie
+    await runHttpTest('24. Form Login: POST /ops application/x-www-form-urlencoded returns 200 + psc_session', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/ops',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    }, `auth=${TEST_KEY}`, 200, (html, headers) => {
+        const setCookieHeaders = headers['set-cookie'] || [];
+        const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
+        assert.ok(sessionCookie && sessionCookie.includes('HttpOnly'), 'Must issue HttpOnly session cookie on valid form POST');
+    });
+
+    // Test 25: POST /api/team-update with valid cookie -> 200
+    await runHttpTest('25. Write API: POST /api/team-update with valid cookie succeeds with 200', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cookie': capturedCookie
+        }
+    }, JSON.stringify({ id: 'salaya_0209', supplier: 'สวนทดสอบ CAR1', truck: 'รถ 6 ล้อ' }), 200);
+
+    // Test 26: POST /api/team-update with expired/no cookie -> 401
+    await runHttpTest('26. Write API: POST /api/team-update with expired/no cookie rejected with 401', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cookie': 'psc_session=psc_sess_expired_dummy_token_9999'
+        }
+    }, JSON.stringify({ id: 'salaya_0209', supplier: 'สวนทดสอบ' }), 401);
+
+    // Test 27: POST /api/team-reset with valid cookie -> 200
+    await runHttpTest('27. Reset API: POST /api/team-reset with valid cookie succeeds with 200', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-reset',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cookie': capturedCookie
+        }
+    }, JSON.stringify({ id: 'salaya_0209' }), 200);
+
+    // Test 28: POST /api/team-reset with no cookie -> 401
+    await runHttpTest('28. Reset API: POST /api/team-reset with no cookie rejected with 401', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-reset',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }, JSON.stringify({ id: 'salaya_0209' }), 401);
+
+    // Test 29: Browser-style /api/login JSON -> 200 + HttpOnly cookie
+    await runHttpTest('29. Login API: POST /api/login JSON returns 200 + HttpOnly cookie', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/login',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }, JSON.stringify({ access_code: TEST_KEY }), 200, (data, headers) => {
+        const setCookieHeaders = headers['set-cookie'] || [];
+        const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
+        assert.ok(sessionCookie && sessionCookie.includes('HttpOnly'), 'Must issue HttpOnly session cookie');
+    });
+
+    // Test 30: /api/login form-urlencoded -> 200 + HttpOnly cookie
+    await runHttpTest('30. Login API: POST /api/login form-urlencoded returns 200 + HttpOnly cookie', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/login',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    }, `access_code=${TEST_KEY}`, 200, (data, headers) => {
+        const setCookieHeaders = headers['set-cookie'] || [];
+        const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
+        assert.ok(sessionCookie && sessionCookie.includes('HttpOnly'), 'Must issue HttpOnly session cookie');
+    });
+
+    // Test 31: Session token in X-PSC-API-KEY -> 401 (Header strictly checks Master Key)
+    await runHttpTest('31. Backend Cookie-Only: Reject session token in X-PSC-API-KEY on write API', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-PSC-API-KEY': extractedSessionToken
+        }
+    }, JSON.stringify({ id: 'salaya_0209' }), 401);
+
+    // Test 32: Session token in Bearer authorization header -> 401 (Header strictly checks Master Key)
+    await runHttpTest('32. Backend Cookie-Only: Reject session token in Authorization: Bearer header', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/team-update',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${extractedSessionToken}`
+        }
+    }, JSON.stringify({ id: 'salaya_0209' }), 401);
+
 
     console.log('\n================================================================');
     console.log(`📊 LIVE TEST RESULTS: PASS: ${pass} | FAIL: ${fail}`);
