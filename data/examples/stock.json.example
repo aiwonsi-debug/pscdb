@@ -1,12 +1,12 @@
 {
   "AsOfDate": "05/09/69",
-  "LastUpdated": "2026-09-05T08:21:00.000Z",
+  "LastUpdated": "2026-09-05T19:01:58.346Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 8800,
+      "StockKg": 8875,
       "Yield": {
-        "AFT": 0.648,
+        "AFT": 0.64,
         "TNS": 0.99
       }
     },
@@ -36,6 +36,12 @@
     }
   },
   "AuditTrail": [
+    {
+      "Timestamp": "2026-09-05T19:01:58.347Z",
+      "Item": "Cabbage",
+      "NewKg": 8875,
+      "Source": "Telegram Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
+    },
     {
       "Timestamp": "2026-09-04T02:38:11.096Z",
       "ItemKey": "Cabbage",
@@ -71,6 +77,19 @@
       "NewKg": 4090,
       "Source": "Telegram Verified Ingestion",
       "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T13:03:12.273Z",
+      "ItemKey": "Cabbage_Yield_AFT",
+      "Field": "Yield.AFT",
+      "PreviousValue": 0.648,
+      "NewValue": 0.64,
+      "Unit": "factor",
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:1532466397:1319:Cabbage_Yield_AFT"
     }
+  ],
+  "ProcessedEvents": [
+    "telegram:1532466397:1319:Cabbage_Yield_AFT"
   ]
 }

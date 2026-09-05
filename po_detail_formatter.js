@@ -29,16 +29,20 @@ function formatPoDetailsForNotification(line) {
             const wb = xlsx.readFile(p);
             // Search only matching month sheet if it exists, otherwise check all
             const sheetsToCheck = wb.SheetNames.includes(targetMonth) ? [targetMonth] : wb.SheetNames;
-            sheetsToCheck.forEach(sheet => {
-              const rows = xlsx.utils.sheet_to_json(wb.Sheets[sheet]);
-              rows.forEach(r => {
-                if (!r.Source_File) return;
-                const srcBase = path.basename(r.Source_File.toString().trim());
-                if (srcBase === filename || r.Source_File.toString().includes(filename)) {
-                  results.push(r);
-                }
+              sheetsToCheck.forEach(sheet => {
+                const rows = xlsx.utils.sheet_to_json(wb.Sheets[sheet]);
+                rows.forEach(r => {
+                  if (!r.Source_File && !r.PO_Number) return;
+                  const srcBase = r.Source_File ? path.basename(r.Source_File.toString().trim()) : '';
+                  const poNum = (r.PO_Number || '').toString();
+                  // Check exact match, partial match, or PO number matching digits in filename
+                  const fileDigits = (filename.match(/\d{4}/g) || []);
+                  const matchesDigits = fileDigits.length > 0 && fileDigits.some(d => poNum.includes(d));
+                  if (srcBase === filename || srcBase.includes(filename) || matchesDigits) {
+                    results.push(r);
+                  }
+                });
               });
-            });
           } catch(e) {}
         }
       });
@@ -55,7 +59,9 @@ function formatPoDetailsForNotification(line) {
 
       for (const [po, items] of Object.entries(byPO)) {
         const dDate = items[0].Delivery_Date || items[0].Request_Date || '-';
-        details += `  📦 ${po} (กำหนดส่ง: ${dDate})\n`;
+        const isRevised = items.some(it => it.Source_File && it.Source_File.toString().toLowerCase().includes('rev'));
+        const revTag = isRevised ? ' 🔴 [REVISED / แก้ไขยอด]' : '';
+        details += `  📦 ${po}${revTag} (กำหนดส่ง: ${dDate})\n`;
         let subtotal = 0;
         items.forEach(it => {
           const q = Number(it.Quantity) || 0;

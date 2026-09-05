@@ -1,39 +1,95 @@
 {
-  "AsOfDate": "01/09/69",
-  "LastUpdated": "2026-09-01T00:00:00.000Z",
+  "AsOfDate": "05/09/69",
+  "LastUpdated": "2026-09-05T19:01:58.346Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 5000,
+      "StockKg": 8875,
       "Yield": {
-        "AFT": 0.6,
+        "AFT": 0.64,
         "TNS": 0.99
       }
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 20000
+      "StockKg": 25480
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
-      "StockKg": 5000
+      "StockKg": 7010
     },
     "Carrot": {
       "Name": "แครอทสวย",
-      "StockKg": 5000
+      "StockKg": 4090
     },
     "Purple_Sweet_Potato": {
       "Name": "มันม่วงหัวเล็ก",
-      "StockKg": 1500
+      "StockKg": 1690
     },
     "Yellow_Sweet_Potato": {
       "Name": "มันเหลืองไข่",
-      "StockKg": 500
+      "StockKg": 342
     },
     "Orange_Sweet_Potato": {
       "Name": "มันส้ม",
-      "StockKg": 500
+      "StockKg": 390
     }
   },
-  "AuditTrail": []
+  "AuditTrail": [
+    {
+      "Timestamp": "2026-09-05T19:01:58.347Z",
+      "Item": "Cabbage",
+      "NewKg": 8875,
+      "Source": "Telegram Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 6075,
+      "NewKg": 8800,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Onion_AFT",
+      "ItemName": "หอม AFT",
+      "PreviousKg": 26120,
+      "NewKg": 25480,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Onion_Chinese",
+      "ItemName": "หอมจีน",
+      "PreviousKg": 7760,
+      "NewKg": 7010,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Carrot",
+      "ItemName": "แครอทสวย",
+      "PreviousKg": 5830,
+      "NewKg": 4090,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T13:03:12.273Z",
+      "ItemKey": "Cabbage_Yield_AFT",
+      "Field": "Yield.AFT",
+      "PreviousValue": 0.648,
+      "NewValue": 0.64,
+      "Unit": "factor",
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:1532466397:1319:Cabbage_Yield_AFT"
+    }
+  ],
+  "ProcessedEvents": [
+    "telegram:1532466397:1319:Cabbage_Yield_AFT"
+  ]
 }

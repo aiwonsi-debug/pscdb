@@ -57,6 +57,18 @@ const DEFAULT_DATA = {
     last_request_time: null,
     status: 'ONLINE'
   },
+  okmd: {
+    model: 'deepseek-v4-pro',
+    provider: 'Deepseek',
+    total_requests: 0,
+    total_tokens: 0,
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    daily_quota_tokens: 180000,
+    daily_remaining_tokens: 174229,
+    last_request_time: null,
+    status: 'ONLINE'
+  },
   recent_events: []
 };
 
@@ -220,10 +232,55 @@ function recordGlmUsage(usage = {}, promptSnippet = '') {
   return data;
 }
 
+function recordOkmdUsage(usage = {}, modelQuota = {}, model = 'deepseek-v4-pro', provider = 'Deepseek', promptSnippet = '') {
+  const data = loadQuotaData();
+  if (!data.okmd) {
+    data.okmd = {
+      model: model,
+      provider: provider,
+      total_requests: 0,
+      total_tokens: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      daily_quota_tokens: 180000,
+      daily_remaining_tokens: 180000,
+      last_request_time: null,
+      status: 'ONLINE'
+    };
+  }
+  data.okmd.total_requests += 1;
+  data.okmd.last_request_time = new Date().toISOString();
+  data.okmd.model = model;
+  data.okmd.provider = provider;
 
+  const promptTokens = usage.prompt_tokens || 0;
+  const compTokens = usage.completion_tokens || 0;
+  const totTokens = usage.total_tokens || (promptTokens + compTokens);
+
+  data.okmd.prompt_tokens += promptTokens;
+  data.okmd.completion_tokens += compTokens;
+  data.okmd.total_tokens += totTokens;
+
+  if (modelQuota.daily_quota_tokens) data.okmd.daily_quota_tokens = modelQuota.daily_quota_tokens;
+  if (modelQuota.daily_remaining_tokens !== undefined) data.okmd.daily_remaining_tokens = modelQuota.daily_remaining_tokens;
+
+  data.recent_events.unshift({
+    timestamp: new Date().toISOString(),
+    engine: 'OKMD',
+    model: model,
+    tokens: totTokens,
+    snippet: (promptSnippet || '').substring(0, 50)
+  });
+
+  if (data.recent_events.length > 20) data.recent_events.pop();
+
+  saveQuotaData(data, true);
+  return data;
+}
 
 function formatUsageForTelegram() {
   const data = loadQuotaData();
+  const okmd = data.okmd || {};
   const g = data.groq;
   const rl = g.rate_limit || {};
   const agy = data.agy || {};
@@ -237,9 +294,19 @@ function formatUsageForTelegram() {
   const gemFive = gem.five_hour_remaining_pct !== undefined ? gem.five_hour_remaining_pct : 0.00;
   const cgWeek = cg.weekly_remaining_pct !== undefined ? cg.weekly_remaining_pct : 0.00;
 
+  const okmdRemaining = okmd.daily_remaining_tokens !== undefined ? okmd.daily_remaining_tokens : 180000;
+  const okmdTotal = okmd.daily_quota_tokens || 180000;
+  const okmdPct = Math.round((okmdRemaining / okmdTotal) * 100);
+
   return [
     '⚡ <b>AI QUOTA & RATE LIMIT STATUS</b>',
     '━━━━━━━━━━━━━━━━━━━━',
+    '👑 <b>OKMD Playground API (Primary Engine)</b>',
+    '• <b>โมเดลหลัก:</b> <code>' + (okmd.model || 'deepseek-v4-pro') + '</code> (' + (okmd.provider || 'Deepseek') + ')',
+    '• <b>Tokens คงเหลือวันนี้:</b> <b>' + okmdRemaining.toLocaleString() + ' / ' + okmdTotal.toLocaleString() + '</b> (' + okmdPct + '%)',
+    '• <b>เรียกใช้สะสม:</b> ' + (okmd.total_requests || 0) + ' ครั้ง (' + (okmd.total_tokens || 0).toLocaleString() + ' tok)',
+    '• <b>สถานะ:</b> 🟢 ' + (okmd.status || 'ONLINE (Active)'),
+    '',
     '🚀 <b>Google Antigravity CLI (AGY)</b>',
     '• <b>บัญชี:</b> <code>' + (agy.account || 'aiwonsi@gmail.com') + '</code>',
     '• <b>Gemini (Flash / Pro):</b>',
@@ -247,16 +314,14 @@ function formatUsageForTelegram() {
     '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '1h 0m') + ')',
     '• <b>Claude / GPT (Sonnet/Opus):</b>',
     '  └ สัปดาห์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '142h 44m') + ')',
-    '  └ สถานะ: ⚠️ ' + (cg.five_hour_status || 'Weekly limit reached'),
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
     '🤖 <b>Groq Fast API (Auto-Failover)</b>',
     '• <b>โมเดล:</b> <code>' + (g.model || 'qwen/qwen3.8-27b') + '</code>',
-    '• <b>คำขอคงเหลือ:</b> <b>' + (rl.remaining_requests || 0) + ' / ' + (rl.limit_requests || 1000) + '</b> (' + reqPct + '%)',
     '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
-    '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง (' + (g.total_tokens || 0).toLocaleString() + ' tok)',
+    '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง',
     '━━━━━━━━━━━━━━━━━━━━',
-    '📱 <i>สถานะโควต้า AI พร้อมใช้งานตลอด 24 ชม.</i>'
+    '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชั้น</i>'
   ].join('\n');
 }
 
@@ -267,6 +332,7 @@ module.exports = {
   recordAgyUsage,
   updateAgyQuota,
   recordGlmUsage,
+  recordOkmdUsage,
   formatUsageForTelegram,
   QUOTA_FILE
 };

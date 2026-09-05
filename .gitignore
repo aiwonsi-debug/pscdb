@@ -36,3 +36,4 @@ MATERIAL_REPORT_TEMPLATE.json
 # Windows metadata files
 desktop.ini
 *.ini
+.aider*

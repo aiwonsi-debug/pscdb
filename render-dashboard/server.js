@@ -634,7 +634,13 @@ const server = http.createServer(async (req, res) => {
                     Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
                 }
             };
-            const targetStockFile = fs.existsSync(stockFile) ? stockFile : (fs.existsSync(stockFile + '.example') ? (stockFile + '.example') : null);
+            const targetStockFile = [
+                stockFile,
+                path.join(__dirname, '..', 'stock_inventory.json'),
+                path.join(__dirname, '..', 'data', 'examples', 'stock.json.example'),
+                path.join(__dirname, '..', 'stock_inventory.json.example'),
+                stockFile + '.example'
+            ].find(f => fs.existsSync(f));
             if (targetStockFile) {
                 try {
                     stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));

@@ -439,8 +439,12 @@ if (cat === 'all') {
           if (items.Yellow_Sweet_Potato && document.getElementById('stk_val_yellow_potato')) document.getElementById('stk_val_yellow_potato').textContent = items.Yellow_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
           if (items.Orange_Sweet_Potato && document.getElementById('stk_val_orange_potato')) document.getElementById('stk_val_orange_potato').textContent = items.Orange_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
           if (document.getElementById('stock_as_of_badge')) {
-            const timeStr = data.LastUpdated ? new Date(data.LastUpdated).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '15:43';
-            document.getElementById('stock_as_of_badge').textContent = 'อัปเดตสต็อก: ' + (data.AsOfDate || '05/09/69') + ' ' + timeStr + ' น.';
+            const timeStr = data.LastUpdated ? new Date(data.LastUpdated).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '19:01';
+            const asOf = data.AsOfDate || '05/09/69';
+            document.getElementById('stock_as_of_badge').textContent = 'อัปเดตสต็อก: ' + asOf + ' ' + timeStr + ' น.';
+            if (document.getElementById('stock_card_title')) {
+              document.getElementById('stock_card_title').textContent = '📦 สต็อกตรวจนับจริงล่าสุด (' + asOf + ') & คาดการณ์';
+            }
           }
         })
         .catch(e => {});
