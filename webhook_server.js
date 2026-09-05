@@ -52,15 +52,7 @@ function sendTelegramNotification(text) {
     } catch (e) {}
 }
 
-let envApiKey = (process.env.PSC_API_KEY || '').trim();
-const secCfgPath = path.join(__dirname, 'line_config.json');
-if (!envApiKey && fs.existsSync(secCfgPath)) {
-    try {
-        const sc = JSON.parse(fs.readFileSync(secCfgPath, 'utf8').replace(/^\uFEFF/, ''));
-        envApiKey = (sc.api_key || sc.PSC_API_KEY || '').trim();
-    } catch (e) {}
-}
-const PSC_API_KEY = envApiKey;
+const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 function syncToRender(endpoint, payload) {
@@ -245,7 +237,7 @@ const server = http.createServer(async (req, res) => {
         'http://localhost:8080',
         'http://127.0.0.1:8080'
     ];
-    if (allowedOrigins.includes(reqOrigin) || reqOrigin.endsWith('.onrender.com')) {
+    if (allowedOrigins.includes(reqOrigin)) {
         res.setHeader('Access-Control-Allow-Origin', reqOrigin);
     } else {
         res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');
@@ -313,7 +305,7 @@ const server = http.createServer(async (req, res) => {
 
         // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
         if (req.method === 'POST') {
-            const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || parsedUrl.query.key || parsedUrl.query.apiKey || '').trim();
+            const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             
@@ -340,6 +332,15 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === 'GET' && (pathname === '/api/usage' || pathname === '/api/quota' || pathname === '/api/ai-usage')) {
+            // Protect operational telemetry & AI quota metrics with API key
+            const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
+            const authHeader = (req.headers['authorization'] || '').trim();
+            const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
+            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
+            if (!isAuthorized) {
+                res.writeHead(401);
+                return res.end(JSON.stringify({ success: false, error: 'Unauthorized: Missing or invalid API key' }));
+            }
             const quotaData = quotaTracker.loadQuotaData();
             res.writeHead(200);
             return res.end(JSON.stringify({

@@ -16,18 +16,7 @@ if (!fs.existsSync(STATUS_FILE)) {
   }, null, 2), 'utf8');
 }
 
-let envApiKey = (process.env.PSC_API_KEY || '').trim();
-const secCfgPath = path.join(__dirname, '../line_config.json');
-const localCfgPath = path.join(__dirname, 'line_config.json');
-for (const p of [secCfgPath, localCfgPath]) {
-  if (!envApiKey && fs.existsSync(p)) {
-    try {
-      const sc = JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, ''));
-      envApiKey = (sc.api_key || sc.PSC_API_KEY || '').trim();
-    } catch (e) {}
-  }
-}
-const PSC_API_KEY = envApiKey;
+const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
 
 // Start daily 08:00 AM LINE notification scheduler
 lineNotifier.initDailyLineScheduler();
@@ -40,7 +29,7 @@ const server = http.createServer((req, res) => {
     'http://localhost:8080',
     'http://127.0.0.1:8080'
   ];
-  if (allowedOrigins.includes(reqOrigin) || reqOrigin.endsWith('.onrender.com')) {
+  if (allowedOrigins.includes(reqOrigin)) {
     res.setHeader('Access-Control-Allow-Origin', reqOrigin);
   } else {
     res.setHeader('Access-Control-Allow-Origin', 'https://pscdb.onrender.com');

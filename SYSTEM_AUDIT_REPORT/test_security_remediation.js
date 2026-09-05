@@ -91,6 +91,8 @@ test('C-05: webhook_server.js enforces X-PSC-API-KEY and fails closed without fa
     assert.ok(whCode.includes('401'), 'Must return HTTP 401 for unauthorized write requests');
     assert.ok(whCode.includes("const isAuthorized = PSC_API_KEY &&"), 'Must fail closed when PSC_API_KEY is not set');
     assert.ok(!whCode.includes("'psc_sec_ops_2026_key'"), 'Must NOT contain hardcoded secret fallback string');
+    assert.ok(!whCode.includes("parsedUrl.query.key"), 'Must NOT accept credentials via URL query parameter');
+    assert.ok(!whCode.includes("line_config.json"), 'Must NOT fallback to line_config.json for PSC_API_KEY');
 });
 
 test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed without fallback key', () => {
@@ -101,6 +103,8 @@ test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed w
         assert.ok(srvCode.includes('401'), 'Must return HTTP 401 for unauthorized write requests');
         assert.ok(srvCode.includes("const isAuthorized = PSC_API_KEY &&"), 'Must fail closed when PSC_API_KEY is not set');
         assert.ok(!srvCode.includes("'psc_sec_ops_2026_key'"), 'Must NOT contain hardcoded secret fallback string');
+        assert.ok(!srvCode.includes("parsedUrl.query.key"), 'Must NOT accept credentials via URL query parameter');
+        assert.ok(!srvCode.includes("line_config.json"), 'Must NOT fallback to line_config.json for PSC_API_KEY');
     } else {
         const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
         assert.ok(whCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
@@ -111,6 +115,12 @@ test('C-05: ops_mobile_web.html uses dynamic auth and has no hardcoded secret', 
     const htmlCode = fs.readFileSync(path.join(__dirname, '../ops_mobile_web.html'), 'utf8');
     assert.ok(htmlCode.includes("'X-PSC-API-KEY': PSC_API_KEY"), 'Client must provide X-PSC-API-KEY in write calls');
     assert.ok(!htmlCode.includes("'psc_sec_ops_2026_key'"), 'Client must NOT hardcode fallback secret key');
+});
+
+test('C-07: GET /api/usage and /api/quota endpoints are protected by authentication', () => {
+    const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
+    assert.ok(whCode.includes("pathname === '/api/usage'"), 'Must handle /api/usage');
+    assert.ok(whCode.includes("Protect operational telemetry & AI quota metrics with API key"), 'Must authenticate quota endpoints');
 });
 
 // 6. Verify Git Ignore & Secret Scrubbing
