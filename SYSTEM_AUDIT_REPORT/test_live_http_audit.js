@@ -6,7 +6,8 @@ const TEST_KEY = 'test_psc_secret_suite_998877';
 process.env.PSC_API_KEY = TEST_KEY;
 process.env.PORT = '8999';
 
-const { server } = require('E:/agy/webhook_server.js');
+const path = require('path');
+const { server } = require(path.resolve(__dirname, '..', 'webhook_server.js'));
 
 let pass = 0;
 let fail = 0;
