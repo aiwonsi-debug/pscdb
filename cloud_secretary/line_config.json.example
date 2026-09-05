@@ -1,9 +1,0 @@
-﻿{
-  "enabled": true,
-  "alert_time": "08:00",
-  "channel_secret": "your_line_channel_secret_here",
-  "line_channel_access_token": "your_line_channel_access_token_here",
-  "line_target_user_id": "your_line_user_id_here",
-  "line_target_group_id": "your_line_group_id_here",
-  "last_sent_date": ""
-}

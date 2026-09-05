@@ -32,3 +32,7 @@ MATERIAL_REPORT_TEMPLATE.json
 # Keep sanitized example templates tracked
 !*.example
 !*.example.json
+
+# Windows metadata files
+desktop.ini
+*.ini
