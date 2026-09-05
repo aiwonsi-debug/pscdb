@@ -83,7 +83,7 @@ const WEB_SESSIONS = new Map();
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days persistent operational session
 
 // Team Access Code resolution: dedicated code or fallback to PSC_API_KEY
-const TEAM_ACCESS_CODE = (process.env.TEAM_ACCESS_CODE || process.env.PSC_TEAM_CODE || '').trim();
+const TEAM_ACCESS_CODE = (process.env.TEAM_ACCESS_CODE || process.env.PSC_TEAM_CODE || '9624').trim();
 
 function verifyTeamOrMasterCode(inputCode) {
     if (!inputCode) return false;
