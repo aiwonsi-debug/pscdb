@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const memoryEngine = require('./memory_engine.js');
 const http = require('http');
 const https = require('https');
@@ -64,6 +65,34 @@ function sendTelegramNotification(text) {
 }
 
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
+// Web Client Session Tokens (Option 1: Zero Master Key Exposure)
+// Web UI clients receive short-lived ephemeral session tokens; Master PSC_API_KEY remains strictly on server.
+const WEB_SESSIONS = new Map();
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function generateWebSessionToken() {
+    const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
+    WEB_SESSIONS.set(token, Date.now() + SESSION_TTL_MS);
+    // Prune expired sessions
+    if (WEB_SESSIONS.size > 1000) {
+        const now = Date.now();
+        for (const [t, exp] of WEB_SESSIONS.entries()) {
+            if (exp < now) WEB_SESSIONS.delete(t);
+        }
+    }
+    return token;
+}
+
+function isValidWebSession(token) {
+    if (!token || !WEB_SESSIONS.has(token)) return false;
+    const expires = WEB_SESSIONS.get(token);
+    if (Date.now() > expires) {
+        WEB_SESSIONS.delete(token);
+        return false;
+    }
+    return true;
+}
+
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 function syncToRender(endpoint, payload) {
@@ -302,9 +331,11 @@ const server = http.createServer(async (req, res) => {
                 res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
                 res.setHeader('Pragma', 'no-cache');
                 res.setHeader('Expires', '0');
+                const sessionToken = generateWebSessionToken();
+                res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
                 res.writeHead(200);
                 const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
-                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
+                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, sessionToken);
                 return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -322,7 +353,7 @@ const server = http.createServer(async (req, res) => {
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             
-            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
+            const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken));
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ 
@@ -349,7 +380,7 @@ const server = http.createServer(async (req, res) => {
             const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
-            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
+            const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken));
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ success: false, error: 'Unauthorized: Missing or invalid API key' }));

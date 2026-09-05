@@ -172,16 +172,18 @@ server.listen(8999, '127.0.0.1', async () => {
         assert.strictEqual(headers['access-control-allow-origin'], 'https://pscdb.onrender.com', 'Must default to trusted origin only, not reflect evil subdomains');
     });
 
-    // Test 13: Dynamic key injection in /ops HTML serving
-    await runHttpTest('13. Serve-time dynamic key injection replaces placeholder in HTML', {
+    // Test 13: Option 1 Zero Master Key Exposure Verification
+    // The master PSC_API_KEY must NEVER be delivered to browser. Web UI receives an ephemeral psc_sess_ token.
+    await runHttpTest('13. Option 1: Ephemeral session token issued, master PSC_API_KEY never exposed', {
         hostname: '127.0.0.1',
         port: 8999,
         path: '/ops',
         method: 'GET'
-    }, null, 200, (html) => {
-        assert.ok(html.includes(TEST_KEY), 'HTML served must contain injected runtime key');
-        assert.ok(!html.includes('__PSC_API_KEY_PLACEHOLDER__'), 'HTML served must not contain placeholder');
-        assert.ok(html.includes("const PSC_API_KEY = '" + TEST_KEY + "';"), 'HTML must assign real injected key directly');
+    }, null, 200, (html, headers) => {
+        assert.ok(!html.includes(TEST_KEY), 'CRITICAL: Master PSC_API_KEY must NEVER be leaked to HTML/browser');
+        assert.ok(!html.includes('__PSC_API_KEY_PLACEHOLDER__'), 'HTML served must not contain un-replaced placeholder');
+        assert.ok(html.includes("const PSC_API_KEY = 'psc_sess_"), 'HTML must receive an ephemeral session token (psc_sess_...)');
+        assert.ok(headers['set-cookie'] && headers['set-cookie'].some(c => c.includes('HttpOnly')), 'Server must issue HttpOnly session cookie');
         assert.ok(!html.includes('psc_sec_ops_2026_key'), 'HTML served must never contain hardcoded fallback key');
     });
 

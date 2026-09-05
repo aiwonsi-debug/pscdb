@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const memoryEngine = require('./memory_engine.js');
 const http = require('http');
 const https = require('https');
@@ -23,6 +24,32 @@ const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
+// Web Client Session Tokens (Option 1: Zero Master Key Exposure)
+const WEB_SESSIONS = new Map();
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+function generateWebSessionToken() {
+    const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
+    WEB_SESSIONS.set(token, Date.now() + SESSION_TTL_MS);
+    if (WEB_SESSIONS.size > 1000) {
+        const now = Date.now();
+        for (const [t, exp] of WEB_SESSIONS.entries()) {
+            if (exp < now) WEB_SESSIONS.delete(t);
+        }
+    }
+    return token;
+}
+
+function isValidWebSession(token) {
+    if (!token || !WEB_SESSIONS.has(token)) return false;
+    const expires = WEB_SESSIONS.get(token);
+    if (Date.now() > expires) {
+        WEB_SESSIONS.delete(token);
+        return false;
+    }
+    return true;
+}
+
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
 function syncToGoogleSheets(payload) {
@@ -195,9 +222,11 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'GET' && (pathname === '/' || pathname === '/ops' || pathname === '/team-app' || pathname === '/field')) {
             if (fs.existsSync(mobileHtmlFile)) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                const sessionToken = generateWebSessionToken();
+                res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
                 res.writeHead(200);
                 const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
-                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
+                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, sessionToken);
                 return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -215,7 +244,7 @@ const server = http.createServer(async (req, res) => {
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
             
-            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
+            const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken));
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ 
@@ -242,7 +271,7 @@ const server = http.createServer(async (req, res) => {
             const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
-            const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
+            const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken));
             if (!isAuthorized) {
                 res.writeHead(401);
                 return res.end(JSON.stringify({ success: false, error: 'Unauthorized: Missing or invalid API key' }));

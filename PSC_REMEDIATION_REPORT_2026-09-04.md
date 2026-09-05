@@ -3,15 +3,18 @@
 **วันและเวลาจัดทำ:** 5 กันยายน 2569 (2026-09-05)  
 **ระบบ:** PSC AI Operations & Secretary Assistant  
 **อ้างอิงเอกสารผลการตรวจสอบเดิม:** `PSC_AI_Operations_FULL_AUDIT_2026-09-04.md`  
-**สถานะการแก้ไข (Verdict):** ✅ **RESOLVED & PRODUCTION-HARDENED (ผ่านการทดสอบ Live & Static 100%)**
+**สถานะการแก้ไข (Verdict):** ✅ **RESOLVED & PRODUCTION-HARDENED (Zero Master Key Exposure, Live & Static 100% PASS)**
 
 ---
 
 ## 1. บทสรุปสำหรับผู้บริหาร (Executive Summary)
 
-จากรายงานผลการ Audit และข้อสังเกตเพิ่มเติมเกี่ยวกับการบังคับใช้นโยบายความปลอดภัยแบบเชิงลึก (Defense in Depth) นั้น ทีมงานได้ดำเนินการแก้ไขช่องโหว่เชิงโครงสร้าง (Remediation) ในโค้ดทุกส่วนอย่างเป็นรูปธรรม ทั้งในระบบบอท Telegram (`bot.js`), เซิร์ฟเวอร์รับส่งข้อมูล (`webhook_server.js`), Render Dashboard (`render-dashboard/server.js`), Cloud Secretary (`cloud_secretary/server.js`), และ Mobile Web Application (`ops_mobile_web.html`)
+จากข้อสังเกตเชิงสถาปัตยกรรม (Architectural Finding) ในการตรวจสอบรอบล่าสุด ซึ่งระบุว่าแม้ระบบจะตัดสิทธิ์ Master API Key ออกจากโค้ดถาวรแล้ว แต่การส่ง Master `PSC_API_KEY` เข้าสู่ Browser ผ่าน `/ops` ทำให้ Secret กลายเป็น Client Credential ซึ่งเปิดเผยต่อ DevTools หรือ Network Inspection ได้นั้น
 
-ระบบได้รับการทดสอบยืนยันความปลอดภัยทั้งแบบ Static Code Analysis (15 รายการ) และ Live HTTP Runtime Testing (13 รายการ) ผ่านการทดสอบจริงครบถ้วน 100% โดยไม่มีข้อบกพร่องตกค้าง
+ทีมงานได้ปรับปรุงสถาปัตยกรรมใหม่เป็น **Option 1: Zero Master Key Exposure Architecture (Ephemeral Web Session Tokens / HttpOnly Cookies)**:
+1. **Master `PSC_API_KEY` จะถูกกักเก็บอยู่บน Server หลังบ้าน 100%** สำหรับการสื่อสารระหว่างระบบ Backend, Inter-Service, Cron Daemons, และ Cloud Sync เท่านั้น
+2. **Web UI Client (`/ops`, `/`) จะไม่ได้รับ Master Key อีกต่อไป**: เซิร์ฟเวอร์จะสร้าง **Ephemeral Web Session Token (`psc_sess_...`)** ที่มีอายุจำกัด พร้อมแนบ `Set-Cookie: HttpOnly; SameSite=Lax` เพื่อใช้สำหรับส่งคำสั่งบันทึกการทำงานของทีมงาน
+3. **Defense in Depth Backend**: ฝั่ง Server ตรวจสอบสิทธิ์โดยยอมรับ Master Key สำหรับระบบภายใน หรือ Web Session Token ที่สร้างจาก Server เท่านั้น และยังคง Fail-Closed 100% หากไม่มีการตั้งค่า `PSC_API_KEY` ใน Environment
 
 ---
 
@@ -25,7 +28,7 @@
 | **C-02** | **สั่งรันคำสั่งเครื่องผ่านแชทได้ (Remote Command Execution):** มีคำสั่ง `/cmd`, `/sh`, `/ps` รันโค้ด PowerShell โดยตรง | • ปิดการทำงานของคำสั่งรัน Shell ทั้งหมดอย่างถาวร<br>• ตัดการเชื่อมต่อ `execSilent` ออกจากคำสั่งกลุ่มนี้ | `bot.js` | ✅ **PASS** |
 | **C-03** | **AGY CLI รันด้วยสิทธิ์สูงสุด:** มีพารามิเตอร์ `--dangerously-skip-permissions` | • นำพารามิเตอร์ดังกล่าวออกจากการ Spawn ของ AGY CLI<br>• จำกัดให้ AI ทำงานภายใต้โหมดความปลอดภัย (Least-Privilege) | `bot.js` | ✅ **PASS** |
 | **C-04** | **รหัสผ่าน/Token ฝังในโค้ด (Hardcoded Secret):** มี Fallback Bot Token เขียนไว้ในซอร์สโค้ด และ Git Track ไฟล์ Credentials | • นำ Hardcoded Token และ API Keys ออกจากซอร์สโค้ดทั้งหมด ห้ามมี fallback secret default เด็ดขาด<br>• ปลดการ Track และลบไฟล์ `.env`, `line_config.json` ออกจาก Git Index ทั้งหมด พร้อมสร้างไฟล์เทมเพลตตัวอย่าง `.example`<br>• บังคับใช้นโยบาย **Fail-Closed** จาก Environment Variables (`process.env.PSC_API_KEY`) เท่านั้น หากไม่ตั้งค่าเซิร์ฟเวอร์จะปฏิเสธการทำงาน (Reject 401) | `webhook_server.js`<br>`bot.js`<br>`cloud_secretary/`<br>`render-dashboard/` | ✅ **PASS** |
-| **C-05** | **API สาธารณะขาดการตรวจสอบสิทธิ์ & Query String Credential Exposure:** ปลายทาง HTTP อนุญาตให้เขียนข้อมูลได้โดยไม่มีสิทธิ์ หรือรับคีย์ผ่าน URL Query | • บังคับใช้ระบบความปลอดภัย **Header-Only API Key Authentication (`X-PSC-API-KEY` หรือ `Authorization: Bearer <key>`)** ในทุก Endpoint ที่เป็นคำสั่งเขียน (POST): `/api/stock-update`, `/api/team-update`, `/api/loading-report`, `/api/team-reset`, `/api/reboot-bot`, `/api/sync-quota`<br>• **ยกเลิกการรับคีย์ผ่าน Query String (`?key=`, `?apiKey=`) ทั้งหมด** เพื่อป้องกัน Credential รั่วไหลผ่าน Server Access Logs<br>• หากไม่มี Header หรือ Key ไม่ตรง จะถูกปฏิเสธทันทีด้วยรหัส **HTTP 401 Unauthorized**<br>• ยกระดับการจำกัดสิทธิ์ Origin (Strict CORS): ไม่อนุญาต Origin ภายนอกที่ไม่ได้รับอนุญาต | `webhook_server.js`<br>`render-dashboard/server.js`<br>`cloud_secretary/server.js` | ✅ **PASS** |
+| **C-05** | **API สาธารณะขาดการตรวจสอบสิทธิ์ & Credential Exposure:** ปลายทาง HTTP อนุญาตให้เขียนข้อมูลได้โดยไม่มีสิทธิ์ หรือรับคีย์ผ่าน URL Query | • บังคับใช้ระบบความปลอดภัย **Header-Only Authentication (`X-PSC-API-KEY` หรือ `Authorization: Bearer <key>`)** ในทุก Endpoint ที่เป็นคำสั่งเขียน (POST): `/api/stock-update`, `/api/team-update`, `/api/loading-report`, `/api/team-reset`, `/api/reboot-bot`, `/api/sync-quota`<br>• **ยกเลิกการรับคีย์ผ่าน Query String (`?key=`, `?apiKey=`) ทั้งหมด** เพื่อป้องกัน Credential รั่วไหลผ่าน Server Access Logs<br>• หากไม่มี Header หรือ Key/Token ไม่ตรง จะถูกปฏิเสธทันทีด้วยรหัส **HTTP 401 Unauthorized**<br>• ยกระดับการจำกัดสิทธิ์ Origin (Strict CORS): ไม่อนุญาต Origin ภายนอกที่ไม่ได้รับอนุญาต | `webhook_server.js`<br>`render-dashboard/server.js`<br>`cloud_secretary/server.js` | ✅ **PASS** |
 | **C-06** | **สต็อกเสี่ยงต่อการเขียนทับพังทั้งระบบ (Wholesale Overwrite & Data Corruption):** `/api/stock-update` ไม่มี Schema Validation | • เพิ่มการตรวจสอบโครงสร้างข้อมูลอย่างเข้มงวด (Strict Schema & Whitelist Validation): ล็อค SKU ที่อนุญาตเฉพาะกลุ่มสินค้าที่กำหนด (`Cabbage`, `Onion_AFT`, `Onion_Chinese`, `Carrot`, `Purple_Sweet_Potato`, `Yellow_Sweet_Potato`, `Orange_Sweet_Potato`)<br>• ป้องกัน Input แฝง: ตรวจสอบ `Number.isFinite(StockKg)` และจำกัดขอบเขต `0 <= StockKg <= 1,000,000` กิโลกรัม (ตัดโอกาสค่า `Infinity`, `NaN`, หรือค่าติดลบ)<br>• ใช้เทคนิค **Atomic Write (temp-file + renameSync)** ป้องกันไฟล์เสียหายระหว่างเขียน | `webhook_server.js`<br>`render-dashboard/server.js` | ✅ **PASS** |
 | **C-07** | **Operational Telemetry & Quota Endpoints ขาดการป้องกัน (Unauthenticated Read Exposure):** ข้อมูล Quota และสถานะการใช้งาน AI เปิดเผยต่อสาธารณะ | • เพิ่ม Auth Guard บังคับตรวจ API Key บน Endpoints: `GET /api/usage`, `GET /api/quota`, `GET /api/ai-usage`<br>• ส่งผลให้บุคคลภายนอกไม่สามารถตรวจดูสถานะทรัพยากรหรือโควตาระบบได้ หากไม่มี API Key (ส่งกลับ HTTP 401) | `webhook_server.js` | ✅ **PASS** |
 
@@ -36,7 +39,7 @@
 | รหัส | รายการที่แก้ไข | รายละเอียดทางเทคนิค | ไฟล์ที่เกี่ยวข้อง |
 | :--- | :--- | :--- | :--- |
 | **H-01** | Strict CORS Restriction | ตรวจสอบ Origin อย่างเข้มงวด โดยไม่อนุญาตให้สะท้อน (Reflect) Untrusted Origins | `webhook_server.js`<br>`render-dashboard/server.js` |
-| **H-02** | Dynamic Client Key Injection | นำ Hardcoded Client API Key ออกจากโค้ด HTML ของฝั่งหน้าบ้านทั้งหมด และใช้การแทนที่ไดนามิกขณะ Serve ไฟล์จากเซิร์ฟเวอร์ (`PSC_API_KEY_INJECT`) | `ops_mobile_web.html`<br>`cloud_secretary/team_dashboard.html`<br>`webhook_server.js` |
+| **H-02** | **Zero Master Key Exposure (Web Session Tokens)** | สถาปัตยกรรมแยก Secret: Master API Key ไม่ส่งออกไปยัง Client โดย Web App `/ops` ได้รับเฉพาะ Short-lived Ephemeral Web Session Token (`psc_sess_...`) พร้อม HttpOnly Cookie เท่านั้น | `ops_mobile_web.html`<br>`cloud_secretary/team_dashboard.html`<br>`webhook_server.js`<br>`render-dashboard/server.js`<br>`cloud_secretary/server.js` |
 | **H-03** | HTML Injection Defense in Push Notifications | ทำ HTML Sanitization / Escaping (`escapeHtml`) กับข้อมูลอีเมล Gmail (`from`, `subject`, `snippet`, `attachmentNames`) ก่อนจัดรูปแบบส่ง Telegram ด้วยโหมด `parse_mode: 'HTML'` ป้องกันการโจมตี Injection ทางแชท | `webhook_server.js`<br>`render-dashboard/webhook_server.js` |
 | **H-04** | File Exfiltration Prevention | จำกัดการค้นหาไฟล์ (`ขอไฟล์`, `/file`) ให้อยู่เฉพาะในโฟลเดอร์เอกสารงาน `E:\รวมงาน\งาน 25-26` พร้อมบล็อกไฟล์ที่มีคำว่า `config`, `token`, `key`, `password`, `.env` | `bot.js` |
 | **H-06** | Data Provenance Tracking | เพิ่ม Metadata ระบุแหล่งที่มา (`provenance`, `extractionMethod`) ในทุกรายการ Ground Truth ให้ตรวจสอบย้อนกลับได้ | `ground_truth_validator.js` |
@@ -64,7 +67,7 @@
 - ตรวจสอบ H-11 (Immutable Rules Protection): ✅ **PASS**
 - ตรวจสอบ C-05 (Webhook POST Enforces Header Auth): ✅ **PASS**
 - ตรวจสอบ C-05 (Render Server POST Enforces Header Auth): ✅ **PASS**
-- ตรวจสอบ C-05 (Mobile Ops Client Passes Dynamic Key): ✅ **PASS**
+- ตรวจสอบ C-05 (Mobile Ops Client Passes Dynamic Auth): ✅ **PASS**
 - ตรวจสอบ SEC-01 (.gitignore Excludes Secrets & State Signals): ✅ **PASS**
 - ตรวจสอบ C-05 (No Secret Key Fallback in Webhook Server): ✅ **PASS**
 👉 **ผลรวม Static Test: ผ่าน 15 / 15 ข้อ (100%)**
@@ -83,7 +86,7 @@
 10. Rejects negative numbers in `StockKg` (400): ✅ **PASS**
 11. Rejects unknown SKU not in whitelist (400): ✅ **PASS**
 12. Strict CORS blocks reflection of untrusted origins: ✅ **PASS**
-13. Dynamic serve-time key injection correctly replaces placeholder on `/ops`: ✅ **PASS**
+13. **Option 1 Zero Master Key Exposure:** Master `PSC_API_KEY` is NEVER leaked to HTML/Browser; Ephemeral session token (`psc_sess_...`) and HttpOnly Cookie are issued correctly: ✅ **PASS**
 👉 **ผลรวม Live HTTP Test: ผ่าน 13 / 13 ข้อ (100%)**
 
 ### 3. Core Functional Logic Suite (`test_functional_logic.js`)
@@ -96,5 +99,5 @@
 
 - **Telegram Secretary Bot:** 🟢 **ONLINE** (PID: Active, พอร์ต 8080 พร้อมรับคำสั่ง)
 - **สิทธิ์การสั่งการ:** ล็อคเฉพาะผู้ใช้ Telegram ID `1532466397`
-- **ระบบ Cloud Sync:** พร้อมเชื่อมต่อไปยัง Render Dashboard และ Google Sheets
-- **ระดับความปลอดภัยโดยรวม:** **HARDENED & SECURE (Fail-Closed, Zero Hardcoded Secrets, Header Auth Enforced, Whitelist Validated)**
+- **ระบบ Web Security:** **Zero Master Key Exposure (Ephemeral Web Session Tokens + HttpOnly Cookies)**
+- **ระดับความปลอดภัยโดยรวม:** **HARDENED & PRODUCTION-READY**

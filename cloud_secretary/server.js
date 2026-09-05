@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -17,6 +18,32 @@ if (!fs.existsSync(STATUS_FILE)) {
 }
 
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
+// Web Client Session Tokens (Option 1: Zero Master Key Exposure)
+const WEB_SESSIONS = new Map();
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+function generateWebSessionToken() {
+    const token = 'psc_sess_' + crypto.randomBytes(24).toString('hex');
+    WEB_SESSIONS.set(token, Date.now() + SESSION_TTL_MS);
+    if (WEB_SESSIONS.size > 1000) {
+        const now = Date.now();
+        for (const [t, exp] of WEB_SESSIONS.entries()) {
+            if (exp < now) WEB_SESSIONS.delete(t);
+        }
+    }
+    return token;
+}
+
+function isValidWebSession(token) {
+    if (!token || !WEB_SESSIONS.has(token)) return false;
+    const expires = WEB_SESSIONS.get(token);
+    if (Date.now() > expires) {
+        WEB_SESSIONS.delete(token);
+        return false;
+    }
+    return true;
+}
+
 
 // Start daily 08:00 AM LINE notification scheduler
 lineNotifier.initDailyLineScheduler();
@@ -50,7 +77,7 @@ const server = http.createServer((req, res) => {
     const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
     const authHeader = (req.headers['authorization'] || '').trim();
     const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
-    const isAuthorized = PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY));
+    const isAuthorized = PSC_API_KEY && (((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)) || isValidWebSession(reqKey) || isValidWebSession(bearerToken));
     if (!isAuthorized && urlPath !== '/api/line-webhook') {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Unauthorized: Missing or invalid API key' }));
@@ -178,8 +205,10 @@ const server = http.createServer((req, res) => {
   if (urlPath === '/ops' || urlPath === '/field' || urlPath === '/team-app') {
     const target = fs.existsSync(OPS_HTML_FILE) ? OPS_HTML_FILE : TEAM_HTML_FILE;
     if (fs.existsSync(target)) {
-      const html = fs.readFileSync(target, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
+      const sessionToken = generateWebSessionToken();
+      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      const html = fs.readFileSync(target, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, sessionToken);
       res.end(html);
       return;
     }
@@ -189,8 +218,10 @@ const server = http.createServer((req, res) => {
   if (urlPath === '/' || urlPath === '/team' || urlPath === '/dashboard') {
     const htmlPath = fs.existsSync(TEAM_HTML_FILE) ? TEAM_HTML_FILE : OPS_HTML_FILE;
     if (fs.existsSync(htmlPath)) {
-      const html = fs.readFileSync(htmlPath, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
+      const sessionToken = generateWebSessionToken();
+      res.setHeader('Set-Cookie', `psc_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      const html = fs.readFileSync(htmlPath, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, sessionToken);
       res.end(html);
       return;
     }
