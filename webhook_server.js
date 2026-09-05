@@ -304,7 +304,7 @@ const server = http.createServer(async (req, res) => {
                 res.setHeader('Expires', '0');
                 res.writeHead(200);
                 const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
-                    .replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
                 return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');

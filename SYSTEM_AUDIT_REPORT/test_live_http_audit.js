@@ -180,6 +180,8 @@ server.listen(8999, '127.0.0.1', async () => {
         method: 'GET'
     }, null, 200, (html) => {
         assert.ok(html.includes(TEST_KEY), 'HTML served must contain injected runtime key');
+        assert.ok(!html.includes('__PSC_API_KEY_PLACEHOLDER__'), 'HTML served must not contain placeholder');
+        assert.ok(html.includes("const PSC_API_KEY = '" + TEST_KEY + "';"), 'HTML must assign real injected key directly');
         assert.ok(!html.includes('psc_sec_ops_2026_key'), 'HTML served must never contain hardcoded fallback key');
     });
 

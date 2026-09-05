@@ -178,7 +178,7 @@ const server = http.createServer((req, res) => {
   if (urlPath === '/ops' || urlPath === '/field' || urlPath === '/team-app') {
     const target = fs.existsSync(OPS_HTML_FILE) ? OPS_HTML_FILE : TEAM_HTML_FILE;
     if (fs.existsSync(target)) {
-      const html = fs.readFileSync(target, 'utf8').replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+      const html = fs.readFileSync(target, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(html);
       return;
@@ -189,7 +189,7 @@ const server = http.createServer((req, res) => {
   if (urlPath === '/' || urlPath === '/team' || urlPath === '/dashboard') {
     const htmlPath = fs.existsSync(TEAM_HTML_FILE) ? TEAM_HTML_FILE : OPS_HTML_FILE;
     if (fs.existsSync(htmlPath)) {
-      const html = fs.readFileSync(htmlPath, 'utf8').replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+      const html = fs.readFileSync(htmlPath, 'utf8').replace(/__PSC_API_KEY_PLACEHOLDER__/g, PSC_API_KEY);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(html);
       return;
