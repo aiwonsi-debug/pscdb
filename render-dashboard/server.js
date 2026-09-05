@@ -6,6 +6,17 @@ const fs = require('fs');
 const path = require('path');
 const quotaTracker = require('./ai_quota_tracker.js');
 
+function escapeHtml(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+
 const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
@@ -185,8 +196,8 @@ const server = http.createServer(async (req, res) => {
             if (fs.existsSync(mobileHtmlFile)) {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.writeHead(200);
-                let htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8');
-                htmlContent = htmlContent.replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+                const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
+                    .replace('PSC_API_KEY_INJECT', PSC_API_KEY);
                 return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -241,8 +252,9 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify({
                 success: true,
                 timestamp: new Date().toISOString(),
-                data: quotaData
-            }, null, 2));
+                data: quotaData,
+                metrics: quotaData
+            }));
         }
 
         

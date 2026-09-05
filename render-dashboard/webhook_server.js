@@ -16,6 +16,7 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+
 const PORT = process.env.PORT || 8080;
 const mobileHtmlFile = path.join(__dirname, 'ops_mobile_web.html');
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
@@ -302,8 +303,8 @@ const server = http.createServer(async (req, res) => {
                 res.setHeader('Pragma', 'no-cache');
                 res.setHeader('Expires', '0');
                 res.writeHead(200);
-                let htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8');
-                htmlContent = htmlContent.replace('PSC_API_KEY_INJECT', PSC_API_KEY);
+                const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
+                    .replace('PSC_API_KEY_INJECT', PSC_API_KEY);
                 return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -358,8 +359,9 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify({
                 success: true,
                 timestamp: new Date().toISOString(),
-                data: quotaData
-            }, null, 2));
+                data: quotaData,
+                metrics: quotaData
+            }));
         }
 
 
@@ -475,11 +477,11 @@ const server = http.createServer(async (req, res) => {
                         `📌 <b>หัวข้อ:</b> ${safeSubject}\n` +
                         `⏰ <b>เวลา:</b> ${safeDate}\n`;
 
-            if (safeAttNames.length > 0) {
+            if (attNames.length > 0) {
                 tgMsg += `📎 <b>ไฟล์แนบ (${safeAttNames.length}):</b> ${safeAttNames.join(', ')}\n`;
             }
 
-            if (safeSnippet) {
+            if (snippet) {
                 tgMsg += `📝 <b>ข้อความ:</b>\n<i>${safeSnippet}...</i>\n`;
             }
 
