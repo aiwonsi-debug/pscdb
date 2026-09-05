@@ -276,6 +276,43 @@ server.listen(8999, '127.0.0.1', async () => {
         }
     }, null, 200);
 
+    // Test 20: GET /api/usage rejects session token in X-PSC-API-KEY header (Backend Cookie-Only Strictness)
+    await runHttpTest('20. Backend Cookie-Only: Reject session token sent via X-PSC-API-KEY on GET /api/usage', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/usage',
+        method: 'GET',
+        headers: {
+            'X-PSC-API-KEY': extractedSessionToken
+        }
+    }, null, 401);
+
+    // Test 21: GET /api/usage rejects session token in Authorization: Bearer header
+    await runHttpTest('21. Backend Cookie-Only: Reject session token sent via Authorization: Bearer on GET /api/usage', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/usage',
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${extractedSessionToken}`
+        }
+    }, null, 401);
+
+    // Test 22: POST /api/login issues HttpOnly session cookie without key in URL
+    await runHttpTest('22. POST /api/login: Issues HttpOnly session cookie via body access_code (No Key in URL)', {
+        hostname: '127.0.0.1',
+        port: 8999,
+        path: '/api/login',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }, JSON.stringify({ access_code: TEST_KEY }), 200, (data, headers) => {
+        const setCookieHeaders = headers['set-cookie'] || [];
+        const sessionCookie = setCookieHeaders.find(c => c.includes('psc_session='));
+        assert.ok(sessionCookie && sessionCookie.includes('HttpOnly'), 'POST /api/login must issue HttpOnly session cookie');
+    });
+
     console.log('\n================================================================');
     console.log(`📊 LIVE TEST RESULTS: PASS: ${pass} | FAIL: ${fail}`);
     console.log('================================================================\n');

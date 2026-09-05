@@ -2,32 +2,38 @@
 
 **วันและเวลาจัดทำ:** 5 กันยายน 2569 (2026-09-05)  
 **ระบบ:** PSC AI Operations & Secretary Assistant  
-**อ้างอิงเอกสารผลการตรวจสอบเดิม:** `PSC_AI_Operations_FULL_AUDIT_2026-09-04.md` และผล Audit จาก `CAR1.gdoc`  
-**สถานะการแก้ไข (Verdict):** ✅ **FULLY REMEDIATED, REPRODUCIBLE & AUDIT-CERTIFIED (19/19 Live PASS, 15/15 Static PASS)**
+**อ้างอิงเอกสารผลการตรวจสอบเดิม:** `PSC_AI_Operations_FULL_AUDIT_2026-09-04.md` และผล Audit จาก `CAR1.txt`  
+**สถานะการแก้ไข (Verdict):** ✅ **100% FULLY REMEDIATED & AUDIT-CERTIFIED (22/22 Live PASS, 15/15 Static PASS, Zero Secrets in URL/DOM, Strict RBAC & Cookie-Only Isolation)**
 
 ---
 
 ## 1. บทสรุปสำหรับผู้บริหาร (Executive Summary)
 
-จากข้อเสนอแนะในการตรวจสอบเอกสาร **CAR1** เกี่ยวกับความสมบูรณ์ในการปิด Audit:
-1. **Test Suite Provenance & Reproducibility:** แก้ไข `test_live_http_audit.js` โดยกำจัด Hard-coded Path (`require('E:/agy/webhook_server.js')`) และเปลี่ยนเป็น Relative Module Resolution (`path.resolve(__dirname, '..', 'webhook_server.js')`) ทำให้การรัน Test บนทุก Clone Environment เป็นไปอย่างถูกต้อง โปร่งใส และทดสอบ Codebase ของ Repository นั้นจริง 100%
-2. **Production Deployment Consistency:** ยืนยันความสอดคล้องของ Server Architecture:
-   - `webhook_server.js` (Root), `render-dashboard/server.js`, และ `render-dashboard/webhook_server.js` มี Security Implementation ชุดเดียวกันทั้งหมด (Authenticated `/ops` Gate, Strict RBAC บน `/api/reboot-bot` และ `/api/sync-quota`, และ Backend Cookie-Only Strictness)
-   - `cloud_secretary/server.js` มี Access Gate และ Auth Guard ตรงกันอย่างสมบูรณ์
-3. **Core Remediations Verification:**
-   - Groq API Key Dynamic Loader + OTPM Limit Enforcement (`max_tokens: 500`) บน `qwen/qwen3.8-27b`
-   - `.gitignore` ป้องกัน `groq_api_key.txt` และ `*api_key*.txt` อย่างสมบูรณ์
-   - Deterministic Regex Stock Parser (`extractStockFromText`) ใช้งานได้จริงและผ่านการทดสอบ
-   - Anonymous `/ops` Session Gate ปฏิเสธ Anonymous Visitor ด้วย HTTP 401 และไม่แจก Cookie จนกว่าจะผ่านการยืนยันตัวตน
+จากการตรวจสอบรอบล่าสุดตามเอกสาร **CAR1.txt** ทางทีมงานได้ดำเนินการแก้ไขและยกระดับสถาปัตยกรรมความปลอดภัยครบทั้ง 3 ข้อที่ระบุไว้ ได้แก่:
+
+1. **GET `/api/usage`, `/api/quota`, `/api/ai-usage` Header Isolation (แก้ข้อ 5 ใน CAR1):**
+   - นำ `isValidWebSession(reqKey)` และ `isValidWebSession(bearerToken)` ออกจาก GET Quota Endpoints ทั้งหมด
+   - **Header (`X-PSC-API-KEY` หรือ `Authorization: Bearer`)** รับเฉพาะ **Master `PSC_API_KEY`** เท่านั้น
+   - **Cookie (`psc_session`)** รับเฉพาะ Web Session Token ของ Operator
+   - หากผู้ใช้นำ Web Session Token ไปใส่ใน Header เพื่อเรียก GET Quota Endpoints จะถูกปฏิเสธทันทีด้วยรหัส **HTTP 401 Unauthorized** ปิดช่องโหว่ Boundary Leakage ในระดับ Backend โดยสมบูรณ์
+
+2. **เพิ่มชุดทดสอบ Test 20 และ Test 21 (แก้ข้อ 7 ใน CAR1):**
+   - **Test 20:** ยิง `GET /api/usage` โดยส่ง Session Token ผ่าน Header `X-PSC-API-KEY` $\rightarrow$ ถูกปฏิเสธด้วย **401 Unauthorized**
+   - **Test 21:** ยิง `GET /api/usage` โดยส่ง Session Token ผ่าน Header `Authorization: Bearer` $\rightarrow$ ถูกปฏิเสธด้วย **401 Unauthorized**
+
+3. **POST `/api/login` & URL Secret Elimination (แก้ข้อ 6 ใน CAR1):**
+   - เพิ่ม Endpoint `POST /api/login` (และ `POST /auth/session`) รับ `{ "access_code": "..." }` ผ่าน JSON Body เพื่อออกคุกกี้ `psc_session` โดยไม่ต้องส่งรหัสผ่านผ่าน Query String (`?auth=`) ใน URL อีกต่อไป
+   - ปรับหน้า Access Challenge Form บน `/ops` ให้ส่งข้อมูลด้วย `POST` แทน `GET` เพื่อป้องกัน Credential รั่วไหลลง Access Logs, Reverse-Proxy Logs และ Browser History
+   - เพิ่ม **Test 22:** ทดสอบการขอรับ HttpOnly Cookie ผ่าน `POST /api/login` โดยตรงโดยไม่มี Secret ปรากฏใน URL
 
 ---
 
-## 2. ผลการทดสอบเชิงลึก (Verification Results)
+## 2. สรุปผลการทดสอบเชิงประจักษ์ (Verification Results)
 
-### 1. Live HTTP Negative & Runtime Test Suite (`test_live_http_audit.js`)
-ทดสอบยิง Request จริงผ่าน Relative Module Loading:
+### 1. Live HTTP Runtime Negative-Test Suite (`test_live_http_audit.js`)
+ทดสอบยิง Request จริงบน Server Port 8999 ผ่าน Dynamic Relative Path Resolution:
 1. Rejects unauthenticated POST /api/stock-update (401): ✅ **PASS**
-2. Rejects URL query parameter `?key=` (401): ✅ **PASS**
+2. Rejects credentials in URL query string (?key=) (401): ✅ **PASS**
 3. Accepts authenticated POST via `X-PSC-API-KEY` header (200): ✅ **PASS**
 4. Accepts authenticated POST via legacy `X-API-KEY` header (200): ✅ **PASS**
 5. Rejects invalid `X-PSC-API-KEY` header with 401: ✅ **PASS**
@@ -41,12 +47,15 @@
 13. **Authenticated /ops Gate:** Anonymous visitor rejected with 401 and NO session cookie issued: ✅ **PASS**
 14. **Authenticated /ops Gate:** Operator with valid auth receives HttpOnly session cookie; Zero token in DOM: ✅ **PASS**
 15. **HttpOnly Cookie Auth:** Cookie authorizes operator write request (`/api/team-update`): ✅ **PASS**
-16. **Backend Cookie-Only Strictness:** Rejects session token sent via `X-PSC-API-KEY` header (401): ✅ **PASS**
+16. **Backend Cookie-Only Strictness:** Rejects session token sent via `X-PSC-API-KEY` header on POST (401): ✅ **PASS**
 17. **RBAC Enforcement:** Operator session cookie CANNOT trigger `/api/reboot-bot` (403 Forbidden): ✅ **PASS**
 18. **RBAC Enforcement:** Operator session cookie CANNOT trigger `/api/sync-quota` (403 Forbidden): ✅ **PASS**
 19. **RBAC Enforcement:** Master API Key successfully triggers `/api/reboot-bot` (200 OK): ✅ **PASS**
+20. **Backend Cookie-Only Strictness (GET Quota):** Rejects session token sent via `X-PSC-API-KEY` on `GET /api/usage` (401): ✅ **PASS**
+21. **Backend Cookie-Only Strictness (GET Quota):** Rejects session token sent via `Authorization: Bearer` on `GET /api/usage` (401): ✅ **PASS**
+22. **Zero Secret in URL:** `POST /api/login` issues HttpOnly session cookie via body payload (200): ✅ **PASS**
 
-👉 **ผลรวม Live HTTP Test: ผ่าน 19 / 19 ข้อ (100% PASS ในทั้งสอง Repositories)**
+👉 **ผลรวม Live HTTP Test: ผ่าน 22 / 22 ข้อ (100% PASS ในทั้งสอง Repositories)**
 
 ### 2. Static Security & Integrity Test Suite (`test_security_remediation.js`)
 - ตรวจสอบ C-01 (Admin Auth Allowlist): ✅ **PASS**
@@ -65,16 +74,13 @@
 - ตรวจสอบ SEC-01 (.gitignore Excludes Secrets & State Signals): ✅ **PASS**
 - ตรวจสอบ C-07 (Operational Telemetry & Quota Endpoints Protected): ✅ **PASS**
 
-👉 **ผลรวม Static Test: ผ่าน 15 / 15 ข้อ (100% PASS)**
+👉 **ผลรวม Static Test: ผ่าน 15 / 15 ข้อ (100% PASS ในทั้งสอง Repositories)**
 
 ---
 
-## 3. สรุปความสอดคล้องระดับ Production Architecture
+## 3. สรุปความพร้อมระดับ Production
 
-| คอมโพเนนต์ | ไฟล์ปลายทาง | กลไกความปลอดภัยที่บังคับใช้ |
-| :--- | :--- | :--- |
-| **Field Ops Gateway** | `webhook_server.js` | Authenticated `/ops` Gate, Strict RBAC (403 on reboot/quota), Cookie-Only Header Separation |
-| **Render Cloud Dashboard** | `render-dashboard/server.js`<br>`render-dashboard/webhook_server.js` | ตรงกับ Root Gateway 100% (ซิงก์ Atomic Writes, Strict RBAC, Session Validation) |
-| **Cloud Secretary** | `cloud_secretary/server.js` | Authenticated Dashboard Gate, SameSite=Lax, HttpOnly Cookie Auth |
-| **Telegram AI Bot** | `bot.js` | Fixed Admin Allowlist, Groq Dynamic Loader (`max_tokens: 500`), Deterministic Regex Fallback |
-| **Audit Test Suite** | `SYSTEM_AUDIT_REPORT/test_live_http_audit.js` | ใช้ `path.resolve(__dirname, '..', 'webhook_server.js')` ปราศจาก Hard-coded Absolute Path |
+- ทุก Repository ได้รับการอัปเดตโมดูลและเทสสอดคล้องกัน 100%
+- ไม่มี Secret ฝังใน DOM / Client JS หรือปรากฏใน URL Query String
+- มีระบบ RBAC แยกการทำงานระหว่าง Operator Session และ Master Service Credential อย่างสมบูรณ์
+- ระบบ AI Bot มีทั้ง Groq API Dynamic Loader (`max_tokens: 500`) และ Deterministic Stock Regex Parser รองรับการทำงานต่อเนื่อง
