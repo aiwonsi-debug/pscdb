@@ -8,3 +8,7 @@ node_modules/
 !*.example
 ops_backup/
 extracted_po_images/
+
+# Secure local API key files
+groq_api_key.txt
+*api_key*.txt

@@ -796,15 +796,80 @@ function sendChatAction(chatId, action = 'typing') {
 
 
 // ==========================================
-// 🚀 GROQ FAST FALLBACK ENGINE (AUTO-FAILOVER)
 // ==========================================
+// 🚀 GROQ FAST FALLBACK ENGINE (AUTO-FAILOVER) - ZERO HARDCODED KEY
+// ==========================================
+function getGroqApiKey() {
+    let key = (process.env.GROQ_API_KEY || '').trim();
+    if (!key) {
+        const keyFile = path.join(agyBaseDir, 'groq_api_key.txt');
+        if (fs.existsSync(keyFile)) {
+            try { key = fs.readFileSync(keyFile, 'utf8').trim(); } catch(e){}
+        }
+    }
+    return key;
+}
+
 const GROQ_CONFIG = {
-    ApiKey: process.env.GROQ_API_KEY || '',
+    get ApiKey() { return getGroqApiKey(); },
     Model: 'qwen/qwen3.8-27b',
     Url: 'https://api.groq.com/openai/v1/chat/completions'
 };
 
+function extractStockFromText(rawText) {
+    if (!rawText || typeof rawText !== 'string') return null;
+    
+    // 1. Strict Exclusion Guard: Must NOT be an intake/shipment/yield/PO message
+    const hasIntakeOrOps = /(?:ขึ้นของ|รับเข้า|ขึ้นกะหล่ำ|ขึ้นหอม|กะหล่ำเข้า|หอมเข้า|ค่ารถ|เก็บปลายทาง|สุ่มปอก|ปอกได้|ทะเบียน|สั่งซื้อ|\bPO\b)/i.test(rawText);
+    if (hasIntakeOrOps) return null;
+
+    // 2. Strict Intent Guard: Must contain stock header or explicit inventory counting keywords
+    const hasStockIntent = /(?:^|\s|\n)(?:stock|สต็อก|สต๊อก|ยอดคงเหลือ|นับสต็อก|ตรวจนับสต็อก|นับจริง|คงคลัง)(?:[:\s\d\n=]|$)/i.test(rawText);
+    if (!hasStockIntent) return null;
+
+    // 3. Extract Date if present
+    const dateM = rawText.match(/(?:(?:stock|สต็อก|สต๊อก|วันที่|ณ\s*วันที่)\s*)?(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/i);
+    const date = dateM ? dateM[1] : null;
+
+    // 4. Strict Line-by-Line Item Extraction (Lookahead prevents false matches on boxes/bags/prices)
+    const inv = {};
+    let foundCount = 0;
+
+    const rules = [
+        { k: 'Cabbage', r: /(?:^|\n|\s)กะหล่ำ(?:ปลี)?\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i },
+        { k: 'Onion_AFT', r: /(?:^|\n|\s)หอม\s*AFT\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i },
+        { k: 'Onion_Chinese', r: /(?:^|\n|\s)หอมจีน\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i },
+        { k: 'Carrot', r: /(?:^|\n|\s)แครอท(?:สวย)?\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i },
+        { k: 'Purple_Sweet_Potato', r: /(?:^|\n|\s)มันม่วง(?:หัวเล็ก)?\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i },
+        { k: 'Yellow_Sweet_Potato', r: /(?:^|\n|\s)มันเหลือง(?:ไข่)?\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i },
+        { k: 'Orange_Sweet_Potato', r: /(?:^|\n|\s)มันส้ม\s*[:=\-]\s*([\d,]+(?:\.\d+)?)(?:\s*(?:กก\.?|kg|กิโล|กิโลกรัม))?(?=\s*(?:\n|$|\s))(?!.*(?:บาท|บ\.|\/กก|ถุง|กล่อง))/i }
+    ];
+
+    for (const rule of rules) {
+        const m = rawText.match(rule.r);
+        if (m) {
+            const val = parseFloat(m[1].replace(/,/g, ''));
+            if (Number.isFinite(val) && val >= 0 && val <= 1000000) {
+                inv[rule.k] = val;
+                foundCount++;
+            }
+        }
+    }
+
+    if (foundCount > 0) {
+        return { date: date, stock_inventory: inv };
+    }
+    return null;
+}
+
 async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota Reached') {
+    const activeKey = getGroqApiKey();
+    if (!activeKey) {
+        sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\n⚠️ ไม่สามารถส่งต่อไปยัง Groq ได้เนื่องจากไม่ได้ตั้งค่า GROQ_API_KEY ในระบบ`);
+        writeLog('[Auto-Failover Warning]: Cannot fallback to Groq because GROQ_API_KEY is missing.');
+        return;
+    }
+
     sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\nกำลังส่งต่อคำสั่งไปยัง Groq Fast Engine (${GROQ_CONFIG.Model}) อัตโนมัติ...`);
     sendChatAction(chatId, 'typing');
 
@@ -816,7 +881,7 @@ async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota R
             { role: 'user', content: promptText }
         ],
         temperature: 0.7,
-        max_tokens: 2048
+        max_tokens: 500
     });
 
     try {
@@ -1453,13 +1518,22 @@ function handleCommand(chatId, text) {
             res.on('data', chunk => resData += chunk);
             res.on('end', () => {
                 try {
-                    const parsed = JSON.parse(resData);
-                    if (!parsed.choices || !parsed.choices[0] || !parsed.choices[0].message) {
+                    let parsed = null;
+                    let result = null;
+                    try { parsed = JSON.parse(resData); } catch(e){}
+
+                    if (parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].message && parsed.choices[0].message.content) {
+                        try { result = JSON.parse(parsed.choices[0].message.content.trim()); } catch(e){}
+                    }
+
+                    if (!result) {
+                        result = extractStockFromText(text);
+                    }
+
+                    if (!result) {
                         sendMessage(chatId, '❌ [AI Error]: ไม่สามารถสกัดข้อมูลได้');
                         return;
                     }
-
-                    const result = JSON.parse(parsed.choices[0].message.content.trim());
                     const { recordLoadingReport, syncToRender } = require('./webhook_server.js');
                     const lineNotifier = require('./line_notifier.js');
 
