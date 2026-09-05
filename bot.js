@@ -778,7 +778,7 @@ async function pollUpdates() {
                 writeLog(`[TG Message] From ${name} (${chatId}): ${text}`);
                 
                 // Fix C-01: Removed dynamic admin promotion
-                handleCommand(chatId, text);
+                handleCommand(chatId, text, msg);
             }
         }
     } catch (err) {
@@ -1251,7 +1251,7 @@ function runGlm(chatId, promptText) {
     }
 }
 
-function handleCommand(chatId, text) {
+function handleCommand(chatId, text, msg = null) {
     const ALLOWED_ADMINS = ['1532466397', config.ChatId];
     if (!ALLOWED_ADMINS.includes(chatId.toString())) {
         sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized Telegram User)');
@@ -1559,7 +1559,7 @@ function handleCommand(chatId, text) {
                     }
 
                     let persistRequired = false;
-                    const telegramEventId = `telegram:${chatId}:${upd.message ? upd.message.message_id : Date.now()}`;
+                    const telegramEventId = `telegram:${chatId}:${(msg && msg.message_id) ? msg.message_id : Date.now()}`;
 
                     if (calcYield && (result.item || '').includes('กะหล่ำ')) {
                         if (!stock.Items.Cabbage) stock.Items.Cabbage = { Name: "กะหล่ำปลี", StockKg: 6075 };
