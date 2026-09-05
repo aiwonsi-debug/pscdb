@@ -12,3 +12,23 @@ extracted_po_images/
 # Secure local API key files
 groq_api_key.txt
 *api_key*.txt
+
+# Operational State, Live Data & Telemetry
+public_tunnel_url.txt
+SECRETARY_MEMORY.md
+TEAM_OPS_LOG.md
+running_services.json
+processed_emails.json
+downloaded_po_registry.json
+last_update_id.txt
+notified_*.json
+ai_quota_usage.json
+stock_inventory.json
+team_ops_status.json
+secretary_memory.json
+cabbage_prices_transport.json
+MATERIAL_REPORT_TEMPLATE.json
+
+# Keep sanitized example templates tracked
+!*.example
+!*.example.json
