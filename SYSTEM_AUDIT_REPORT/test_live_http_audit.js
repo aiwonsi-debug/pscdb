@@ -7,6 +7,15 @@ process.env.PSC_API_KEY = TEST_KEY;
 process.env.PORT = '8999';
 
 const path = require('path');
+const fs = require('fs');
+
+// Backup stock_inventory.json before running test mutations
+const stockPath = path.resolve(__dirname, '..', 'stock_inventory.json');
+let stockBackup = null;
+if (fs.existsSync(stockPath)) {
+    try { stockBackup = fs.readFileSync(stockPath, 'utf8'); } catch(e){}
+}
+
 const { server } = require(path.resolve(__dirname, '..', 'webhook_server.js'));
 
 let pass = 0;
@@ -448,6 +457,11 @@ server.listen(8999, '127.0.0.1', async () => {
     console.log('\n================================================================');
     console.log(`📊 LIVE TEST RESULTS: PASS: ${pass} | FAIL: ${fail}`);
     console.log('================================================================\n');
+
+    // Restore original stock_inventory.json
+    if (stockBackup !== null && fs.existsSync(stockPath)) {
+        try { fs.writeFileSync(stockPath, stockBackup, 'utf8'); } catch(e){}
+    }
 
     server.close(() => {
         process.exit(fail > 0 ? 1 : 0);

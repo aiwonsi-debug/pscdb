@@ -1,7 +1,76 @@
 {
+  "AsOfDate": "05/09/69",
+  "LastUpdated": "2026-09-05T08:21:00.000Z",
   "Items": {
     "Cabbage": {
-      "StockKg": 5000
+      "Name": "กะหล่ำปลี",
+      "StockKg": 8800,
+      "Yield": {
+        "AFT": 0.648,
+        "TNS": 0.99
+      }
+    },
+    "Onion_AFT": {
+      "Name": "หอม AFT",
+      "StockKg": 25480
+    },
+    "Onion_Chinese": {
+      "Name": "หอมจีน",
+      "StockKg": 7010
+    },
+    "Carrot": {
+      "Name": "แครอทสวย",
+      "StockKg": 4090
+    },
+    "Purple_Sweet_Potato": {
+      "Name": "มันม่วงหัวเล็ก",
+      "StockKg": 1690
+    },
+    "Yellow_Sweet_Potato": {
+      "Name": "มันเหลืองไข่",
+      "StockKg": 342
+    },
+    "Orange_Sweet_Potato": {
+      "Name": "มันส้ม",
+      "StockKg": 390
     }
-  }
+  },
+  "AuditTrail": [
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 6075,
+      "NewKg": 8800,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Onion_AFT",
+      "ItemName": "หอม AFT",
+      "PreviousKg": 26120,
+      "NewKg": 25480,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Onion_Chinese",
+      "ItemName": "หอมจีน",
+      "PreviousKg": 7760,
+      "NewKg": 7010,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Carrot",
+      "ItemName": "แครอทสวย",
+      "PreviousKg": 5830,
+      "NewKg": 4090,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    }
+  ]
 }
