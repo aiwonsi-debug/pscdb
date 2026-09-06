@@ -1,4 +1,4 @@
-// AI Quota & Usage Tracker with Loop-Safe Sync
+// AI Quota & Usage Tracker with Loop-Safe Sync (bloat‑reduced)
 'use strict';
 
 const fs = require('fs');
@@ -123,159 +123,143 @@ function saveQuotaData(data, shouldSync = true) {
   }
 }
 
-function recordGroqUsage(usage = {}, headers = null, model = 'qwen/qwen3.8-27b', promptSnippet = '') {
+// -----------------  helper to reduce duplication  -----------------
+
+function _applyUsageData(modifyFn) {
   const data = loadQuotaData();
-  data.groq.total_requests += 1;
-  data.groq.last_request_time = new Date().toISOString();
-  data.groq.model = model;
-
-  const promptTokens = usage.prompt_tokens || 0;
-  const compTokens = usage.completion_tokens || 0;
-  const totTokens = usage.total_tokens || (promptTokens + compTokens);
-
-  data.groq.prompt_tokens += promptTokens;
-  data.groq.completion_tokens += compTokens;
-  data.groq.total_tokens += totTokens;
-
-  const getHeader = (name) => {
-    if (!headers) return null;
-    if (typeof headers.get === 'function') return headers.get(name);
-    return headers[name.toLowerCase()] || headers[name];
-  };
-
-  const limitReq = getHeader('x-ratelimit-limit-requests');
-  const remReq = getHeader('x-ratelimit-remaining-requests');
-  const limitTok = getHeader('x-ratelimit-limit-tokens');
-  const remTok = getHeader('x-ratelimit-remaining-tokens');
-  const resetReq = getHeader('x-ratelimit-reset-requests');
-  const resetTok = getHeader('x-ratelimit-reset-tokens');
-
-  if (limitReq !== undefined && limitReq !== null) data.groq.rate_limit.limit_requests = parseInt(limitReq, 10) || data.groq.rate_limit.limit_requests;
-  if (remReq !== undefined && remReq !== null) data.groq.rate_limit.remaining_requests = parseInt(remReq, 10) || 0;
-  if (limitTok !== undefined && limitTok !== null) data.groq.rate_limit.limit_tokens = parseInt(limitTok, 10) || data.groq.rate_limit.limit_tokens;
-  if (remTok !== undefined && remTok !== null) data.groq.rate_limit.remaining_tokens = parseInt(remTok, 10) || 0;
-  if (resetReq) data.groq.rate_limit.reset_requests = resetReq;
-  if (resetTok) data.groq.rate_limit.reset_tokens = resetTok;
-
-  data.recent_events.unshift({
-    timestamp: new Date().toISOString(),
-    engine: 'Groq',
-    model: model,
-    tokens: totTokens,
-    snippet: (promptSnippet || '').substring(0, 50)
-  });
-
-  if (data.recent_events.length > 20) data.recent_events.pop();
-
+  modifyFn(data);
   saveQuotaData(data, true);
   return data;
+}
+
+function _appendRecentEvent(data, engine, model, tokens, snippet) {
+  data.recent_events.unshift({
+    timestamp: new Date().toISOString(),
+    engine,
+    model,
+    tokens,
+    snippet: (snippet || '').substring(0, 50)
+  });
+  if (data.recent_events.length > 20) {
+    data.recent_events.pop();
+  }
+}
+
+// -----------------  record functions  -----------------
+
+function recordGroqUsage(usage = {}, headers = null, model = 'qen/qwen3.8-27b', promptSnipppet = '') {
+  return _applyUsageData((data) => {
+    data.groq.total_requests += 1;
+    data.groq.last_request_time = new Date().toISOString();
+    data.groq.model = model;
+
+    const promptTokens = usage.prompt_tokens || 0;
+    const compTokens = usage.completion_tokens || 0;
+    const totTokens = usage.total_tokens || (promptTokens + compTokens);
+
+    data.groq.prompt_tokens += promptTokens;
+    data.groq.completion_tokens += compTokens;
+    data.groq.total_tokens += totTokens;
+
+    // helper to retrieve header regardless of case or Headers object
+    const getHeader = (name) => {
+      if (!headers) return null;
+      if (typeof headersget === 'function') return headers.get(name);
+      return headers[name.toLowerCase()] || headers[name];
+    };
+
+    const limitReq = getHeader('x-ratelimit-limit-requests');
+    const remReq = getHeader('x-ratelimit-remaining-requests');
+    const limitTok = getHeader('x-ratelimit-limit-tokens');
+    const remTok = getHeader('x-ratelimit-remaining-tokens');
+    const resetReq = getHeader('x-ratelimit-reset-requests');
+    const resetTok = getHeader('x-ratelimit-reset-tokens');
+
+    if (limitReq !== undefined && limitReq !== null) data.groq.rate_limit.limit_requests = parseInt(limitReq, 10) || data.groq.rate_limit.limit_requests;
+    if (remReq !== undefined && remReq !== null) data.groq.rate_limit.remaining_requests = parseInt(remReq, 10) || 0;
+    if (limitTok !== undefined && limitTok !== null) data.groq.rate_limit.limit_tokens = parseInt(limitTok, 10) || data.groq.rate_limit.limit_tokens;
+    if (remTok !== undefined && remTok !== null) data.groq.rate_limit.remaining_tokens = parseInt(remTok, 10) || 0;
+    if (resetReq) data.groq.rate_limit.reset_requests = resetReq;
+    if (resetTok) data.groq.rate_limit.reset_tokens = resetTok;
+
+    _appendRecentEvent(data, 'Groq', model, totTokens, promptSnipppet);
+  });
 }
 
 function updateAgyQuota(quotaUpdate = {}) {
-  const data = loadQuotaData();
-  if (quotaUpdate.gemini) {
-    data.agy.gemini = Object.assign(data.agy.gemini, quotaUpdate.gemini);
-  }
-  if (quotaUpdate.claude_gpt) {
-    data.agy.claude_gpt = Object.assign(data.agy.claude_gpt, quotaUpdate.claude_gpt);
-  }
-  if (quotaUpdate.account) {
-    data.agy.account = quotaUpdate.account;
-  }
-  saveQuotaData(data, true);
-  return data;
+  return _applyUsageData((data) => {
+    if (quotaUpdate.gemini) {
+      data.agy.gemini = Object.assign(data.agy.gemini, quotaUpdate.gemini);
+    }
+    if (quotaUpdate.claude_gpt) {
+      data.agy.claude_gpt = Object.assign(data.agy.claude_gpt, quotaUpdate.claude_gpt);
+    }
+    if (quotaUpdate.account) {
+      data.agy.account = quotaUpdate.account;
+    }
+    // no event appended for quota update
+  });
 }
 
 function recordAgyUsage(promptText = '') {
-  const data = loadQuotaData();
-  data.agy.total_prompts += 1;
-  data.agy.last_prompt_time = new Date().toISOString();
-
-  data.recent_events.unshift({
-    timestamp: new Date().toISOString(),
-    engine: 'AGY CLI',
-    model: 'Antigravity Direct',
-    tokens: null,
-    snippet: (promptText || '').substring(0, 50)
+  return _applyUsageData((data) => {
+    data.agy.total_prompts += 1;
+    data.agy.last_prompt_time = new Date().toISOString();
+    _appendRecentEvent(data, 'AGY CLI', 'Antigravity Direct', null, promptText);
   });
-
-  if (data.recent_events.length > 20) data.recent_events.pop();
-
-  saveQuotaData(data, true);
-  return data;
 }
 
 function recordGlmUsage(usage = {}, promptSnippet = '') {
-  const data = loadQuotaData();
-  data.glm.total_requests += 1;
-  data.glm.last_request_time = new Date().toISOString();
+  return _applyUsageData((data) => {
+    data.glm.total_requests += 1;
+    data.glm.last_request_time = new Date().toISOString();
 
-  const promptTokens = usage.prompt_tokens || 0;
-  const compTokens = usage.completion_tokens || 0;
-  const totTokens = usage.total_tokens || (promptTokens + compTokens);
+    const promptTokens = usage.prompt_tokens || 0;
+    const compTokens = usage.completion_tokens || 0;
+    const totTokens = usage.total_tokens || (promptTokens + compTokens);
 
-  data.glm.prompt_tokens += promptTokens;
-  data.glm.completion_tokens += compTokens;
-  data.glm.total_tokens += totTokens;
+    data.glm.prompt_tokens += promptTokens;
+    data.glm.completion_tokens += compTokens;
+    data.glm.total_tokens += totTokens;
 
-  data.recent_events.unshift({
-    timestamp: new Date().toISOString(),
-    engine: 'GLM',
-    model: data.glm.model || 'glm-4-plus',
-    tokens: totTokens,
-    snippet: (promptSnippet || '').substring(0, 50)
+    _appendRecentEvent(data, 'GLM', data.glm.model || 'glm-4-plus', totTokens, promptSnippet);
   });
-
-  if (data.recent_events.length > 20) data.recent_events.pop();
-
-  saveQuotaData(data, true);
-  return data;
 }
 
 function recordOkmdUsage(usage = {}, modelQuota = {}, model = 'deepseek-v4-pro', provider = 'Deepseek', promptSnippet = '') {
-  const data = loadQuotaData();
-  if (!data.okmd) {
-    data.okmd = {
-      model: model,
-      provider: provider,
-      total_requests: 0,
-      total_tokens: 0,
-      prompt_tokens: 0,
-      completion_tokens: 0,
-      daily_quota_tokens: 180000,
-      daily_remaining_tokens: 180000,
-      last_request_time: null,
-      status: 'ONLINE'
-    };
-  }
-  data.okmd.total_requests += 1;
-  data.okmd.last_request_time = new Date().toISOString();
-  data.okmd.model = model;
-  data.okmd.provider = provider;
+  return _applyUsageData((data) => {
+    if (!data.okmd) {
+      data.okmd = {
+        model: model,
+        provider: provider,
+        total_requests: 0,
+        total_tokens: 0,
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        daily_quota_tokens: 180000,
+        daily_remaining_tokens: 180000,
+        last_request_time: null,
+        status: 'ONLINE'
+      };
+    }
+    data.okmd.total_requests += 1;
+    data.okmd.last_request_time = new Date().toISOString();
+    data.okmd.model = model;
+    data.okmd.provider = provider;
 
-  const promptTokens = usage.prompt_tokens || 0;
-  const compTokens = usage.completion_tokens || 0;
-  const totTokens = usage.total_tokens || (promptTokens + compTokens);
+    const promptTokens = usage.prompt_tokens || 0;
+    const compTokens = usage.completion_tokens || 0;
+    const totTokens = usage.total_tokens || (promptTokens + compTokens);
 
-  data.okmd.prompt_tokens += promptTokens;
-  data.okmd.completion_tokens += compTokens;
-  data.okmd.total_tokens += totTokens;
+    data.okmd.prompt_tokens += promptTokens;
+    data.okmd.completion_tokens += compTokens;
+    data.okmd.total_tokens += totTokens;
 
-  if (modelQuota.daily_quota_tokens) data.okmd.daily_quota_tokens = modelQuota.daily_quota_tokens;
-  if (modelQuota.daily_remaining_tokens !== undefined) data.okmd.daily_remaining_tokens = modelQuota.daily_remaining_tokens;
+    if (modelQuota.daily_quota_tokens) data.okmd.daily_quota_tokens = modelQuota.daily_quota_tokens;
+    if (modelQuota.daily_remaining_tokens !== undefined) data.okmd.daily_remaining_tokens = modelQuota.daily_remaining_tokens;
 
-  data.recent_events.unshift({
-    timestamp: new Date().toISOString(),
-    engine: 'OKMD',
-    model: model,
-    tokens: totTokens,
-    snippet: (promptSnippet || '').substring(0, 50)
+    _appendRecentEvent(data, 'OKMD', model, totTokens, promptSnippet);
   });
-
-  if (data.recent_events.length > 20) data.recent_events.pop();
-
-  saveQuotaData(data, true);
-  return data;
 }
 
 function formatUsageForTelegram() {
@@ -286,7 +270,7 @@ function formatUsageForTelegram() {
   const agy = data.agy || {};
   const gem = agy.gemini || {};
   const cg = agy.claude_gpt || {};
-  
+
   const reqPct = rl.limit_requests ? Math.round((rl.remaining_requests / rl.limit_requests) * 100) : 100;
   const tokPct = rl.limit_tokens ? Math.round((rl.remaining_tokens / rl.limit_tokens) * 100) : 100;
 
@@ -313,16 +297,16 @@ function formatUsageForTelegram() {
     '  └ สัปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh || '162h 59m') + ')',
     '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '1h 0m') + ')',
     '• <b>Claude / GPT (Sonnet/Opus):</b>',
-    '  └ สัปดาห์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '142h 44m') + ')',
+    '  └ สัปดาห่์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '142h 44m') + ')',
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
     '🤖 <b>Groq Fast API (Auto-Failover)</b>',
-    '• <b>โมเดล:</b> <code>' + (g.model || 'qwen/qwen3.8-27b') + '</code>',
-    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
+    '• <b>โมเดล:</b> <code>' + (g.model || 'qen/qwen3.8-27b') + '</code>',
+    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0)toLocaleString() + ' / ' + (rl.limit_tokens || 8000)toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง',
     '━━━━━━━━━━━━━━━━━━━━',
-    '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชั้น</i>'
-  ].join('\n');
+    '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชัน</i>'
+  ]join('\n');
 }
 
 module.exports = {
