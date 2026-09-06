@@ -302,11 +302,11 @@ function formatUsageForTelegram() {
     '',
     '🤖 <b>Groq Fast API (Auto-Failover)</b>',
     '• <b>โมเดล:</b> <code>' + (g.model || 'qen/qwen3.8-27b') + '</code>',
-    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0)toLocaleString() + ' / ' + (rl.limit_tokens || 8000)toLocaleString() + '</b> (' + tokPct + '%)',
+    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง',
     '━━━━━━━━━━━━━━━━━━━━',
     '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชัน</i>'
-  ]join('\n');
+  ].join('\n');
 }
 
 module.exports = {
