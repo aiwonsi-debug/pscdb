@@ -299,8 +299,8 @@ function formatUsageForTelegram() {
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
     '🤖 <b>Groq Fast API (Auto-Failover)</b>',
-    '• <b>โมเดล:</b> <code>' + (g.model || 'qwen/qwen3.8-27b') + '</code',
-    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' tokPct + '%)',
+    '• <b>โมเดล:</b> <code>' + (g.model || 'qwen/qwen3.8-27b') + '</code>',
+    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง',
     '━━━━━━━━━━━━━━━━━━━━━━',
     '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชั้น</i>'
@@ -313,8 +313,8 @@ module.exports = {
   recordGroqUsage,
   recordAgyUsage,
   updateAgyQuota,
-  recordG lmUsage,
-  record k mdUsage,
+  recordGlmUsage,
+  recordOkmdUsage,
   formatUsageForTelegram,
   QUOTA_FILE
 };
