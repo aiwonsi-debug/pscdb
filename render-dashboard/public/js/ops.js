@@ -320,7 +320,7 @@
     
     function filterCategory(cat, element) {
       currentFilter = cat;
-      const tabs = document.querySelectorAll('.filter-tabs .tab-btn');
+      const tabs = document.querySelectorAll('#ops_sub_filters .tab-btn');
       tabs.forEach(t => t.classList.remove('active'));
       
       if (element) {

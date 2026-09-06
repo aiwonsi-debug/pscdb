@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PSC Mobile</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/ops.css">
+    <link rel="stylesheet" href="/css/ops.css?v=20260906_1530">
   <script>
-    // Early initialization so tabs are clickable immediately even before full ops.js loads
+    // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
       const tabs = ['ops', 'stock', 'sec'];
       tabs.forEach(t => {
@@ -26,6 +26,60 @@
       }
     }
     window.switchAppTab = switchAppTab;
+
+    function filterCalCustomer(cust, element) {
+      const btns = ['btn_cal_all', 'btn_cal_aft', 'btn_cal_tns', 'btn_cal_yamamori'];
+      btns.forEach(b => {
+        const el = document.getElementById(b);
+        if (el) el.classList.remove('active');
+      });
+
+      let targetEl = element;
+      if (!targetEl && typeof window !== 'undefined' && window.event) {
+        targetEl = window.event.currentTarget || window.event.target;
+      }
+      if (!targetEl) {
+        targetEl = document.getElementById('btn_cal_' + cust);
+      }
+      if (targetEl && targetEl.classList) {
+        targetEl.classList.add('active');
+      }
+
+      const items = document.querySelectorAll('.cal-event-item');
+      items.forEach(it => {
+        if (cust === 'all') {
+          it.style.display = 'block';
+        } else {
+          const isAft = (cust === 'aft' && (it.classList.contains('cal-aft') || it.classList.contains('cal-salaya')));
+          const isMatch = isAft || it.classList.contains('cal-' + cust);
+          it.style.display = isMatch ? 'block' : 'none';
+        }
+      });
+
+      const innerItems = document.querySelectorAll('.inner-factory');
+      innerItems.forEach(it => {
+        if (cust === 'all') {
+          it.style.display = 'block';
+        } else {
+          it.style.display = it.classList.contains('inner-' + cust) ? 'block' : 'none';
+        }
+      });
+
+      const weekBoxes = document.querySelectorAll('.cal-week-box');
+      weekBoxes.forEach(box => {
+        if (cust === 'all') {
+          box.style.display = 'block';
+        } else {
+          const visibleItems = box.querySelectorAll('.cal-event-item');
+          let hasVisible = false;
+          visibleItems.forEach(vi => {
+            if (vi.style.display !== 'none') hasVisible = true;
+          });
+          box.style.display = hasVisible ? 'block' : 'none';
+        }
+      });
+    }
+    window.filterCalCustomer = filterCalCustomer;
   </script>
 </head>
 <body>
@@ -578,11 +632,11 @@
       <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update">05 ก.ย. 2569 17:00 น.</span></div>
 
       <!-- Customer Filter Selector for Calendar -->
-      <div class="filter-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; touch-action: manipulation; -webkit-overflow-scrolling: touch;">
-        <button type="button" class="tab-btn active" id="btn_cal_all" onclick="filterCalCustomer('all', this)">🌟 ทุกโรงงาน</button>
-        <button type="button" class="tab-btn" id="btn_cal_aft" onclick="filterCalCustomer('aft', this)">🏢 AFT (Rev.01)</button>
-        <button type="button" class="tab-btn" id="btn_cal_tns" onclick="filterCalCustomer('tns', this)">🏢 TNS (24 วัน)</button>
-        <button type="button" class="tab-btn" id="btn_cal_yamamori" onclick="filterCalCustomer('yamamori', this)">🏢 Siam Yamamori</button>
+      <div class="cal-filter-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; touch-action: manipulation; -webkit-overflow-scrolling: touch;">
+        <div class="tab-btn active" id="btn_cal_all" onclick="filterCalCustomer('all', this)" role="button" tabindex="0">🌟 ทุกโรงงาน</div>
+        <div class="tab-btn" id="btn_cal_aft" onclick="filterCalCustomer('aft', this)" role="button" tabindex="0">🏢 AFT (Rev.01)</div>
+        <div class="tab-btn" id="btn_cal_tns" onclick="filterCalCustomer('tns', this)" role="button" tabindex="0">🏢 TNS (24 วัน)</div>
+        <div class="tab-btn" id="btn_cal_yamamori" onclick="filterCalCustomer('yamamori', this)" role="button" tabindex="0">🏢 Siam Yamamori</div>
       </div>
 
       <!-- WEEK 1: 01/09 - 06/09 -->
@@ -758,7 +812,7 @@
 
   </div>
 
-  <script src="/js/ops.js"></script>
+  <script src="/js/ops.js?v=20260906_1530"></script>
 
   
   <!-- Auth Unlock Modal -->
