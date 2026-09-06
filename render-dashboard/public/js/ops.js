@@ -621,8 +621,8 @@ if (cat === 'all') {
             if (saved[id].truckChecked !== undefined && document.getElementById('chk_truck_' + id)) {
               document.getElementById('chk_truck_' + id).checked = saved[id].truckChecked;
             }
-            updateStyles(id);
           }
+          updateStyles(id);
         });
 
         const savedPrices = JSON.parse(localStorage.getItem('PSC_DAILY_PRICES')) || {};
@@ -818,6 +818,9 @@ if (cat === 'all') {
         subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
       }
     }
+    window.switchAppTab = switchAppTab;
+    window.filterCategory = filterCategory;
+    window.filterCalCustomer = filterCalCustomer;
 
     
     function handleAuthRequired(onSuccessCallback) {

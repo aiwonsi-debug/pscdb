@@ -44,8 +44,9 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      pointer-events: none;
     }
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.show { transform: translateX(-50%) translateY(0); pointer-events: auto; }
 
 
     /* Filter Tabs */
@@ -114,8 +115,8 @@
 
     footer { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 14px; padding: 12px 0; border-top: 1px solid var(--card-border); }
   
-    .main-nav-bar { background: #1d2125; padding: 6px; border-radius: 12px; border: 1px solid var(--card-border); }
-    .nav-tab-btn { background: rgba(255,255,255,0.04); border: 1px solid transparent; color: var(--text-muted); padding: 8px 4px; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .main-nav-bar { background: #1d2125; padding: 6px; border-radius: 12px; border: 1px solid var(--card-border); position: relative; z-index: 10; }
+    .nav-tab-btn { background: rgba(255,255,255,0.04); border: 1px solid transparent; color: var(--text-muted); padding: 8px 4px; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; }
     .nav-tab-btn.active { background: #35727a; color: #ffffff; font-weight: 700; border-color: #437d88; box-shadow: 0 2px 8px rgba(53, 114, 122, 0.4); }
     .app-section { display: none; }
     .app-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }

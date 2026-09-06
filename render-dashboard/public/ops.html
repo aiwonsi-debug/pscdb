@@ -6,6 +6,27 @@
   <title>PSC Mobile</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/ops.css">
+  <script>
+    // Early initialization so tabs are clickable immediately even before full ops.js loads
+    function switchAppTab(tabId) {
+      const tabs = ['ops', 'stock', 'sec'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab_btn_' + t);
+        const sec = document.getElementById('sec_' + t);
+        if (btn) btn.classList.remove('active');
+        if (sec) sec.classList.remove('active');
+      });
+      const activeBtn = document.getElementById('tab_btn_' + tabId);
+      const activeSec = document.getElementById('sec_' + tabId);
+      const subFilter = document.getElementById('ops_sub_filters');
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeSec) activeSec.classList.add('active');
+      if (subFilter) {
+        subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
+      }
+    }
+    window.switchAppTab = switchAppTab;
+  </script>
 </head>
 <body>
   <div class="container">
@@ -33,9 +54,9 @@
 
     <!-- Unified App Navigation Bar -->
     <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px;">
-      <button class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
-      <button class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
-      <button class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
+      <button type="button" class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
     </div>
 
     <!-- Sub Filter Tabs for Ops Tab -->
@@ -314,7 +335,32 @@
 
     </div>
 
-    
+    <!-- SECTION: COMPLETED DELIVERY LOG TABLE (รายงานการขึ้นของ/ส่งมอบ) -->
+    <div class="card" id="delivery_log_card" style="margin-top:12px;">
+      <div class="card-header">
+        <div class="card-title">📋 รายงานการขึ้นของ & บันทึกส่งมอบ (ส่งรายงานเลขาแล้ว)</div>
+        <span class="badge badge-success" id="log_count_badge">0 รายการ (อัปเดต: 05/09/69 17:00 น.)</span>
+      </div>
+      <div class="table-container">
+        <table class="log-table" id="delivery_log_table">
+          <thead>
+            <tr>
+              <th>🌾 วันขึ้นของ</th>
+              <th>🏢 ถึงปลายทาง</th>
+              <th>รายการ / สวน</th>
+              <th>น้ำหนักสุทธิ</th>
+              <th>ค่ารถ & การชำระ</th>
+              <th>สถานที่ขึ้นของ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="delivery_log_tbody">
+            <!-- Dynamic Completed Delivery Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     </div>
 
 <!-- SECTION: STOCK & PRICES -->
@@ -376,32 +422,6 @@
           <span>• 4 ล้อ ฮอด (4 ตัน) / แม่แจ่ม:</span>
           <span style="color:#f8fafc; font-weight:600;">7,000 บ. / 7,500 บ.</span>
         </div>
-      </div>
-    </div>
-
-    <!-- SECTION: COMPLETED DELIVERY LOG TABLE -->
-    <div class="card" id="delivery_log_card">
-      <div class="card-header">
-        <div class="card-title">📋 ตารางบันทึกการส่งของ (ส่งรายงานเลขาแล้ว)</div>
-        <span class="badge badge-success" id="log_count_badge">0 รายการ (อัปเดต: 05/09/69 17:00 น.)</span>
-      </div>
-      <div class="table-container">
-        <table class="log-table" id="delivery_log_table">
-          <thead>
-            <tr>
-              <th>🌾 วันขึ้นของ</th>
-              <th>🏢 ถึงปลายทาง</th>
-              <th>รายการ / สวน</th>
-              <th>น้ำหนักสุทธิ</th>
-              <th>ค่ารถ & การชำระ</th>
-              <th>สถานที่ขึ้นของ</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="delivery_log_tbody">
-            <!-- Dynamic Completed Delivery Rows -->
-          </tbody>
-        </table>
       </div>
     </div>
 
@@ -537,7 +557,7 @@
         <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (กำหนดการจัดส่งตามคำสั่งซื้อยืนยัน)</div>
         <span class="badge badge-primary">กันยายน 2569 (อัปเดต: 05/09/69 17:00 น.)</span>
       </div>
-        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update"><script>document.write(new Date(document.lastModified).toLocaleString("th-TH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " น.");</script></span></div>
+      <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update">05 ก.ย. 2569 17:00 น.</span></div>
 
       <!-- Customer Filter Selector for Calendar -->
       <div style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px;">
