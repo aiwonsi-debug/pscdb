@@ -6,7 +6,7 @@ const path = require('path');
 const https = require('https');
 const url = require('url');
 
-const QUOTA_FILE = path.join(__dirname, 'ai_quota_usage.json');
+const QUOTA_FILE = process.env.AI_QUOTA_USAGE_FILE || path.join(__dirname, 'ai_quota_usage.json');
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
