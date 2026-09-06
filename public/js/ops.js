@@ -476,6 +476,65 @@ if (cat === 'all') {
       } catch (e) {}
     }
 
+    function completeCard(id, customer, product, qty_kg, delivery_date) {
+      try {
+        const supplier = getFieldValue('supplier', id);
+        const truck = getFieldValue('truck', id);
+
+        const orderChk = document.getElementById('chk_order_' + id);
+        const truckChk = document.getElementById('chk_truck_' + id);
+        if (orderChk) orderChk.checked = true;
+        if (truckChk) truckChk.checked = true;
+
+        const now = new Date();
+        const dStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + (now.getFullYear() + 543).toString().slice(-2);
+
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        if (!saved[id]) saved[id] = {};
+        saved[id].id = id;
+        saved[id].supplier = supplier;
+        saved[id].truck = truck;
+        saved[id].orderChecked = true;
+        saved[id].truckChecked = true;
+        saved[id].loadedReported = true;
+        saved[id].loadedDate = dStr;
+        saved[id].loadedItem = supplier ? (product + '<br>' + supplier) : product;
+        saved[id].loadedWeight = qty_kg ? (qty_kg.toLocaleString() + ' kg') : '';
+        saved[id].clientUpdatedAt = Date.now();
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+
+        if (!serverCardsState[id]) serverCardsState[id] = {};
+        serverCardsState[id].supplier = supplier;
+        serverCardsState[id].truck = truck;
+        serverCardsState[id].orderChecked = true;
+        serverCardsState[id].truckChecked = true;
+        serverCardsState[id].loadedReported = true;
+        serverCardsState[id].loadedDate = dStr;
+        serverCardsState[id].loadedItem = saved[id].loadedItem;
+        serverCardsState[id].loadedWeight = saved[id].loadedWeight;
+
+        updateStyles(id);
+        renderDeliveryLogTable();
+        showToast('✅ บันทึกขึ้นของสำเร็จ! ย้ายลงตารางรายงานเรียบร้อย');
+
+        fetch('/api/team-complete', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: id })
+        }).then(res => {
+          if (res.status === 401 || res.status === 403) {
+            handleAuthRequired();
+          }
+        }).catch(e => {});
+      } catch (e) {}
+    }
+    window.completeCard = completeCard;
+    window.restoreCard = restoreCard;
+
     
     function fetchLiveStock() {
       fetch('/api/stock')

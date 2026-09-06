@@ -879,6 +879,32 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify({ success: true, message: `Card ${id} reset successfully` }));
         }
 
+        // 7. Team Complete POST (Manual Mark Done)
+        if (req.method === 'POST' && pathname === '/api/team-complete') {
+            const body = await getBody();
+            const { id } = body;
+            const opsData = loadTeamOps();
+            if (!opsData.cards_state) opsData.cards_state = {};
+            if (!opsData.cards_state[id]) opsData.cards_state[id] = { id: id };
+
+            const now = new Date();
+            const thaiDate = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + (now.getFullYear() + 543).toString().slice(-2);
+            opsData.cards_state[id].loadedReported = true;
+            opsData.cards_state[id].reportedAt = now.toISOString();
+            opsData.cards_state[id].orderChecked = true;
+            opsData.cards_state[id].truckChecked = true;
+            if (!opsData.cards_state[id].loadedDate) opsData.cards_state[id].loadedDate = thaiDate;
+            if (!opsData.cards_state[id].loadedItem && opsData.cards_state[id].supplier) {
+                opsData.cards_state[id].loadedItem = opsData.cards_state[id].supplier;
+            }
+            saveTeamOps(opsData);
+            syncToGoogleSheets(opsData.cards_state[id]);
+            syncToRender('/api/team-complete', { id: id });
+
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: `Card ${id} marked completed successfully`, cards_state: opsData.cards_state }));
+        }
+
         // 404 Fallback
         res.writeHead(404);
         res.end(JSON.stringify({ error: `Endpoint ${pathname} not found` }));

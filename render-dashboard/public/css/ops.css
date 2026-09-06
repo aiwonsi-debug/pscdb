@@ -94,6 +94,8 @@
     .check-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 6px; background: #141718; border: 1px solid #35393b; font-size: 12px; cursor: pointer; user-select: none; transition: 0.2s; color: var(--text-muted); }
     .check-btn input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--success); }
     .check-btn.checked { background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: #48bb78; font-weight: 600; }
+    .btn-complete-card { width: 100%; margin-top: 8px; padding: 8px 12px; border-radius: 6px; border: 1px solid #2ea043; background: rgba(46, 160, 67, 0.15); color: #3fb950; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; }
+    .btn-complete-card:active { background: #238636; color: #ffffff; }
 
     /* Completed Delivery Log Table */
     
