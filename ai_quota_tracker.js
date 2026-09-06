@@ -1,4 +1,4 @@
-// AI Quota & Usage Tracker with Loop-Safe Sync (bloat-reduced)
+// AI Quota & Usage Tracker with Loop-Safe Sync (bloat‑reduced)
 'use strict';
 
 const fs = require('fs');
@@ -147,7 +147,7 @@ function _appendRecentEvent(data, engine, model, tokens, snippet) {
 
 // -----------------  record functions  -----------------
 
-function recordGroqUsage(usage = {}, headers = null, model = 'qwen/qwen3.8-27b', promptSnippet = '') {
+function recordGroqUsage(usage = {}, headers = null, model = 'qen/qwen3.8-27b', promptSnipppet = '') {
   return _applyUsageData((data) => {
     data.groq.total_requests += 1;
     data.groq.last_request_time = new Date().toISOString();
@@ -161,9 +161,10 @@ function recordGroqUsage(usage = {}, headers = null, model = 'qwen/qwen3.8-27b',
     data.groq.completion_tokens += compTokens;
     data.groq.total_tokens += totTokens;
 
+    // helper to retrieve header regardless of case or Headers object
     const getHeader = (name) => {
       if (!headers) return null;
-      if (typeof headers.get === 'function') return headers.get(name);
+      if (typeof headersget === 'function') return headers.get(name);
       return headers[name.toLowerCase()] || headers[name];
     };
 
@@ -181,7 +182,7 @@ function recordGroqUsage(usage = {}, headers = null, model = 'qwen/qwen3.8-27b',
     if (resetReq) data.groq.rate_limit.reset_requests = resetReq;
     if (resetTok) data.groq.rate_limit.reset_tokens = resetTok;
 
-    _appendRecentEvent(data, 'Groq', model, totTokens, promptSnippet);
+    _appendRecentEvent(data, 'Groq', model, totTokens, promptSnipppet);
   });
 }
 
@@ -196,7 +197,8 @@ function updateAgyQuota(quotaUpdate = {}) {
     if (quotaUpdate.account) {
       data.agy.account = quotaUpdate.account;
     }
- ​});
+    // no event appended for quota update
+  });
 }
 
 function recordAgyUsage(promptText = '') {
@@ -208,7 +210,7 @@ function recordAgyUsage(promptText = '') {
 }
 
 function recordGlmUsage(usage = {}, promptSnippet = '') {
-  return _applyUsageData((data)) => {
+  return _applyUsageData((data) => {
     data.glm.total_requests += 1;
     data.glm.last_request_time = new Date().toISOString();
 
@@ -220,12 +222,12 @@ function recordGlmUsage(usage = {}, promptSnippet = '') {
     data.glm.completion_tokens += compTokens;
     data.glm.total_tokens += totTokens;
 
-    _appndRecentEvent(data, 'GLM', data.glm.model || 'glm-4-plus', totTokens, promptSnippet);
+    _appendRecentEvent(data, 'GLM', data.glm.model || 'glm-4-plus', totTokens, promptSnippet);
   });
 }
 
-function recordOkmdUsage(usage := {}, modelQuota = {}, model = 'deepseek-v4-pro', provider = 'Deepssek', promptSnippet = '') {
-  return _applyUsageData((data)) => {
+function recordOkmdUsage(usage = {}, modelQuota = {}, model = 'deepseek-v4-pro', provider = 'Deepseek', promptSnippet = '') {
+  return _applyUsageData((data) => {
     if (!data.okmd) {
       data.okmd = {
         model: model,
@@ -234,8 +236,8 @@ function recordOkmdUsage(usage := {}, modelQuota = {}, model = 'deepseek-v4-pro'
         total_tokens: 0,
         prompt_tokens: 0,
         completion_tokens: 0,
-        daily_quota_tokens: 18000,
-        daily_remaining_tokens: 18000,
+        daily_quota_tokens: 180000,
+        daily_remaining_tokens: 180000,
         last_request_time: null,
         status: 'ONLINE'
       };
@@ -251,10 +253,10 @@ function recordOkmdUsage(usage := {}, modelQuota = {}, model = 'deepseek-v4-pro'
 
     data.okmd.prompt_tokens += promptTokens;
     data.okmd.completion_tokens += compTokens;
-   data.okmd.total_tokens += totTokens;
+    data.okmd.total_tokens += totTokens;
 
-    if (modelQuota.daily_quota_tokens) data.okmd.daily_quata_tokens = modelQuota.daily_quota_tokens;
-    if (modelQuota.daily_remaining_tokens !:= undefined) data.okmd.daily_remaining_tokens = modelQuota.daily_remaining_tokens;
+    if (modelQuota.daily_quota_tokens) data.okmd.daily_quota_tokens = modelQuota.daily_quota_tokens;
+    if (modelQuota.daily_remaining_tokens !== undefined) data.okmd.daily_remaining_tokens = modelQuota.daily_remaining_tokens;
 
     _appendRecentEvent(data, 'OKMD', model, totTokens, promptSnippet);
   });
@@ -264,7 +266,7 @@ function formatUsageForTelegram() {
   const data = loadQuotaData();
   const okmd = data.okmd || {};
   const g = data.groq;
-  const rl = g.ate_limit || {};
+  const rl = g.rate_limit || {};
   const agy = data.agy || {};
   const gem = agy.gemini || {};
   const cg = agy.claude_gpt || {};
@@ -272,37 +274,37 @@ function formatUsageForTelegram() {
   const reqPct = rl.limit_requests ? Math.round((rl.remaining_requests / rl.limit_requests) * 100) : 100;
   const tokPct = rl.limit_tokens ? Math.round((rl.remaining_tokens / rl.limit_tokens) * 100) : 100;
 
-  const gemWeek = gem.weekly_remaining_pct != undefined ? gem.weekly_remaining_pct : 81.08;
-  const gemFive = gem.five_hour_remaining_pct != undefined ? gem.five_hour_remaining_pct : 0.0;
-  const cgWeek = cg.weely_remaining_pct != undefined ? cg.weekly_remaining_pct : 0.0;
+  const gemWeek = gem.weekly_remaining_pct !== undefined ? gem.weekly_remaining_pct : 81.08;
+  const gemFive = gem.five_hour_remaining_pct !== undefined ? gem.five_hour_remaining_pct : 0.00;
+  const cgWeek = cg.weekly_remaining_pct !== undefined ? cg.weekly_remaining_pct : 0.00;
 
-  const okmdRemaining = okmd.daily_remaining_tokens != undefined ? okmd.daily_remaining_tokens : 180000;
+  const okmdRemaining = okmd.daily_remaining_tokens !== undefined ? okmd.daily_remaining_tokens : 180000;
   const okmdTotal = okmd.daily_quota_tokens || 180000;
-  const okmdPct = Math.round(okmdRemaining / okmdTotal) * 100);
+  const okmdPct = Math.round((okmdRemaining / okmdTotal) * 100);
 
   return [
-    '⚡ <b>AI QUOTA & RATE LIMIT SATUS</b>',
-    '━━━━━━━━━━━━━━━━━━━━━━',
+    '⚡ <b>AI QUOTA & RATE LIMIT STATUS</b>',
+    '━━━━━━━━━━━━━━━━━━━━',
     '👑 <b>OKMD Playground API (Primary Engine)</b>',
-    '• <b>โมเดลหลัก:</b> <code>' + (okmd.moel || 'deepseek-v4-pro') + '</code> (' + (okmd.provider || 'Deepssek') + ')',
-    '• <b>Tokens คงเหลือวันนี้:</b> <b>' + okmdRemaining.toLocaleString() + ' / ' + okmdTotal.toLocaeString() + '</b> (' + kmdPct + '%)',
+    '• <b>โมเดลหลัก:</b> <code>' + (okmd.model || 'claude-sonnet-5') + '</code> (' + (okmd.provider || 'Claude') + ')',
+    '• <b>Tokens คงเหลือวันนี้:</b> <b>' + okmdRemaining.toLocaleString() + ' / ' + okmdTotal.toLocaleString() + '</b> (' + okmdPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (okmd.total_requests || 0) + ' ครั้ง (' + (okmd.total_tokens || 0).toLocaleString() + ' tok)',
-    '• <b>สถานะ:</b>  ' + (okmd.status || 'ONLINE (Active)'),
+    '• <b>สถานะ:</b> 🟢 ' + (okmd.status || 'ONLINE (Active)'),
     '',
-    '🚀 <b>Gooe Antigravity CLI (AGY)</b>',
-    '• <b>บัญชี:</b> <code>' + (agy.account || 'aiwonsi@gmial.com') + '</code>',
+    '🚀 <b>Google Antigravity CLI (AGY)</b>',
+    '• <b>บัญชี:</b> <code>' + (agy.account || 'aiwonsi@gmail.com') + '</code>',
     '• <b>Gemini (Flash / Pro):</b>',
-    '  └ สปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh ||'162h 59m') + ')',
-    '  └ 5 ชั่วโง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '1h 0m') + ')',
-    '• <b>Claude / GpT (Sonnet/Opus):</b>',
-    '  └ สปดาห์: <b>' + cgWeek + '%</b> (รีเฟช ' + (cg.weekly_refresh || '142h 44m') + ')',
+    '  └ สัปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh || '162h 59m') + ')',
+    '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '1h 0m') + ')',
+    '• <b>Claude / GPT (Sonnet/Opus):</b>',
+    '  └ สัปดาห่์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '142h 44m') + ')',
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
-    '🤖 <b>Groq Fast PI (Auto-Failover)<b>',
-    '• <b>โมเดล:</b> <code>' + (g.model || 'qwen/qen3.-27b') + '</code>',
-    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens ||0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
+    '🤖 <b>Groq Fast API (Auto-Failover)</b>',
+    '• <b>โมเดล:</b> <code>' + (g.model || 'qen/qwen3.8-27b') + '</code>',
+    '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง',
-    '━━━━━━━━━━━━━━━━━━━━━━',
+    '━━━━━━━━━━━━━━━━━━━━',
     '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชัน</i>'
   ].join('\n');
 }
