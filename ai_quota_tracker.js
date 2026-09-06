@@ -10,6 +10,8 @@ const QUOTA_FILE = process.env.AI_QUOTA_USAGE_FILE || path.join(__dirname, 'ai_q
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
+// True defaults only — no live/runtime data hardcoded here.
+// Real numbers should come from the persisted QUOTA_FILE or from updateAgyQuota() calls.
 const DEFAULT_DATA = {
   last_updated: new Date().toISOString(),
   groq: {
@@ -32,17 +34,17 @@ const DEFAULT_DATA = {
     account: 'aiwonsi@gmail.com',
     gemini: {
       models: 'Gemini Flash, Gemini Pro',
-      weekly_remaining_pct: 92.16,
-      weekly_refresh: '165h 57m',
-      five_hour_remaining_pct: 70.22,
-      five_hour_refresh: '3h 58m'
+      weekly_remaining_pct: 100,
+      weekly_refresh: '168h 0m',
+      five_hour_remaining_pct: 100,
+      five_hour_refresh: '5h 0m'
     },
     claude_gpt: {
       models: 'Claude Opus, Claude Sonnet, GPT-OSS',
-      weekly_remaining_pct: 0.0,
-      weekly_refresh: '145h 42m',
-      five_hour_remaining_pct: 0.0,
-      five_hour_status: 'Weekly limit reached'
+      weekly_remaining_pct: 100,
+      weekly_refresh: '168h 0m',
+      five_hour_remaining_pct: 100,
+      five_hour_status: 'OK'
     },
     total_prompts: 0,
     last_prompt_time: null,
@@ -65,7 +67,7 @@ const DEFAULT_DATA = {
     prompt_tokens: 0,
     completion_tokens: 0,
     daily_quota_tokens: 180000,
-    daily_remaining_tokens: 174229,
+    daily_remaining_tokens: 180000,
     last_request_time: null,
     status: 'ONLINE'
   },
@@ -145,35 +147,43 @@ function _appendRecentEvent(data, engine, model, tokens, snippet) {
   }
 }
 
+// Shared token-accounting logic used by recordGroqUsage / recordGlmUsage / recordOkmdUsage
+function _computeTokenTotals(usage = {}) {
+  const promptTokens = usage.prompt_tokens || 0;
+  const compTokens = usage.completion_tokens || 0;
+  const totTokens = usage.total_tokens || (promptTokens + compTokens);
+  return { promptTokens, compTokens, totTokens };
+}
+
+function _accumulateEngineTokens(bucket, tokenTotals) {
+  bucket.prompt_tokens += tokenTotals.promptTokens;
+  bucket.completion_tokens += tokenTotals.compTokens;
+  bucket.total_tokens += tokenTotals.totTokens;
+}
+
+function _getHeader(headers, name) {
+  if (!headers) return null;
+  if (typeof headers.get === 'function') return headers.get(name);
+  return headers[name.toLowerCase()] || headers[name];
+}
+
 // -----------------  record functions  -----------------
 
-function recordGroqUsage(usage = {}, headers = null, model = 'qen/qwen3.8-27b', promptSnipppet = '') {
+function recordGroqUsage(usage = {}, headers = null, model = 'qwen/qwen3.8-27b', promptSnipppet = '') {
   return _applyUsageData((data) => {
     data.groq.total_requests += 1;
     data.groq.last_request_time = new Date().toISOString();
     data.groq.model = model;
 
-    const promptTokens = usage.prompt_tokens || 0;
-    const compTokens = usage.completion_tokens || 0;
-    const totTokens = usage.total_tokens || (promptTokens + compTokens);
+    const tokenTotals = _computeTokenTotals(usage);
+    _accumulateEngineTokens(data.groq, tokenTotals);
 
-    data.groq.prompt_tokens += promptTokens;
-    data.groq.completion_tokens += compTokens;
-    data.groq.total_tokens += totTokens;
-
-    // helper to retrieve header regardless of case or Headers object
-    const getHeader = (name) => {
-      if (!headers) return null;
-      if (typeof headersget === 'function') return headers.get(name);
-      return headers[name.toLowerCase()] || headers[name];
-    };
-
-    const limitReq = getHeader('x-ratelimit-limit-requests');
-    const remReq = getHeader('x-ratelimit-remaining-requests');
-    const limitTok = getHeader('x-ratelimit-limit-tokens');
-    const remTok = getHeader('x-ratelimit-remaining-tokens');
-    const resetReq = getHeader('x-ratelimit-reset-requests');
-    const resetTok = getHeader('x-ratelimit-reset-tokens');
+    const limitReq = _getHeader(headers, 'x-ratelimit-limit-requests');
+    const remReq = _getHeader(headers, 'x-ratelimit-remaining-requests');
+    const limitTok = _getHeader(headers, 'x-ratelimit-limit-tokens');
+    const remTok = _getHeader(headers, 'x-ratelimit-remaining-tokens');
+    const resetReq = _getHeader(headers, 'x-ratelimit-reset-requests');
+    const resetTok = _getHeader(headers, 'x-ratelimit-reset-tokens');
 
     if (limitReq !== undefined && limitReq !== null) data.groq.rate_limit.limit_requests = parseInt(limitReq, 10) || data.groq.rate_limit.limit_requests;
     if (remReq !== undefined && remReq !== null) data.groq.rate_limit.remaining_requests = parseInt(remReq, 10) || 0;
@@ -182,7 +192,7 @@ function recordGroqUsage(usage = {}, headers = null, model = 'qen/qwen3.8-27b', 
     if (resetReq) data.groq.rate_limit.reset_requests = resetReq;
     if (resetTok) data.groq.rate_limit.reset_tokens = resetTok;
 
-    _appendRecentEvent(data, 'Groq', model, totTokens, promptSnipppet);
+    _appendRecentEvent(data, 'Groq', model, tokenTotals.totTokens, promptSnipppet);
   });
 }
 
@@ -214,15 +224,10 @@ function recordGlmUsage(usage = {}, promptSnippet = '') {
     data.glm.total_requests += 1;
     data.glm.last_request_time = new Date().toISOString();
 
-    const promptTokens = usage.prompt_tokens || 0;
-    const compTokens = usage.completion_tokens || 0;
-    const totTokens = usage.total_tokens || (promptTokens + compTokens);
+    const tokenTotals = _computeTokenTotals(usage);
+    _accumulateEngineTokens(data.glm, tokenTotals);
 
-    data.glm.prompt_tokens += promptTokens;
-    data.glm.completion_tokens += compTokens;
-    data.glm.total_tokens += totTokens;
-
-    _appendRecentEvent(data, 'GLM', data.glm.model || 'glm-4-plus', totTokens, promptSnippet);
+    _appendRecentEvent(data, 'GLM', data.glm.model || 'glm-4-plus', tokenTotals.totTokens, promptSnippet);
   });
 }
 
@@ -247,18 +252,13 @@ function recordOkmdUsage(usage = {}, modelQuota = {}, model = 'deepseek-v4-pro',
     data.okmd.model = model;
     data.okmd.provider = provider;
 
-    const promptTokens = usage.prompt_tokens || 0;
-    const compTokens = usage.completion_tokens || 0;
-    const totTokens = usage.total_tokens || (promptTokens + compTokens);
-
-    data.okmd.prompt_tokens += promptTokens;
-    data.okmd.completion_tokens += compTokens;
-    data.okmd.total_tokens += totTokens;
+    const tokenTotals = _computeTokenTotals(usage);
+    _accumulateEngineTokens(data.okmd, tokenTotals);
 
     if (modelQuota.daily_quota_tokens) data.okmd.daily_quota_tokens = modelQuota.daily_quota_tokens;
     if (modelQuota.daily_remaining_tokens !== undefined) data.okmd.daily_remaining_tokens = modelQuota.daily_remaining_tokens;
 
-    _appendRecentEvent(data, 'OKMD', model, totTokens, promptSnippet);
+    _appendRecentEvent(data, 'OKMD', model, tokenTotals.totTokens, promptSnippet);
   });
 }
 
@@ -271,12 +271,11 @@ function formatUsageForTelegram() {
   const gem = agy.gemini || {};
   const cg = agy.claude_gpt || {};
 
-  const reqPct = rl.limit_requests ? Math.round((rl.remaining_requests / rl.limit_requests) * 100) : 100;
   const tokPct = rl.limit_tokens ? Math.round((rl.remaining_tokens / rl.limit_tokens) * 100) : 100;
 
-  const gemWeek = gem.weekly_remaining_pct !== undefined ? gem.weekly_remaining_pct : 81.08;
-  const gemFive = gem.five_hour_remaining_pct !== undefined ? gem.five_hour_remaining_pct : 0.00;
-  const cgWeek = cg.weekly_remaining_pct !== undefined ? cg.weekly_remaining_pct : 0.00;
+  const gemWeek = gem.weekly_remaining_pct !== undefined ? gem.weekly_remaining_pct : 100;
+  const gemFive = gem.five_hour_remaining_pct !== undefined ? gem.five_hour_remaining_pct : 100;
+  const cgWeek = cg.weekly_remaining_pct !== undefined ? cg.weekly_remaining_pct : 100;
 
   const okmdRemaining = okmd.daily_remaining_tokens !== undefined ? okmd.daily_remaining_tokens : 180000;
   const okmdTotal = okmd.daily_quota_tokens || 180000;
@@ -294,18 +293,18 @@ function formatUsageForTelegram() {
     '🚀 <b>Google Antigravity CLI (AGY)</b>',
     '• <b>บัญชี:</b> <code>' + (agy.account || 'aiwonsi@gmail.com') + '</code>',
     '• <b>Gemini (Flash / Pro):</b>',
-    '  └ สัปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh || '162h 59m') + ')',
-    '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '1h 0m') + ')',
+    '  └ สัปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh || '168h 0m') + ')',
+    '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '5h 0m') + ')',
     '• <b>Claude / GPT (Sonnet/Opus):</b>',
-    '  └ สัปดาห่์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '142h 44m') + ')',
+    '  └ สัปดาห์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '168h 0m') + ')',
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
     '🤖 <b>Groq Fast API (Auto-Failover)</b>',
-    '• <b>โมเดล:</b> <code>' + (g.model || 'qen/qwen3.8-27b') + '</code>',
+    '• <b>โมเดล:</b> <code>' + (g.model || 'qwen/qwen3.8-27b') + '</code>',
     '• <b>Tokens คงเหลือ:</b> <b>' + (rl.remaining_tokens || 0).toLocaleString() + ' / ' + (rl.limit_tokens || 8000).toLocaleString() + '</b> (' + tokPct + '%)',
     '• <b>เรียกใช้สะสม:</b> ' + (g.total_requests || 0) + ' ครั้ง',
     '━━━━━━━━━━━━━━━━━━━━',
-    '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชัน</i>'
+    '📱 <i>ระบบ AI รัน 24 ชม. พร้อม Failover ครบ 3 ชั้น</i>'
   ].join('\n');
 }
 

@@ -5,6 +5,7 @@ const https = require('https');
 const agyBaseDir = 'E:\\agy';
 const tgConfigPath = path.join(agyBaseDir, 'telegram_config.json');
 const notifiedHistoryPath = path.join(agyBaseDir, 'notified_gt_deliveries.json');
+const deliveriesConfigPath = path.join(__dirname, 'gt_deliveries_config.json');
 
 function getTelegramConfig() {
     if (fs.existsSync(tgConfigPath)) {
@@ -13,6 +14,17 @@ function getTelegramConfig() {
         } catch (e) {}
     }
     return { BotToken: process.env.TELEGRAM_BOT_TOKEN || '', ChatId: process.env.TELEGRAM_CHAT_ID || '1532466397' };
+}
+
+function getDeliveries() {
+    if (fs.existsSync(deliveriesConfigPath)) {
+        try {
+            return JSON.parse(fs.readFileSync(deliveriesConfigPath, 'utf8'));
+        } catch (e) {
+            console.error('[Auto-PrepareGT] Error reading deliveries config:', e.message);
+        }
+    }
+    return [];
 }
 
 function sendTGAlert(botToken, chatId, message) {
@@ -38,7 +50,46 @@ function sendTGAlert(botToken, chatId, message) {
     });
 }
 
-async function runAutoPrepareGT(currentDateStr = '2026-08-31') {
+function computeTriggerInfo(deliv, dDate) {
+    let triggerDate = new Date(dDate.getTime() - 2 * 24 * 60 * 60 * 1000); // D-2
+    let alertLeadText = "ล่วงหน้า 2 วัน (D-2)";
+    const sampleDate = new Date(dDate.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+    if (deliv.customer === 'AFT') {
+        triggerDate = new Date(dDate.getTime() - 1 * 24 * 60 * 60 * 1000); // D-1
+        alertLeadText = "ล่วงหน้า 1 วัน เวลา 12:00 น. (เที่ยงวัน)";
+        // If Sunday shift to Saturday
+        if (triggerDate.getUTCDay() === 0) {
+            triggerDate = new Date(triggerDate.getTime() - 1 * 24 * 60 * 60 * 1000);
+            alertLeadText = "ล่วงหน้า 2 วัน (เลื่อนจากวันอาทิตย์เป็นวันเสาร์ 12:00 น.)";
+        }
+    }
+
+    return { triggerDate, alertLeadText, sampleDate };
+}
+
+function buildAlertMessage(deliv, alertLeadText, sampleDate) {
+    const formattedDelivery = deliv.date.split('-').reverse().join('/');
+    const formattedSample = sampleDate.toISOString().split('T')[0].split('-').reverse().join('/');
+
+    return `🔔 [แจ้งเตือนจัดทำ GT และส่งเอกสาร]\n` +
+        `กำหนดแจ้งเตือน: ${alertLeadText}\n` +
+        `──────────────────\n` +
+        `🏢 ลูกค้า: ${deliv.customer}\n` +
+        `📅 วันที่ส่งมอบ: ${formattedDelivery}\n` +
+        `🧪 วันที่สุ่มตัวอย่าง/ตรวจ GT: ${formattedSample}\n` +
+        `📄 เอกสารอ้างอิง: ${deliv.ref}\n\n` +
+        `📦 รายการสินค้า:\n` +
+        `• ${deliv.items}\n\n` +
+        `กรุณาจัดเตรียมตัวอย่าง ตรวจแล็บ GT และส่งเอกสารให้ลูกค้าตามรอบ`;
+}
+
+async function runAutoPrepareGT(currentDateStr) {
+    // Fallback to actual current date if not provided (no more hardcoded test date)
+    if (!currentDateStr) {
+        currentDateStr = new Date().toISOString().split('T')[0];
+    }
+
     let notified = {};
     if (fs.existsSync(notifiedHistoryPath)) {
         try {
@@ -47,19 +98,7 @@ async function runAutoPrepareGT(currentDateStr = '2026-08-31') {
     }
 
     const { BotToken, ChatId } = getTelegramConfig();
-    const today = new Date(currentDateStr + 'T00:00:00Z');
-
-    const deliveries = [
-        { customer: "Siam Yamamori", date: "2026-09-05", ref: "PO6908-2357", items: "แครอท 180 kg, หอมหัวใหญ่ 625 kg" },
-        { customer: "Siam Yamamori", date: "2026-09-10", ref: "PO6908-2358", items: "แครอท 136 kg, หอมหัวใหญ่ 1,150 kg" },
-        { customer: "AFT", date: "2026-09-01", ref: "AFT-Plan-Sep01", items: "กะหล่ำปลี 2,500 kg, หอมใหญ่ปอกเปลือก 1,500 kg" },
-        { customer: "AFT", date: "2026-09-03", ref: "AFT-Plan-Sep03", items: "กะหล่ำปลี 3,000 kg, หอมใหญ่ปอกเปลือก 1,100 kg" },
-        { customer: "AFT", date: "2026-09-05", ref: "AFT-Plan-Sep05", items: "กะหล่ำปลี 2,000 kg, แครอท 630 kg, หอมใหญ่ปอกเปลือก 500 kg" },
-        { customer: "AFT", date: "2026-09-07", ref: "AFT-Plan-Sep07", items: "กะหล่ำปลี 2,500 kg, หอมใหญ่ปอกเปลือก 1,500 kg" },
-        { customer: "AFT", date: "2026-09-08", ref: "AFT-Plan-Sep08", items: "กะหล่ำปลี 2,500 kg, หอมใหญ่ปอกเปลือก 1,500 kg" },
-        { customer: "AFT", date: "2026-09-10", ref: "AFT-Plan-Sep10", items: "กะหล่ำปลี 2,000 kg, หอมใหญ่ปอกเปลือก 2,000 kg" },
-        { customer: "AFT", date: "2026-09-12", ref: "AFT-Plan-Sep12", items: "กะหล่ำปลี 2,500 kg, แครอท 630 kg, หอมใหญ่ปอกเปลือก 1,000 kg" }
-    ];
+    const deliveries = getDeliveries();
 
     let alertsTriggered = 0;
 
@@ -67,37 +106,11 @@ async function runAutoPrepareGT(currentDateStr = '2026-08-31') {
         const dDate = new Date(deliv.date + 'T00:00:00Z');
         const key = `${deliv.customer}_${deliv.ref}_${deliv.date.replace(/-/g, '')}`;
 
-        // Trigger logic
-        let triggerDate = new Date(dDate.getTime() - 2 * 24 * 60 * 60 * 1000); // D-2
-        let alertLeadText = "ล่วงหน้า 2 วัน (D-2)";
-        let sampleDate = new Date(dDate.getTime() - 2 * 24 * 60 * 60 * 1000);
-
-        if (deliv.customer === 'AFT') {
-            triggerDate = new Date(dDate.getTime() - 1 * 24 * 60 * 60 * 1000); // D-1
-            alertLeadText = "ล่วงหน้า 1 วัน เวลา 12:00 น. (เที่ยงวัน)";
-            // If Sunday shift to Saturday
-            if (triggerDate.getUTCDay() === 0) {
-                triggerDate = new Date(triggerDate.getTime() - 1 * 24 * 60 * 60 * 1000);
-                alertLeadText = "ล่วงหน้า 2 วัน (เลื่อนจากวันอาทิตย์เป็นวันเสาร์ 12:00 น.)";
-            }
-        }
-
+        const { triggerDate, alertLeadText, sampleDate } = computeTriggerInfo(deliv, dDate);
         const isTriggerDay = triggerDate.toISOString().split('T')[0] === currentDateStr;
 
         if (isTriggerDay && !notified[key]) {
-            const formattedDelivery = deliv.date.split('-').reverse().join('/');
-            const formattedSample = sampleDate.toISOString().split('T')[0].split('-').reverse().join('/');
-
-            const msg = `🔔 [แจ้งเตือนจัดทำ GT และส่งเอกสาร]\n` +
-                        `กำหนดแจ้งเตือน: ${alertLeadText}\n` +
-                        `──────────────────\n` +
-                        `🏢 ลูกค้า: ${deliv.customer}\n` +
-                        `📅 วันที่ส่งมอบ: ${formattedDelivery}\n` +
-                        `🧪 วันที่สุ่มตัวอย่าง/ตรวจ GT: ${formattedSample}\n` +
-                        `📄 เอกสารอ้างอิง: ${deliv.ref}\n\n` +
-                        `📦 รายการสินค้า:\n` +
-                        `• ${deliv.items}\n\n` +
-                        `กรุณาจัดเตรียมตัวอย่าง ตรวจแล็บ GT และส่งเอกสารให้ลูกค้าตามรอบ`;
+            const msg = buildAlertMessage(deliv, alertLeadText, sampleDate);
 
             console.log(`[Trigger GT Alert] ${key}`);
             const sent = await sendTGAlert(BotToken, ChatId, msg);
