@@ -461,12 +461,11 @@ if (cat === 'all') {
                 { key: 'Onion_AFT', name: '🧅 หอม AFT' },
                 { key: 'Onion_Chinese', name: '🧅 หอมจีน' },
                 { key: 'Carrot', name: '🥕 แครอทสวย' },
-                { key: 'Purple_Sweet_Potato', name: '🍠 มันม่วงหัวเล็ก' },
-                { key: 'Yellow_Sweet_Potato', name: '🥔 มันเหลืองไข่' },
-                { key: 'Orange_Sweet_Potato', name: '🥔 มันส้ม' }
+                { key: 'Purple_Sweet_Potato', name: '🍠 มันม่วงหัวเล็ก' }
               ];
               let rowsHtml = '';
-              skuMeta.forEach((sku, idx) => {
+              const activeSkus = skuMeta.filter(s => cur.Items && cur.Items[s.key] !== undefined);
+              activeSkus.forEach((sku, idx) => {
                 const cVal = cur.Items[sku.key] || 0;
                 const pVal = prev.Items[sku.key] || 0;
                 const diff = cVal - pVal;
@@ -479,7 +478,7 @@ if (cat === 'all') {
                   diffStr = diff.toLocaleString() + ' กก.';
                   diffColor = '#f59e0b';
                 }
-                const bBorder = idx < skuMeta.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.04);' : '';
+                const bBorder = idx < activeSkus.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.04);' : '';
                 rowsHtml += `<tr style="${bBorder}">
                   <td style="padding:6px 8px;">${sku.name}</td>
                   <td style="padding:6px 8px; text-align:right; color:#94a3b8;">${pVal.toLocaleString()} กก.</td>
