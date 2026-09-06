@@ -836,14 +836,26 @@ if (cat === 'all') {
           const el = document.getElementById(b);
           if (el) el.classList.remove('active');
         });
-        if (element) element.classList.add('active');
-  
+
+        let targetEl = element;
+        if (!targetEl && typeof window !== 'undefined' && window.event) {
+          targetEl = window.event.currentTarget || window.event.target;
+        }
+        if (!targetEl) {
+          targetEl = document.getElementById('btn_cal_' + cust);
+        }
+        if (targetEl && targetEl.classList) {
+          targetEl.classList.add('active');
+        }
+
         const items = document.querySelectorAll('.cal-event-item');
         items.forEach(it => {
           if (cust === 'all') {
             it.style.display = 'block';
           } else {
-            it.style.display = it.classList.contains('cal-' + cust) ? 'block' : 'none';
+            const isAft = (cust === 'aft' && (it.classList.contains('cal-aft') || it.classList.contains('cal-salaya')));
+            const isMatch = isAft || it.classList.contains('cal-' + cust);
+            it.style.display = isMatch ? 'block' : 'none';
           }
         });
 
@@ -855,7 +867,41 @@ if (cat === 'all') {
                 it.style.display = it.classList.contains('inner-' + cust) ? 'block' : 'none';
             }
         });
+
+        const weekBoxes = document.querySelectorAll('.cal-week-box');
+        weekBoxes.forEach(box => {
+          if (cust === 'all') {
+            box.style.display = 'block';
+          } else {
+            const visibleItems = box.querySelectorAll('.cal-event-item');
+            let hasVisible = false;
+            visibleItems.forEach(vi => {
+              if (vi.style.display !== 'none') hasVisible = true;
+            });
+            box.style.display = hasVisible ? 'block' : 'none';
+          }
+        });
       }
+
+    function initCalFilterListeners() {
+      const filterMap = [
+        { id: 'btn_cal_all', cust: 'all' },
+        { id: 'btn_cal_aft', cust: 'aft' },
+        { id: 'btn_cal_tns', cust: 'tns' },
+        { id: 'btn_cal_yamamori', cust: 'yamamori' }
+      ];
+      filterMap.forEach(item => {
+        const btn = document.getElementById(item.id);
+        if (btn) {
+          btn.onclick = function(e) {
+            filterCalCustomer(item.cust, this);
+          };
+          btn.addEventListener('click', function(e) {
+            filterCalCustomer(item.cust, this);
+          });
+        }
+      });
+    }
 
       function switchAppTab(tabId) {
       const tabs = ['ops', 'stock', 'sec'];
@@ -969,6 +1015,13 @@ if (cat === 'all') {
       } catch (e) {}
 
       loadSavedState(); 
+      initCalFilterListeners();
       updateNotificationBtn(); 
       scheduleDaily8AMAlert(); 
     };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCalFilterListeners);
+    } else {
+      initCalFilterListeners();
+    }

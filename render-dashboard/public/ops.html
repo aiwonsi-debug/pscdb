@@ -578,11 +578,11 @@
       <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update">05 ก.ย. 2569 17:00 น.</span></div>
 
       <!-- Customer Filter Selector for Calendar -->
-      <div style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px;">
-        <button class="tab-btn active" id="btn_cal_all" onclick="filterCalCustomer('all', this)">🌟 ทุกโรงงาน</button>
-        <button class="tab-btn" id="btn_cal_aft" onclick="filterCalCustomer('aft', this)">🏢 AFT (Rev.01)</button>
-        <button class="tab-btn" id="btn_cal_tns" onclick="filterCalCustomer('tns', this)">🏢 TNS (24 วัน)</button>
-        <button class="tab-btn" id="btn_cal_yamamori" onclick="filterCalCustomer('yamamori', this)">🏢 Siam Yamamori</button>
+      <div class="filter-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; touch-action: manipulation; -webkit-overflow-scrolling: touch;">
+        <button type="button" class="tab-btn active" id="btn_cal_all" onclick="filterCalCustomer('all', this)">🌟 ทุกโรงงาน</button>
+        <button type="button" class="tab-btn" id="btn_cal_aft" onclick="filterCalCustomer('aft', this)">🏢 AFT (Rev.01)</button>
+        <button type="button" class="tab-btn" id="btn_cal_tns" onclick="filterCalCustomer('tns', this)">🏢 TNS (24 วัน)</button>
+        <button type="button" class="tab-btn" id="btn_cal_yamamori" onclick="filterCalCustomer('yamamori', this)">🏢 Siam Yamamori</button>
       </div>
 
       <!-- WEEK 1: 01/09 - 06/09 -->
