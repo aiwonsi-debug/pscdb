@@ -158,28 +158,80 @@
       return custom ? custom.value.trim() : '';
     }
 
+    function normalizeOptionText(str) {
+      if (!str || typeof str !== 'string') return '';
+      return str.replace(/^[\uD800-\uDBFF][\uDC00-\uDFFF]|\s+|[📦🌿🌱🚛🛻🧅🫑🚚🏪]/gu, '').replace(/^ส่ง/g, '').trim().toLowerCase();
+    }
+
     function setFieldValue(type, id, val) {
       if (val === undefined || val === null) return;
       const sel = document.getElementById('sel_' + type + '_' + id) || document.getElementById(type + '_' + id);
       const custom = document.getElementById('custom_' + type + '_' + id);
       if (!sel) return;
 
-      let matched = false;
+      const cleanVal = typeof val === 'string' ? val.trim() : String(val);
+      if (cleanVal === '' || cleanVal === '__custom__') {
+        if (custom) custom.style.display = 'none';
+        return;
+      }
+
+      let matchedIndex = -1;
+
+      // 1. Exact match on option.value
       for (let i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].value === val && val !== '__custom__') {
-          sel.selectedIndex = i;
-          matched = true;
+        if (sel.options[i].value === cleanVal && cleanVal !== '__custom__') {
+          matchedIndex = i;
           break;
         }
       }
 
-      if (matched) {
-        if (custom) custom.style.display = 'none';
-      } else if (val && val !== '') {
-        sel.value = '__custom__';
+      // 2. Normalized match on option.value & option.text (stripping emoji, prefix 'ส่ง', spaces)
+      if (matchedIndex === -1) {
+        const normVal = normalizeOptionText(cleanVal);
+        if (normVal) {
+          for (let i = 0; i < sel.options.length; i++) {
+            const optVal = sel.options[i].value;
+            if (optVal === '__custom__') continue;
+            const normOptVal = normalizeOptionText(optVal);
+            const normOptText = normalizeOptionText(sel.options[i].textContent);
+            if (normOptVal === normVal || normOptText === normVal ||
+                normOptVal.includes(normVal) || normVal.includes(normOptVal) ||
+                normOptText.includes(normVal) || normVal.includes(normOptText)) {
+              matchedIndex = i;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matchedIndex !== -1) {
+        sel.selectedIndex = matchedIndex;
         if (custom) {
-          custom.style.display = 'block';
-          custom.value = val;
+          custom.style.display = 'none';
+          custom.value = '';
+        }
+      } else {
+        // If it looks like a standard option (not a raw custom freeform note), ensure option exists
+        ensureOptionExists(sel, cleanVal, type === 'supplier' ? '🌱 ' : '🚛 ');
+        let reMatched = false;
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === cleanVal) {
+            sel.selectedIndex = i;
+            reMatched = true;
+            break;
+          }
+        }
+        if (reMatched) {
+          if (custom) {
+            custom.style.display = 'none';
+            custom.value = '';
+          }
+        } else {
+          sel.value = '__custom__';
+          if (custom) {
+            custom.style.display = 'block';
+            custom.value = cleanVal;
+          }
         }
       }
     }
@@ -512,6 +564,14 @@ if (cat === 'all') {
             Object.keys(ORDERS_META).forEach(id => {
               const item = serverCardsState[id];
               if (item) {
+                const localItem = saved[id] || {};
+                const localAge = localItem.clientUpdatedAt ? (Date.now() - localItem.clientUpdatedAt) : 999999;
+                
+                // If local user edited within the last 15 seconds, don't let background poll override
+                if (localAge < 15000) {
+                  return;
+                }
+
                 saved[id] = Object.assign(saved[id] || {}, item);
                 
                 // Sync DOM Checkboxes directly from server
@@ -538,6 +598,12 @@ if (cat === 'all') {
 
     function loadSavedState() {
       try {
+        // Sync dynamic options first from localStorage if previously stored
+        const savedOps = JSON.parse(localStorage.getItem('PSC_OPS_CACHED_CUSTOM') || '{}');
+        if (savedOps.suppliers || savedOps.trucks) {
+          syncDynamicOptions(savedOps.suppliers || [], savedOps.trucks || []);
+        }
+
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         const items = Object.keys(ORDERS_META);
         
@@ -589,7 +655,8 @@ if (cat === 'all') {
           truck: truck,
           orderChecked: orderChecked,
           truckChecked: truckChecked,
-          loadedReported: isLoaded
+          loadedReported: isLoaded,
+          clientUpdatedAt: Date.now()
         };
 
         saved[id] = payloadLocal;
@@ -610,12 +677,13 @@ if (cat === 'all') {
 
         const apiPayload = {
           id: id,
-          farm: supplier || 'สวนเครือข่าย PSC',
-          truck: truck || 'รถขนส่ง 6 ล้อ PSC',
-          product: product || 'สินค้าเกษตร',
-          qty_kg: qty_kg || 0,
-          customer: customer || 'โรงงานศาลายา / TNS',
-          delivery_date: delivery_date || '2026-09-01',
+          farm: supplier || '',
+          supplier: supplier || '',
+          truck: truck || '',
+          product: product || (ORDERS_META[id] ? ORDERS_META[id].product : 'สินค้าเกษตร'),
+          qty_kg: qty_kg || (ORDERS_META[id] ? ORDERS_META[id].qty_kg : 0),
+          customer: customer || (ORDERS_META[id] ? ORDERS_META[id].customer : 'ลูกค้า PSC'),
+          delivery_date: delivery_date || (ORDERS_META[id] ? ORDERS_META[id].delivery_date : '2026-09-01'),
           status: statusText,
           orderChecked: orderChecked,
           truckChecked: truckChecked,

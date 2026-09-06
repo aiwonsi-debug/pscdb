@@ -195,19 +195,15 @@ function syncToGoogleSheets(payload) {
 
         const req = https.request(options, (res) => {
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                const redUrl = url.parse(res.headers.location);
-                const redReq = https.request({
-                    hostname: redUrl.hostname,
-                    path: redUrl.path,
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Content-Length': Buffer.byteLength(postData)
-                    }
-                }, () => {});
-                redReq.on('error', () => {});
-                redReq.write(postData);
-                redReq.end();
+                https.get(res.headers.location, (redRes) => {
+                    let resData = '';
+                    redRes.on('data', c => resData += c);
+                    redRes.on('end', () => {
+                        // GAS returns JSON response after redirect
+                    });
+                }).on('error', (err) => {
+                    console.error('[GoogleSheets Redirect Sync Error]:', err.message);
+                });
             }
         });
 
@@ -752,19 +748,28 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'GET' && pathname === '/api/team-status') {
             const ops = loadTeamOps();
             
-            // Fetch latest from Google Sheets
+            // Fetch latest from Google Sheets and merge with conflict resolution
             try {
                 const sheetData = await fetchGoogleSheetsData();
                 if (sheetData && typeof sheetData === 'object') {
                     if (!ops.cards_state) ops.cards_state = {};
-                    Object.keys(sheetData).forEach(id => {
-                        const item = sheetData[id];
-                        if (item) {
-                            if (!ops.cards_state[id]) ops.cards_state[id] = { id: id };
-                            if (item.supplier) ops.cards_state[id].supplier = item.supplier;
-                            if (item.truck) ops.cards_state[id].truck = item.truck;
-                            if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
-                            if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
+                    Object.keys(sheetData).forEach(rawId => {
+                        const id = rawId.trim();
+                        const item = sheetData[rawId];
+                        if (item && id) {
+                            const localItem = ops.cards_state[id];
+                            const localUpdatedAt = localItem && localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
+                            const sheetUpdatedAt = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+                            
+                            // Only allow Google Sheets to update if local state doesn't have newer changes
+                            if (!localItem || sheetUpdatedAt >= localUpdatedAt) {
+                                if (!ops.cards_state[id]) ops.cards_state[id] = { id: id };
+                                if (item.supplier) ops.cards_state[id].supplier = item.supplier;
+                                if (item.truck) ops.cards_state[id].truck = item.truck;
+                                if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
+                                if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
+                                if (item.updatedAt) ops.cards_state[id].updatedAt = item.updatedAt;
+                            }
                         }
                     });
                 }
@@ -794,11 +799,13 @@ const server = http.createServer(async (req, res) => {
             const activeSupplier = supplier || farm;
 
             if (id) {
+                const nowIso = new Date().toISOString();
                 if (!opsData.cards_state[id]) opsData.cards_state[id] = { id: id };
                 if (activeSupplier !== undefined) opsData.cards_state[id].supplier = activeSupplier;
                 if (truck !== undefined) opsData.cards_state[id].truck = truck;
                 if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
                 if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
+                opsData.cards_state[id].updatedAt = nowIso;
 
                 // Auto-add custom seller/location to database & memory
                 if (activeSupplier && activeSupplier !== '__custom__' && activeSupplier.trim() !== '') {
@@ -824,7 +831,8 @@ const server = http.createServer(async (req, res) => {
                     supplier: opsData.cards_state[id].supplier || '',
                     truck: opsData.cards_state[id].truck || '',
                     orderChecked: !!opsData.cards_state[id].orderChecked,
-                    truckChecked: !!opsData.cards_state[id].truckChecked
+                    truckChecked: !!opsData.cards_state[id].truckChecked,
+                    updatedAt: nowIso
                 });
             }
 
