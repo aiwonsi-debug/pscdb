@@ -152,7 +152,7 @@ function isValidWebSession(token) {
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
 function syncToRender(endpoint, payload) {
-    if (!RENDER_DASHBOARD_URL) return;
+    if (process.env.RENDER || !RENDER_DASHBOARD_URL) return;
     try {
         const postData = JSON.stringify(payload);
         const parsed = url.parse(RENDER_DASHBOARD_URL);
