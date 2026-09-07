@@ -252,7 +252,8 @@ function loadTeamOps() {
         history_logs: [], 
         cards_state: {},
         custom_suppliers: [],
-        custom_trucks: []
+        custom_trucks: [],
+        other_tasks: []
     };
     const targetOpsFile = fs.existsSync(teamOpsFile) ? teamOpsFile : (fs.existsSync(teamOpsFile + '.example') ? (teamOpsFile + '.example') : null);
     if (targetOpsFile) {
@@ -261,6 +262,7 @@ function loadTeamOps() {
             if (!data.cards_state) data.cards_state = {};
             if (!data.custom_suppliers) data.custom_suppliers = [];
             if (!data.custom_trucks) data.custom_trucks = [];
+            if (!data.other_tasks) data.other_tasks = [];
         } catch (e) {}
     }
     return data;
@@ -862,6 +864,44 @@ const server = http.createServer(async (req, res) => {
                 message: 'Updated successfully and synced to Google Sheets',
                 cards_state: opsData.cards_state
             }, null, 2));
+        }
+
+        // Endpoint: Add Other Task / Planting Task
+        if (req.method === 'POST' && pathname === '/api/add-other-task') {
+            const body = await getBody();
+            const opsData = loadTeamOps();
+            if (!opsData.other_tasks) opsData.other_tasks = [];
+            const newId = 'TASK-' + Date.now();
+            const taskObj = {
+                id: newId,
+                task_type: (body.task_type || 'งานปลูก').trim(),
+                seller: (body.seller || '-').trim(),
+                crop: (body.crop || '-').trim(),
+                target_customer: (body.target_customer || 'TNS').trim(),
+                target_delivery: (body.target_delivery || 'ปลายเดือน 9').trim(),
+                status: (body.status || 'รอดำเนินการ').trim(),
+                notes: (body.notes || '').trim(),
+                updated_at: new Date().toISOString()
+            };
+            opsData.other_tasks.unshift(taskObj);
+            saveTeamOps(opsData);
+            syncToRender('/api/add-other-task', taskObj);
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'บันทึกงานใหม่เรียบร้อย', task: taskObj, other_tasks: opsData.other_tasks }));
+        }
+
+        // Endpoint: Delete Other Task
+        if (req.method === 'POST' && pathname === '/api/delete-other-task') {
+            const body = await getBody();
+            const { id } = body;
+            const opsData = loadTeamOps();
+            if (opsData.other_tasks) {
+                opsData.other_tasks = opsData.other_tasks.filter(t => t.id !== id);
+                saveTeamOps(opsData);
+                syncToRender('/api/delete-other-task', { id });
+            }
+            res.writeHead(200);
+            return res.end(JSON.stringify({ success: true, message: 'ลบรายการงานเรียบร้อย', other_tasks: opsData.other_tasks }));
         }
 
         // 6. Team Reset POST

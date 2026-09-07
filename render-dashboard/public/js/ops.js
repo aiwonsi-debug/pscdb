@@ -651,9 +651,135 @@ if (cat === 'all') {
 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
           }
+
+          if (data && data.other_tasks) {
+            renderOtherTasks(data.other_tasks);
+          }
         })
         .catch(e => {});
     }
+
+    function renderOtherTasks(tasks) {
+      const tbody = document.getElementById('other_task_tbody');
+      const badge = document.getElementById('other_task_count_badge');
+      if (!tbody) return;
+      if (badge) badge.textContent = (tasks ? tasks.length : 0) + ' รายการ';
+
+      if (!tasks || tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:16px;">ยังไม่มีรายการงานอื่น / งานปลูกในระบบ</td></tr>';
+        return;
+      }
+
+      let html = '';
+      tasks.forEach(t => {
+        const id = t.id;
+        const crop = t.crop || '-';
+        const seller = t.seller || '-';
+        const cust = t.target_customer || 'TNS';
+        const delivery = t.target_delivery || '-';
+        const type = t.task_type || 'งานปลูก';
+        const status = t.status || 'รอดำเนินการ';
+        const notes = t.notes || '-';
+        
+        let custBadge = 'badge-primary';
+        if (cust === 'TNS') custBadge = 'badge-tns';
+        else if (cust === 'AFT') custBadge = 'badge-salaya';
+        else if (cust === 'Yamamori') custBadge = 'badge-warning';
+
+        html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+          <td><span class="badge badge-success">${type}</span></td>
+          <td style="font-weight:700; color:#38bdf8;">${crop}</td>
+          <td style="color:#e2e8f0;">${seller}</td>
+          <td><span class="badge ${custBadge}">${cust}</span></td>
+          <td style="color:#fbbf24; font-weight:600;">${delivery}</td>
+          <td><span style="color:#34d399; font-weight:600; font-size:11px;">${status}</span></td>
+          <td style="color:#94a3b8; font-size:11.5px;">${notes}</td>
+          <td>
+            <button type="button" class="btn-restore" onclick="deleteOtherTask('${id}')" style="background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;">ลบ</button>
+          </td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+    window.renderOtherTasks = renderOtherTasks;
+
+    function submitNewOtherTask() {
+      const typeEl = document.getElementById('inp_task_type');
+      const cropEl = document.getElementById('inp_task_crop');
+      const sellerEl = document.getElementById('inp_task_seller');
+      const custEl = document.getElementById('inp_task_customer');
+      const deliveryEl = document.getElementById('inp_task_delivery');
+      const statusEl = document.getElementById('inp_task_status');
+      const notesEl = document.getElementById('inp_task_notes');
+
+      const payload = {
+        task_type: typeEl ? typeEl.value : 'งานปลูก',
+        crop: cropEl ? cropEl.value : 'ต้นหอม',
+        seller: sellerEl ? sellerEl.value : '',
+        target_customer: custEl ? custEl.value : 'TNS',
+        target_delivery: deliveryEl ? deliveryEl.value : 'ปลายเดือน 9',
+        status: statusEl ? statusEl.value : 'กำลังเพาะปลูก',
+        notes: notesEl ? notesEl.value : ''
+      };
+
+      if (!payload.crop.trim()) {
+        alert('กรุณาระบุชนิดผัก');
+        return;
+      }
+
+      fetch('/api/add-other-task', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          handleAuthRequired(() => submitNewOtherTask());
+          return null;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.success) {
+          showToast('🌱 บันทึกงานเรียบร้อยแล้ว!');
+          if (sellerEl) sellerEl.value = '';
+          if (notesEl) notesEl.value = '';
+          if (data.other_tasks) renderOtherTasks(data.other_tasks);
+          else syncLiveBackendState();
+        }
+      })
+      .catch(e => {
+        alert('เกิดข้อผิดพลาดในการบันทึกงาน');
+      });
+    }
+    window.submitNewOtherTask = submitNewOtherTask;
+
+    function deleteOtherTask(id) {
+      if (!confirm('ต้องการลบรายการงานนี้ใช่หรือไม่?')) return;
+      fetch('/api/delete-other-task', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+      })
+      .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          handleAuthRequired(() => deleteOtherTask(id));
+          return null;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.success) {
+          showToast('ลบรายการเรียบร้อย');
+          if (data.other_tasks) renderOtherTasks(data.other_tasks);
+          else syncLiveBackendState();
+        }
+      })
+      .catch(e => {});
+    }
+    window.deleteOtherTask = deleteOtherTask;
 
     function loadSavedState() {
       try {

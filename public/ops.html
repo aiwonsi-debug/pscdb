@@ -9,7 +9,7 @@
   <script>
     // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
-      const tabs = ['ops', 'stock', 'sec'];
+      const tabs = ['ops', 'stock', 'sec', 'other'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab_btn_' + t);
         const sec = document.getElementById('sec_' + t);
@@ -106,11 +106,12 @@
       </div>
     </header>
 
-    <!-- Unified App Navigation Bar -->
-    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px;">
+    <!-- Unified App Navigation Bar (4 Tabs) -->
+    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px; margin-bottom:12px;">
       <button type="button" class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_other" onclick="switchAppTab('other')">🌱 งานอื่น/ปลูก</button>
     </div>
 
     <!-- Sub Filter Tabs for Ops Tab -->
@@ -804,6 +805,101 @@
 
     </div>
 
+</div>
+
+<!-- SECTION 5: OTHER TASKS & PLANTING OPERATIONS (งานอื่น / งานปลูก) -->
+<div id="sec_other" class="app-section">
+    <!-- Form to add new task -->
+    <div class="card" style="border-left: 4px solid #10b981;">
+      <div class="card-header">
+        <div class="card-title" style="color:#34d399;">🌱 บันทึกงานอื่น / งานแปลงปลูก</div>
+        <span class="badge badge-success">PSC Field Tasks</span>
+      </div>
+      <div style="font-size:12px; color:#94a3b8; margin-bottom:12px;">
+        บันทึกแปลงปลูก คนขาย/แหล่งสวน ผักที่จะส่งมอบ และติดตามสถานะงาน
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+        <div class="select-group">
+          <label class="select-label">📌 ประเภทงาน:</label>
+          <input type="text" id="inp_task_type" class="mobile-select" style="padding:7px 10px;" value="งานปลูก" placeholder="เช่น งานปลูก, สุ่มตรวจแปลง, เตรียมเก็บ">
+        </div>
+        <div class="select-group">
+          <label class="select-label">🌱 ชนิดผัก / พืช:</label>
+          <input type="text" id="inp_task_crop" class="mobile-select" style="padding:7px 10px;" value="ต้นหอม" placeholder="เช่น ต้นหอม, พริกหวาน, หอมแดง">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+        <div class="select-group">
+          <label class="select-label">👤 คนขาย / สวน:</label>
+          <input type="text" id="inp_task_seller" class="mobile-select" style="padding:7px 10px;" placeholder="เช่น สวนลุงสม, ป้าผา, สวนเชียงใหม่">
+        </div>
+        <div class="select-group">
+          <label class="select-label">🏢 ส่งให้ลูกค้า:</label>
+          <select id="inp_task_customer" class="mobile-select">
+            <option value="TNS" selected>TNS (ไทยนิชชิน)</option>
+            <option value="AFT">AFT (อายิโนะโมะโต๊ะ)</option>
+            <option value="Yamamori">Siam Yamamori</option>
+            <option value="โรงงานศาลายา">โรงงานศาลายา</option>
+            <option value="ทั่วไป">ลูกค้าทั่วไป</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+        <div class="select-group">
+          <label class="select-label">📅 กำหนดส่งมอบ:</label>
+          <input type="text" id="inp_task_delivery" class="mobile-select" style="padding:7px 10px;" value="ปลายเดือน 9" placeholder="เช่น ปลายเดือน 9, 24/09/69, 30/09/69">
+        </div>
+        <div class="select-group">
+          <label class="select-label">🚦 สถานะงาน:</label>
+          <select id="inp_task_status" class="mobile-select">
+            <option value="กำลังเพาะปลูก / ดูแลแปลง" selected>🌿 กำลังเพาะปลูก / ดูแลแปลง</option>
+            <option value="พร้อมเก็บเกี่ยว / รอตัด">✂️ พร้อมเก็บเกี่ยว / รอตัด</option>
+            <option value="ติดต่อ/เจรจาคนขายแล้ว">🤝 ติดต่อ/เจรจาคนขายแล้ว</option>
+            <option value="ส่งตัวอย่างให้ตรวจแล้ว">📦 ส่งตัวอย่างให้ตรวจแล้ว</option>
+            <option value="เสร็จสิ้น / ส่งมอบแล้ว">✓ เสร็จสิ้น / ส่งมอบแล้ว</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="select-group" style="margin-bottom:12px;">
+        <label class="select-label">📝 บันทึกรายละเอียดเพิ่มเติม:</label>
+        <input type="text" id="inp_task_notes" class="mobile-select" style="padding:7px 10px;" placeholder="เช่น ต้นหอมแปลง 2 ปลายเดือน 9 ส่ง TNS ประมาณ 200 กก.">
+      </div>
+
+      <button type="button" class="btn-complete-card" onclick="submitNewOtherTask()" style="background:#238636; color:#fff; border:none; padding:10px; font-size:13px;">
+        <span>➕</span> บันทึกงานอื่น / งานปลูก
+      </button>
+    </div>
+
+    <!-- Table of Tasks & Monitoring -->
+    <div class="card" style="margin-top:12px;">
+      <div class="card-header">
+        <div class="card-title">📋 ตารางติดตามงานปลูก & งานอื่น ๆ</div>
+        <span class="badge badge-success" id="other_task_count_badge">1 รายการ</span>
+      </div>
+      <div class="table-container">
+        <table class="log-table" id="other_task_table">
+          <thead>
+            <tr>
+              <th>ประเภท</th>
+              <th>ชนิดผัก</th>
+              <th>คนขาย / สวน</th>
+              <th>ลูกค้า</th>
+              <th>กำหนดส่ง</th>
+              <th>สถานะ</th>
+              <th>บันทึก / รายละเอียด</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="other_task_tbody">
+            <!-- Dynamic task rows will be injected here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
 </div>
 
     <footer>
