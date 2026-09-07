@@ -742,10 +742,17 @@ if (cat === 'all') {
         }
       }
 
+      const sessToken = (typeof localStorage !== 'undefined' && localStorage.getItem('PSC_SESSION_TOKEN')) || '';
+      const reqHeaders = { 'Content-Type': 'application/json' };
+      if (sessToken) {
+        reqHeaders['X-PSC-Session'] = sessToken;
+        reqHeaders['Authorization'] = 'Bearer ' + sessToken;
+      }
+
       fetch('/api/add-other-task', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: reqHeaders,
         body: JSON.stringify(payload)
       })
       .then(res => {
@@ -765,22 +772,29 @@ if (cat === 'all') {
           if (data.other_tasks) renderOtherTasks(data.other_tasks);
           else syncLiveBackendState();
         } else if (data && data.error) {
-          alert(data.error);
+          alert('ไม่สามารถบันทึกได้: ' + data.error);
         }
       })
       .catch(e => {
         restoreBtn();
-        alert('เกิดข้อผิดพลาดในการบันทึกงาน');
+        alert('เกิดข้อผิดพลาดในการบันทึกงาน (' + (e && e.message ? e.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้') + ')');
       });
     }
     window.submitNewOtherTask = submitNewOtherTask;
 
     function deleteOtherTask(id) {
       if (!confirm('ต้องการลบรายการงานนี้ใช่หรือไม่?')) return;
+      const sessToken = (typeof localStorage !== 'undefined' && localStorage.getItem('PSC_SESSION_TOKEN')) || '';
+      const reqHeaders = { 'Content-Type': 'application/json' };
+      if (sessToken) {
+        reqHeaders['X-PSC-Session'] = sessToken;
+        reqHeaders['Authorization'] = 'Bearer ' + sessToken;
+      }
+
       fetch('/api/delete-other-task', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: reqHeaders,
         body: JSON.stringify({ id: id })
       })
       .then(res => {
