@@ -727,6 +727,21 @@ if (cat === 'all') {
         return;
       }
 
+      const btn = document.getElementById('btn_submit_other_task') || (event && event.target ? event.target.closest('button') : null);
+      if (btn) {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.dataset.originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span>⏳</span> กำลังบันทึก...';
+      }
+
+      function restoreBtn() {
+        if (btn) {
+          btn.disabled = false;
+          if (btn.dataset.originalHtml) btn.innerHTML = btn.dataset.originalHtml;
+        }
+      }
+
       fetch('/api/add-other-task', {
         method: 'POST',
         credentials: 'same-origin',
@@ -735,21 +750,26 @@ if (cat === 'all') {
       })
       .then(res => {
         if (res.status === 401 || res.status === 403) {
+          restoreBtn();
           handleAuthRequired(() => submitNewOtherTask());
           return null;
         }
         return res.json();
       })
       .then(data => {
+        restoreBtn();
         if (data && data.success) {
           showToast('🌱 บันทึกงานเรียบร้อยแล้ว!');
           if (sellerEl) sellerEl.value = '';
           if (notesEl) notesEl.value = '';
           if (data.other_tasks) renderOtherTasks(data.other_tasks);
           else syncLiveBackendState();
+        } else if (data && data.error) {
+          alert(data.error);
         }
       })
       .catch(e => {
+        restoreBtn();
         alert('เกิดข้อผิดพลาดในการบันทึกงาน');
       });
     }

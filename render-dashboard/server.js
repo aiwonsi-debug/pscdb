@@ -871,16 +871,47 @@ const server = http.createServer(async (req, res) => {
             const body = await getBody();
             const opsData = loadTeamOps();
             if (!opsData.other_tasks) opsData.other_tasks = [];
+
+            const taskType = (body.task_type || 'งานปลูก').trim();
+            const seller = (body.seller || '-').trim();
+            const crop = (body.crop || '-').trim();
+            const targetCustomer = (body.target_customer || 'TNS').trim();
+            const targetDelivery = (body.target_delivery || 'ปลายเดือน 9').trim();
+            const status = (body.status || 'รอดำเนินการ').trim();
+            const notes = (body.notes || '').trim();
+
+            // Prevent spam/double submission if duplicate exists within 30 seconds
+            const now = Date.now();
+            const duplicate = opsData.other_tasks.find(t => {
+                const diffMs = now - new Date(t.updated_at).getTime();
+                return diffMs < 30000 &&
+                       t.task_type === taskType &&
+                       t.crop === crop &&
+                       t.seller === seller &&
+                       t.target_customer === targetCustomer &&
+                       t.target_delivery === targetDelivery;
+            });
+
+            if (duplicate) {
+                res.writeHead(200);
+                return res.end(JSON.stringify({ 
+                    success: true, 
+                    message: 'รายการนี้เพิ่งถูกบันทึกไปแล้ว (ตรวจจับการกดซ้ำ)', 
+                    task: duplicate, 
+                    other_tasks: opsData.other_tasks 
+                }));
+            }
+
             const newId = 'TASK-' + Date.now();
             const taskObj = {
                 id: newId,
-                task_type: (body.task_type || 'งานปลูก').trim(),
-                seller: (body.seller || '-').trim(),
-                crop: (body.crop || '-').trim(),
-                target_customer: (body.target_customer || 'TNS').trim(),
-                target_delivery: (body.target_delivery || 'ปลายเดือน 9').trim(),
-                status: (body.status || 'รอดำเนินการ').trim(),
-                notes: (body.notes || '').trim(),
+                task_type: taskType,
+                seller: seller,
+                crop: crop,
+                target_customer: targetCustomer,
+                target_delivery: targetDelivery,
+                status: status,
+                notes: notes,
                 updated_at: new Date().toISOString()
             };
             opsData.other_tasks.unshift(taskObj);
