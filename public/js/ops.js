@@ -7,6 +7,18 @@
 
     function playAlertChime() {}
 
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      if (msg) toast.innerHTML = msg;
+      toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+    window.showToast = showToast;
+
     function requestPushNotification() {
       if (!('Notification' in window)) {
         alert('เบราว์เซอร์นี้ไม่รองรับระบบ Web Push Notification แต่สามารถรับแจ้งเตือนผ่าน Telegram บอทเลขาได้ค่ะ');
@@ -727,7 +739,7 @@ if (cat === 'all') {
         return;
       }
 
-      const btn = document.getElementById('btn_submit_other_task') || (event && event.target ? event.target.closest('button') : null);
+      const btn = document.getElementById('btn_submit_other_task') || ((typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null);
       if (btn) {
         if (btn.disabled) return;
         btn.disabled = true;
@@ -1114,7 +1126,11 @@ if (cat === 'all') {
       showAuthModal(onSuccessCallback);
     }
 
+    let _pendingAuthCallback = null;
     function showAuthModal(onSuccessCallback) {
+      if (typeof onSuccessCallback === 'function') {
+        _pendingAuthCallback = onSuccessCallback;
+      }
       const modal = document.getElementById('auth_modal');
       if (modal) {
         modal.style.display = 'flex';
@@ -1122,18 +1138,19 @@ if (cat === 'all') {
         if (inp) {
           inp.focus();
           inp.onkeydown = function(ev) {
-            if (ev.key === 'Enter') submitAuthKey(inp.value, onSuccessCallback);
+            if (ev.key === 'Enter') submitAuthKey(inp.value, _pendingAuthCallback);
           };
         }
       } else {
         const pass = prompt('🔒 เซสชันหมดอายุ กรุณากรอก Access Key เพื่อปลดล็อค:');
         if (pass) {
-          submitAuthKey(pass, onSuccessCallback);
+          submitAuthKey(pass, _pendingAuthCallback);
         }
       }
     }
 
     function submitAuthKey(key, onSuccessCallback) {
+      const cb = onSuccessCallback || _pendingAuthCallback;
       if (!key) return;
       const cleanKey = key.trim();
       fetch('/api/login', {
@@ -1150,7 +1167,8 @@ if (cat === 'all') {
           showToast('✅ ปลดล็อคและจำอุปกรณ์เรียบร้อย (30 วัน)');
           const modal = document.getElementById('auth_modal');
           if (modal) modal.style.display = 'none';
-          if (typeof onSuccessCallback === 'function') onSuccessCallback();
+          _pendingAuthCallback = null;
+          if (typeof cb === 'function') cb();
           else syncLiveBackendState();
         } else {
           alert('❌ รหัสผ่านไม่ถูกต้อง');

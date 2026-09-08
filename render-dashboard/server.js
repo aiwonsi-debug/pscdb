@@ -495,13 +495,15 @@ const server = http.createServer(async (req, res) => {
 
                 // If authenticating via key or renewing valid session
                 const sessionToken = hasValidSession ? existingSession : generateWebSessionToken(true);
-                const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
+                const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production' || !!process.env.RENDER;
                 const maxAgeSec = 30 * 24 * 60 * 60; // 30 days
-                const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
+                const sameSiteAttr = isHttps ? 'SameSite=None; Secure' : 'SameSite=Lax';
+                const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; ${sameSiteAttr}`;
                 res.setHeader('Set-Cookie', cookieFlags);
                 res.writeHead(200);
                 const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
-                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, '');
+                    .replace(/__PSC_API_KEY_PLACEHOLDER__/g, '')
+                    .replace('</head>', `<script>try { localStorage.setItem('PSC_SESSION_TOKEN', '${sessionToken}'); } catch(e){}</script></head>`);
                 return res.end(htmlContent);
             } else {
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -519,9 +521,10 @@ const server = http.createServer(async (req, res) => {
             const accessKey = (body.access_code || body.key || body.auth || '').trim();
             if (verifyTeamOrMasterCode(accessKey)) {
                 const sessionToken = generateWebSessionToken(true);
-                const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production';
+                const isHttps = req.headers['x-forwarded-proto'] === 'https' || (req.connection && req.connection.encrypted) || process.env.NODE_ENV === 'production' || !!process.env.RENDER;
                 const maxAgeSec = 30 * 24 * 60 * 60; // 30 days
-                const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; SameSite=Lax${isHttps ? '; Secure' : ''}`;
+                const sameSiteAttr = isHttps ? 'SameSite=None; Secure' : 'SameSite=Lax';
+                const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; ${sameSiteAttr}`;
                 res.setHeader('Set-Cookie', cookieFlags);
                 res.writeHead(200);
                 return res.end(JSON.stringify({ 
