@@ -29,7 +29,7 @@
   },
   "AuditTrail": [
     {
-      "Timestamp": "2026-09-08T02:11:33.000Z",
+      "Timestamp": "2026-09-08T09:11:00.000Z",
       "Item": "Stock Audit Update (08/09/69)",
       "Details": "Cabbage: 8,500 kg, Onion AFT: 22,620 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
       "Source": "User Explicit Directive (08/09/69 Stock Count)"
@@ -116,14 +116,26 @@
   ],
   "RecentAudits": [
     {
-      "AsOfDate": "08/09/69",
-      "Label": "ตรวจนับจริง 08/09/69 (ล่าสุด)",
-      "Timestamp": "2026-09-08T02:11:33.000Z",
+      "AsOfDate": "09/09/69",
+      "Label": "ตรวจนับจริง 09/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-09T20:08:00.000Z",
       "Items": {
         "Cabbage": 8500,
-        "Onion_AFT": 22620,
-        "Onion_Chinese": 7010,
-        "Carrot": 4090,
+        "Onion_AFT": 21460,
+        "Onion_Chinese": 5480,
+        "Carrot": 3950,
+        "Purple_Sweet_Potato": 1690
+      }
+    },
+    {
+      "AsOfDate": "08/09/69",
+      "Label": "ตรวจนับจริง 08/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-08T09:11:00.000Z",
+      "Items": {
+        "Cabbage": 8500,
+        "Onion_AFT": 21460,
+        "Onion_Chinese": 5480,
+        "Carrot": 3950,
         "Purple_Sweet_Potato": 1690
       }
     },
