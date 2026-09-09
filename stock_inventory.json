@@ -1,0 +1,167 @@
+{
+  "AsOfDate": "09/09/69",
+  "LastUpdated": "2026-09-09T19:19:44.000Z",
+  "Items": {
+    "Cabbage": {
+      "Name": "กะหล่ำปลี",
+      "StockKg": 8500,
+      "Yield": {
+        "AFT": 0.64,
+        "TNS": 0.99
+      }
+    },
+    "Onion_AFT": {
+      "Name": "หอม AFT",
+      "StockKg": 21460
+    },
+    "Onion_Chinese": {
+      "Name": "หอมจีน",
+      "StockKg": 5480
+    },
+    "Carrot": {
+      "Name": "แครอทสวย",
+      "StockKg": 3950
+    },
+    "Purple_Sweet_Potato": {
+      "Name": "มันม่วงหัวเล็ก",
+      "StockKg": 1690
+    }
+  },
+  "AuditTrail": [
+    {
+      "Timestamp": "2026-09-26T00:00:00.000Z",
+      "Item": "Transport Operation (09/09/26)",
+      "Details": "Cabbage: 9,280 kg, Transport cost: 13,000 ฿, Destination handling: 13,000 ฿, Route: ขนทโกดง อมพาย แมสะเรยง, Unit price: 4 ฿/kg",
+      "Source": "User Explicit Directive (09/09/26 Transport)"
+    },
+    {
+      "Timestamp": "2026-09-09T00:00:00.000Z",
+      "Item": "Stock Audit Update (09/09/69)",
+      "Details": "Cabbage: 8,500 kg, Onion AFT: 21,460 kg, Onion CN: 5,480 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (09/09/69 Stock Count)"
+    },
+    {
+      "Timestamp": "2026-09-08T02:11:33.000Z",
+      "Item": "Stock Audit Update (08/09/69)",
+      "Details": "Cabbage: 8,500 kg, Onion AFT: 22,620 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (08/09/69 Stock Count)"
+    },
+    {
+      "Timestamp": "2026-09-07T15:25:00.000Z",
+      "Item": "Stock Audit Update (07/09/69)",
+      "Details": "Cabbage: 12,500 kg, Onion AFT: 22,340 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (07/09/69 Stock Count)"
+    },
+    {
+      "Timestamp": "2026-09-06T00:43:24.298Z",
+      "Item": "Stock Removal",
+      "Details": "นำมันเหลืองไข่และมันส้มออกจากสต็อกคงเหลือตามคำสั่งผู้ใช้งาน (สต็อกหมดแล้ว)",
+      "Source": "User Explicit Directive"
+    },
+    {
+      "Timestamp": "2026-09-05T20:18:11.230Z",
+      "Item": "Stock History Record (04/09/69)",
+      "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,760 kg, Carrot: 5,830 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (04/09/69 Stock Audit Baseline)"
+    },
+    {
+      "Timestamp": "2026-09-05T19:58:27.544Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (05/09/69 Stock Audit)"
+    },
+    {
+      "Timestamp": "2026-09-05T19:01:58.347Z",
+      "Item": "Cabbage",
+      "NewKg": 8875,
+      "Source": "Telegram Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 6075,
+      "NewKg": 8800,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Onion_AFT",
+      "ItemName": "หอม AFT",
+      "PreviousKg": 26120,
+      "NewKg": 25480,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Onion_Chinese",
+      "ItemName": "หอมจีน",
+      "PreviousKg": 7760,
+      "NewKg": 7010,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Carrot",
+      "ItemName": "แครอทสวย",
+      "PreviousKg": 5830,
+      "NewKg": 4090,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T13:03:12.273Z",
+      "ItemKey": "Cabbage_Yield_AFT",
+      "Field": "Yield.AFT",
+      "PreviousValue": 0.648,
+      "NewValue": 0.64,
+      "Unit": "factor",
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:1532466397:1319:Cabbage_Yield_AFT"
+    }
+  ],
+  "ProcessedEvents": [
+    "telegram:1532466397:1319:Cabbage_Yield_AFT"
+  ],
+  "RecentAudits": [
+    {
+      "AsOfDate": "08/09/69",
+      "Label": "ตรวจนับจริง 08/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-08T02:11:33.000Z",
+      "Items": {
+        "Cabbage": 8500,
+        "Onion_AFT": 22620,
+        "Onion_Chinese": 7010,
+        "Carrot": 4090,
+        "Purple_Sweet_Potato": 1690
+      }
+    },
+    {
+      "AsOfDate": "07/09/69",
+      "Label": "ตรวจนับจริง 07/09/69 (รอบก่อนหน้า)",
+      "Timestamp": "2026-09-07T15:25:00.000Z",
+      "Items": {
+        "Cabbage": 12500,
+        "Onion_AFT": 22340,
+        "Onion_Chinese": 7010,
+        "Carrot": 4090,
+        "Purple_Sweet_Potato": 1690
+      }
+    },
+    {
+      "AsOfDate": "05/09/69",
+      "Label": "ตรวจนับจริง 05/09/69 (รอบก่อนหน้า)",
+      "Timestamp": "2026-09-05T19:58:27.000Z",
+      "Items": {
+        "Cabbage": 8800,
+        "Onion_AFT": 25480,
+        "Onion_Chinese": 7010,
+        "Carrot": 4090,
+        "Purple_Sweet_Potato": 1690
+      }
+    }
+  ]
+}
