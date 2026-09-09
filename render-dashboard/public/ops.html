@@ -9,7 +9,7 @@
   <script>
     // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
-      const tabs = ['ops', 'stock', 'sec', 'other'];
+      const tabs = ['ops', 'stock', 'sec', 'other', 'report'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab_btn_' + t);
         const sec = document.getElementById('sec_' + t);
@@ -107,11 +107,12 @@
     </header>
 
     <!-- Unified App Navigation Bar (4 Tabs) -->
-    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px; margin-bottom:12px;">
+    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:5px; margin-bottom:12px;">
       <button type="button" class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
-      <button type="button" class="nav-tab-btn" id="tab_btn_other" onclick="switchAppTab('other')">🌱 งานอื่น/ปลูก</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_other" onclick="switchAppTab('other')">🌱 งานอื่น</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_report" onclick="switchAppTab('report')">📋 รายงาน</button>
     </div>
 
     <!-- Sub Filter Tabs for Ops Tab -->
@@ -904,6 +905,63 @@
         </table>
       </div>
     </div>
+</div>
+
+<!-- ===== SECTION: รายงานการขนของ & บันทึกส่งมอบ ===== -->
+<div id="sec_report" class="app-section">
+  <div class="card" style="border-left:4px solid #f59e0b;">
+    <div class="card-header">
+      <div class="card-title" style="color:#fbbf24;">🚚 รายงานการขนของ & บันทึกส่งมอบ</div>
+      <span class="badge badge-warning" id="report_count_badge">กำลังโหลด...</span>
+    </div>
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:12px;">
+      รายการส่งมอบทั้งหมด เรียงตามวันที่ส่งของ (ล่าสุดก่อน)
+    </div>
+    <div class="table-container">
+      <table class="log-table" id="report_table">
+        <thead>
+          <tr>
+            <th>วันที่ส่ง</th>
+            <th>ลูกค้า</th>
+            <th>สวน / แหล่งสินค้า</th>
+            <th>สินค้า</th>
+            <th>น้ำหนัก (kg)</th>
+            <th>รถ / ขนส่ง</th>
+            <th>สถานะ</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="report_tbody">
+          <tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:20px;">⏳ กำลังโหลดข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- History Logs Section -->
+  <div class="card" style="margin-top:12px; border-left:4px solid #6366f1;">
+    <div class="card-header">
+      <div class="card-title" style="color:#818cf8;">📜 ประวัติการรับเข้าโรงงาน</div>
+      <span class="badge" style="background:#312e81; color:#a5b4fc;" id="history_count_badge">–</span>
+    </div>
+    <div class="table-container">
+      <table class="log-table" id="history_table">
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>รายการ</th>
+            <th>น้ำหนัก</th>
+            <th>ค่าขนส่ง</th>
+            <th>การชำระ</th>
+            <th>สถานที่</th>
+          </tr>
+        </thead>
+        <tbody id="history_tbody">
+          <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">⏳ กำลังโหลดข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
     <footer>

@@ -547,9 +547,91 @@ if (cat === 'all') {
     window.completeCard = completeCard;
     window.restoreCard = restoreCard;
 
+    // ─── Report Tab: Shipment & Delivery Log ────────────────────────────────
+    function fetchShipmentReport() {
+      fetch('/api/team-status?t=' + Date.now())
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data) return;
+
+          // --- Active Operations table ---
+          var ops = (data.active_operations || []).filter(function(o) {
+            return o.delivery_date;
+          });
+          // Sort newest first
+          ops.sort(function(a, b) {
+            return new Date(b.delivery_date) - new Date(a.delivery_date);
+          });
+          var tbody = document.getElementById('report_tbody');
+          var badge = document.getElementById('report_count_badge');
+          if (tbody) {
+            if (ops.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:16px;">ไม่มีข้อมูล</td></tr>';
+            } else {
+              tbody.innerHTML = ops.map(function(o) {
+                var statusColor = '#94a3b8';
+                if (o.status && o.status.includes('ขึ้นของ')) statusColor = '#34d399';
+                else if (o.status && o.status.includes('รอ')) statusColor = '#fbbf24';
+                var delivLabel = o.delivery_date;
+                try {
+                  var d = new Date(o.delivery_date);
+                  if (!isNaN(d)) {
+                    var day = ('0'+d.getDate()).slice(-2);
+                    var mon = ('0'+(d.getMonth()+1)).slice(-2);
+                    var yr = (d.getFullYear()+543).toString().slice(-2);
+                    delivLabel = day+'/'+mon+'/'+yr;
+                  }
+                } catch(e) {}
+                return '<tr>' +
+                  '<td style="white-space:nowrap;font-weight:600;">' + delivLabel + '</td>' +
+                  '<td>' + (o.customer||'–') + '</td>' +
+                  '<td>' + (o.farm||'–') + '</td>' +
+                  '<td>' + (o.product||'–') + '</td>' +
+                  '<td style="text-align:right;">' + (o.qty_kg ? o.qty_kg.toLocaleString() : '–') + '</td>' +
+                  '<td>' + (o.truck||'–') + '</td>' +
+                  '<td style="color:'+statusColor+';">' + (o.status||'–') + '</td>' +
+                  '<td style="font-size:11px;color:#94a3b8;">' + (o.notes||'') + '</td>' +
+                  '</tr>';
+              }).join('');
+            }
+          }
+          if (badge) badge.textContent = ops.length + ' รายการ';
+
+          // --- History Logs table ---
+          var logs = (data.history_logs || []).slice();
+          logs.sort(function(a, b) {
+            return new Date(b.timestamp||b.date) - new Date(a.timestamp||a.date);
+          });
+          var hbody = document.getElementById('history_tbody');
+          var hbadge = document.getElementById('history_count_badge');
+          if (hbody) {
+            if (logs.length === 0) {
+              hbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:16px;">ไม่มีข้อมูล</td></tr>';
+            } else {
+              hbody.innerHTML = logs.map(function(l) {
+                return '<tr>' +
+                  '<td style="white-space:nowrap;font-weight:600;">' + (l.date||'–') + '</td>' +
+                  '<td>' + (l.item||'–') + '</td>' +
+                  '<td style="text-align:right;">' + (l.weight||'–') + '</td>' +
+                  '<td>' + (l.freight||'–') + '</td>' +
+                  '<td>' + (l.payment||'–') + '</td>' +
+                  '<td>' + (l.location||'–') + '</td>' +
+                  '</tr>';
+              }).join('');
+            }
+          }
+          if (hbadge) hbadge.textContent = logs.length + ' รายการ';
+        })
+        .catch(function(e) {
+          var tbody = document.getElementById('report_tbody');
+          if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:16px;">⚠️ โหลดข้อมูลไม่สำเร็จ</td></tr>';
+        });
+    }
+    window.fetchShipmentReport = fetchShipmentReport;
+
     
     function fetchLiveStock() {
-      fetch('/api/stock')
+       fetch('/api/stock?t=' + Date.now())
         .then(res => res.json())
         .then(data => {
           if (!data || !data.Items) return;
@@ -864,7 +946,9 @@ if (cat === 'all') {
 
       syncLiveBackendState();
       fetchLiveStock();
+      fetchShipmentReport();
       setInterval(fetchLiveStock, 30000);
+      setInterval(fetchShipmentReport, 60000);
       setInterval(syncLiveBackendState, 3000);
     }
 
