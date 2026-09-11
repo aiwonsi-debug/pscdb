@@ -290,17 +290,32 @@ function recordLoadingReport(reportObj) {
         opsData.cards_state[cardId].rawReport = reportObj.rawText;
     }
 
-    opsData.history_logs.unshift({
-        id: 'LOG-' + Date.now(),
-        timestamp: new Date().toISOString(),
-        date: reportObj.date,
-        item: reportObj.item,
-        weight: reportObj.weight,
-        freight: reportObj.freight,
-        payment: reportObj.payment,
-        location: reportObj.location,
-        cardId: cardId
-    });
+    const existingLog = opsData.history_logs.find(l => 
+        (cardId && l.cardId === cardId) ||
+        (l.date === reportObj.date && l.item === reportObj.item && l.weight === reportObj.weight)
+    );
+    if (existingLog) {
+        existingLog.timestamp = new Date().toISOString();
+        existingLog.date = reportObj.date;
+        existingLog.item = reportObj.item;
+        existingLog.weight = reportObj.weight;
+        existingLog.freight = reportObj.freight;
+        existingLog.payment = reportObj.payment;
+        existingLog.location = reportObj.location;
+        if (cardId) existingLog.cardId = cardId;
+    } else {
+        opsData.history_logs.unshift({
+            id: 'LOG-' + Date.now(),
+            timestamp: new Date().toISOString(),
+            date: reportObj.date,
+            item: reportObj.item,
+            weight: reportObj.weight,
+            freight: reportObj.freight,
+            payment: reportObj.payment,
+            location: reportObj.location,
+            cardId: cardId
+        });
+    }
 
     if (opsData.history_logs.length > 50) opsData.history_logs.pop();
     saveTeamOps(opsData);

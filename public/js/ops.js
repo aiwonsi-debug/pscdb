@@ -585,8 +585,19 @@ if (cat === 'all') {
                 else if (o.status && o.status.includes('รอ')) statusColor = '#fbbf24';
                 var delivLabel = o.delivery_date;
                 try {
-                  var d = new Date(o.delivery_date);
-                  if (!isNaN(d)) {
+                  var d;
+                  if (o.delivery_date.indexOf('-') !== -1) {
+                    d = new Date(o.delivery_date);
+                  } else if (o.delivery_date.indexOf('/') !== -1) {
+                    var parts = o.delivery_date.split('/');
+                    var dy = parseInt(parts[0], 10);
+                    var dm = parseInt(parts[1], 10) - 1;
+                    var dyr = parseInt(parts[2], 10);
+                    if (dyr < 100) dyr += 2000;
+                    if (dyr > 2500) dyr -= 543;
+                    d = new Date(dyr, dm, dy);
+                  }
+                  if (d && !isNaN(d.getTime())) {
                     var day = ('0'+d.getDate()).slice(-2);
                     var mon = ('0'+(d.getMonth()+1)).slice(-2);
                     var yr = (d.getFullYear()+543).toString().slice(-2);
@@ -609,7 +620,21 @@ if (cat === 'all') {
           if (badge) badge.textContent = ops.length + ' รายการ';
 
           // --- History Logs table ---
-          var logs = (data.history_logs || []).slice();
+          var rawLogs = (data.history_logs || []).slice();
+          var seenLogKeys = {};
+          var logs = [];
+          for (var j = 0; j < rawLogs.length; j++) {
+            var item = rawLogs[j];
+            var lk = (item.date || '') + '|' + (item.item || '') + '|' + (item.weight || '') + '|' + (item.location || '');
+            if (!seenLogKeys[lk]) {
+              seenLogKeys[lk] = true;
+              // Normalize year if 26 -> 69
+              if (item.date && item.date.endsWith('/26')) {
+                item.date = item.date.slice(0, -2) + '69';
+              }
+              logs.push(item);
+            }
+          }
           logs.sort(function(a, b) {
             return new Date(b.timestamp||b.date) - new Date(a.timestamp||a.date);
           });
