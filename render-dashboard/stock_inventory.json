@@ -1,10 +1,10 @@
 {
-  "AsOfDate": "09/09/69",
-  "LastUpdated": "2026-09-09T19:19:44.000Z",
+  "AsOfDate": "11/09/69",
+  "LastUpdated": "2026-09-11T03:05:00.000Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 8500,
+      "StockKg": 11975,
       "Yield": {
         "AFT": 0.64,
         "TNS": 0.99
@@ -12,11 +12,11 @@
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 21460
+      "StockKg": 19140
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
-      "StockKg": 5480
+      "StockKg": 5440
     },
     "Carrot": {
       "Name": "แครอทสวย",
@@ -29,16 +29,16 @@
   },
   "AuditTrail": [
     {
-      "Timestamp": "2026-09-08T09:11:00.000Z",
-      "Item": "Stock Audit Update (08/09/69)",
-      "Details": "Cabbage: 8,500 kg, Onion AFT: 22,620 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
-      "Source": "User Explicit Directive (08/09/69 Stock Count)"
+      "Timestamp": "2026-09-11T03:05:00.000Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 11,975 kg, Onion AFT: 19,140 kg, Onion CN: 5,440 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (11/09/69 Stock Audit)"
     },
     {
-      "Timestamp": "2026-09-07T15:25:00.000Z",
-      "Item": "Stock Audit Update (07/09/69)",
-      "Details": "Cabbage: 12,500 kg, Onion AFT: 22,340 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
-      "Source": "User Explicit Directive (07/09/69 Stock Count)"
+      "Timestamp": "2026-09-10T11:25:00.000Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 5,025 kg, Onion AFT: 20,280 kg, Onion CN: 5,440 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (10/09/69 Stock Audit)"
     },
     {
       "Timestamp": "2026-09-06T00:43:24.298Z",
@@ -116,50 +116,26 @@
   ],
   "RecentAudits": [
     {
-      "AsOfDate": "09/09/69",
-      "Label": "ตรวจนับจริง 09/09/69 (ล่าสุด)",
-      "Timestamp": "2026-09-09T20:08:00.000Z",
+      "AsOfDate": "11/09/69",
+      "Label": "ตรวจนับจริง 11/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-11T03:05:00.000Z",
       "Items": {
-        "Cabbage": 8500,
-        "Onion_AFT": 21460,
-        "Onion_Chinese": 5480,
+        "Cabbage": 11975,
+        "Onion_AFT": 19140,
+        "Onion_Chinese": 5440,
         "Carrot": 3950,
         "Purple_Sweet_Potato": 1690
       }
     },
     {
-      "AsOfDate": "08/09/69",
-      "Label": "ตรวจนับจริง 08/09/69 (ล่าสุด)",
-      "Timestamp": "2026-09-08T09:11:00.000Z",
+      "AsOfDate": "10/09/69",
+      "Label": "ตรวจนับจริง 10/09/69 (รอบก่อนหน้า)",
+      "Timestamp": "2026-09-10T11:25:00.000Z",
       "Items": {
-        "Cabbage": 8500,
-        "Onion_AFT": 21460,
-        "Onion_Chinese": 5480,
+        "Cabbage": 5025,
+        "Onion_AFT": 20280,
+        "Onion_Chinese": 5440,
         "Carrot": 3950,
-        "Purple_Sweet_Potato": 1690
-      }
-    },
-    {
-      "AsOfDate": "07/09/69",
-      "Label": "ตรวจนับจริง 07/09/69 (รอบก่อนหน้า)",
-      "Timestamp": "2026-09-07T15:25:00.000Z",
-      "Items": {
-        "Cabbage": 12500,
-        "Onion_AFT": 22340,
-        "Onion_Chinese": 7010,
-        "Carrot": 4090,
-        "Purple_Sweet_Potato": 1690
-      }
-    },
-    {
-      "AsOfDate": "05/09/69",
-      "Label": "ตรวจนับจริง 05/09/69 (รอบก่อนหน้า)",
-      "Timestamp": "2026-09-05T19:58:27.000Z",
-      "Items": {
-        "Cabbage": 8800,
-        "Onion_AFT": 25480,
-        "Onion_Chinese": 7010,
-        "Carrot": 4090,
         "Purple_Sweet_Potato": 1690
       }
     }
