@@ -318,13 +318,13 @@
 
 
     const ORDERS_META = {
-      salaya_0209: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '01/09/26', delivery_date: '02/09/26', title: '🥬 กะหล่ำปลี 8 ตัน', cat: 'salaya' },
-      salaya_0309: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9200, pickup_date: '02/09/26', delivery_date: '03/09/26', title: '🥬 กะหล่ำปลี 9.2 ตัน', cat: 'salaya' },
-      salaya_0809: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9280, pickup_date: '09/09/26', delivery_date: '10/09/26', title: '🥬 กะหล่ำปลี 9.28 ตัน (รับเข้า 8,450 kg)', cat: 'salaya' },
-      salaya_1409: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8500, pickup_date: '13/09/26', delivery_date: '14/09/26', title: '🥬 กะหล่ำปลี 6 ล้อ (~8.5 ตัน)', cat: 'salaya' },
-      tns_shallot_0709: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '06/09/26', delivery_date: '07/09/26', title: '🧅 หอมแดง 500 kg', cat: 'tns' },
-      tns_pepper_1609: { customer: 'TNS', product: 'พริกหวานเขียว', qty_kg: 2000, pickup_date: '15/09/26', delivery_date: '16/09/26', title: '🫑 พริกหวานเขียว 2,000 kg', cat: 'tns' },
-      tns_shallot_2109: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '20/09/26', delivery_date: '21/09/26', title: '🧅 หอมแดง 500 kg', cat: 'tns' }
+      salaya_0209: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '01/09/69', delivery_date: '02/09/69', title: '🥬 กะหล่ำปลี 8 ตัน', cat: 'salaya' },
+      salaya_0309: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9200, pickup_date: '02/09/69', delivery_date: '03/09/69', title: '🥬 กะหล่ำปลี 9.2 ตัน', cat: 'salaya' },
+      salaya_0809: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9280, pickup_date: '09/09/69', delivery_date: '10/09/69', title: '🥬 กะหล่ำปลี 9.28 ตัน (รับเข้า 8,450 kg)', cat: 'salaya' },
+      salaya_1409: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8500, pickup_date: '13/09/69', delivery_date: '14/09/69', title: '🥬 กะหล่ำปลี 6 ล้อ (~8.5 ตัน)', cat: 'salaya' },
+      tns_shallot_0709: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '06/09/69', delivery_date: '07/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' },
+      tns_pepper_1609: { customer: 'TNS', product: 'พริกหวานเขียว', qty_kg: 2000, pickup_date: '15/09/69', delivery_date: '16/09/69', title: '🫑 พริกหวานเขียว 2,000 kg', cat: 'tns' },
+      tns_shallot_2109: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '20/09/69', delivery_date: '21/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' }
     };
 
     
@@ -415,6 +415,33 @@ if (cat === 'all') {
         }
       });
 
+      function parseDateVal(dStr) {
+        if (!dStr) return 0;
+        var s = String(dStr).trim();
+        if (s.indexOf('/') !== -1) {
+          var p = s.split('/');
+          var day = parseInt(p[0], 10);
+          var mon = parseInt(p[1], 10) - 1;
+          var yr = parseInt(p[2], 10);
+          if (yr < 100) yr += (yr >= 50 ? 2500 - 543 : 2000);
+          if (yr > 2500) yr -= 543;
+          return new Date(yr, mon, day).getTime() || 0;
+        }
+        return new Date(s).getTime() || 0;
+      }
+      function toThaiYearStr(dStr) {
+        if (!dStr) return '';
+        var s = String(dStr).trim();
+        if (s.endsWith('/26')) return s.slice(0, -2) + '69';
+        return s;
+      }
+
+      completedList.sort(function(a, b) {
+        var tB = parseDateVal(b.deliveryDate || b.loadedDate);
+        var tA = parseDateVal(a.deliveryDate || a.loadedDate);
+        return tB - tA;
+      });
+
       if (badge) badge.textContent = `${completedList.length} รายการ`;
 
       if (completedList.length === 0) {
@@ -426,10 +453,12 @@ if (cat === 'all') {
       completedList.forEach(c => {
         const tagClass = c.meta.cat === 'salaya' ? 'salaya' : 'tns';
         const tagText = c.meta.customer === 'โรงงานศาลายา' ? 'ศาลายา' : 'TNS';
+        const pickupDate = toThaiYearStr(c.loadedDate || c.meta.pickup_date);
+        const deliveryDate = toThaiYearStr(c.deliveryDate || c.meta.delivery_date);
         
         html += `<tr>
-          <td><span style="color:#f59e0b; font-weight:600;">${c.loadedDate || c.meta.pickup_date}</span></td>
-          <td><span style="color:#38bdf8; font-weight:600;">${c.deliveryDate || c.meta.delivery_date}</span></td>
+          <td><span style="color:#f59e0b; font-weight:600;">${pickupDate}</span></td>
+          <td><span style="color:#38bdf8; font-weight:600;">${deliveryDate}</span></td>
           <td>
             <span class="log-tag ${tagClass}">${tagText}</span>
             <div style="font-weight:600; margin-top:2px;">${c.loadedItem || c.meta.title}</div>

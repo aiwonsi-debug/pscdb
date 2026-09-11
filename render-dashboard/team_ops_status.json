@@ -143,7 +143,7 @@
     "salaya_0209": {
       "id": "salaya_0209",
       "loadedReported": true,
-      "loadedDate": "01/09/26",
+      "loadedDate": "01/09/69",
       "loadedItem": "กะหล่ำปลี<br>เฮียหนิง",
       "loadedWeight": "8,715 kg (รับเข้า 8,500 kg)",
       "loadedFreight": "13,000บาท",
@@ -159,7 +159,8 @@
       "supplier": "สวนทดสอบ CAR1",
       "truck": "รถ 6 ล้อ",
       "orderChecked": true,
-      "truckChecked": true
+      "truckChecked": true,
+      "deliveryDate": "02/09/69"
     },
     "salaya_0309": {
       "id": "salaya_0309",
@@ -223,7 +224,13 @@
       "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
       "orderChecked": true,
       "truckChecked": true,
-      "loadedReported": true
+      "loadedReported": true,
+      "loadedDate": "06/09/69",
+      "deliveryDate": "07/09/69",
+      "loadedItem": "หอมแดง (ป้าผา)",
+      "loadedWeight": "50 ถุง (500 kg)",
+      "loadedFreight": "นิ่มซี่เส็ง สาขาท่าลี่",
+      "loadedLocation": "ท่าลี่"
     },
     "tns_pepper_1609": {
       "id": "tns_pepper_1609",
