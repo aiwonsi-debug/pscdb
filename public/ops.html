@@ -9,7 +9,7 @@
   <script>
     // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
-      const tabs = ['ops', 'stock', 'sec', 'other'];
+      const tabs = ['ops', 'stock', 'sec', 'other', 'report'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab_btn_' + t);
         const sec = document.getElementById('sec_' + t);
@@ -102,16 +102,17 @@
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#6e8490; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
         <span>✓ pscdb.onrender.com</span>
-        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#d8e2ea;">10/09/69 13:00 น.</span></span>
+        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#d8e2ea;">05/09/69 17:00 น.</span></span>
       </div>
     </header>
 
     <!-- Unified App Navigation Bar (4 Tabs) -->
-    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px; margin-bottom:12px;">
+    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:5px; margin-bottom:12px;">
       <button type="button" class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚛 จัดซื้อ/รถ</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก/ราคา</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_sec" onclick="switchAppTab('sec')">🧠 สรุปยอด PO</button>
       <button type="button" class="nav-tab-btn" id="tab_btn_other" onclick="switchAppTab('other')">🌱 งานอื่น</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_report" onclick="switchAppTab('report')">📋 รายงาน</button>
     </div>
 
     <!-- Sub Filter Tabs for Ops Tab -->
@@ -311,7 +312,55 @@
               <input type="checkbox" id="chk_truck_salaya_0809" onchange="toggleCard('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')"> สั่งรถ 6 ล้อแล้ว
             </label>
           </div>
-          <button type="button" class="btn-complete-card" onclick="completeCard('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 8000, '2026-09-10')">
+          <button type="button" class="btn-complete-card" onclick="completeCard('salaya_0809', 'โรงงานศาลายา', 'กะหล่ำปลี', 9280, '2026-09-10')">
+            <span>✓</span> ขึ้นของเสร็จแล้ว (ย้ายไปตารางส่งมอบ)
+          </button>
+        </div>
+      </div>
+
+      <!-- 4.1 ขึ้นของ 13/09: กะหล่ำเข้าศาลายา 14/09 (6 ล้อ 1 คัน ~8.5 ตัน) -->
+      <div class="order-card salaya cat-salaya" id="card_salaya_1409">
+        <div class="order-header">
+          <span class="order-title">🥬 4.1 กะหล่ำปลี 6 ล้อ 1 คัน (~8.5 ตัน - เข้าศาลายา 14/09)</span>
+          <span class="badge badge-salaya">ขึ้นของ 13/09</span>
+        </div>
+        <div class="order-details">
+          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">13/09/69</span> ➔ <b>เข้าศาลายา:</b> 14/09/69 (6 ล้อ 1 คัน ~8,500 กก.)
+        </div>
+        <div class="action-box">
+          <div class="select-group">
+            <label class="select-label">🌱 แหล่งสวน / ผู้ขาย (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_supplier_salaya_1409" onchange="onSelectChange('supplier', 'salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')">
+              <option value="เฮียหนิง (โกดังฮอด - 3.00 บ.)" selected>🌿 เฮียหนิง โกดังฮอด (3.00 บ./กก.)</option>
+              <option value="เฮียหนิง (โกดังอมพาย - 4.00 บ.)">🌿 เฮียหนิง โกดังอมพาย (4.00 บ./กก.)</option>
+              <option value="เจ๊อารีย์ (แม่แจ่ม/บ่อสลี - 3.00 บ.)">🌿 เจ๊อารีย์ แม่แจ่ม/บ่อสลี (3.00 บ./กก.)</option>
+              <option value="เฮียบุญชู (3.00 บ.)">🌿 เฮียบุญชู (3.00 บ./กก.)</option>
+              <option value="__custom__">✍️ พิมพ์ชื่อสวน/ผู้ขายเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_supplier_salaya_1409" placeholder="✏️ พิมพ์ระบุชื่อสวน / ร้านค้าเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')">
+          </div>
+          <div class="select-group">
+            <label class="select-label">🚛 รถขนส่ง (แตะเลือกหรือพิมพ์เอง):</label>
+            <select class="mobile-select" id="sel_truck_salaya_1409" onchange="onSelectChange('truck', 'salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')">
+              <option value="6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)" selected>🚛 6 ล้อ เฮียหนิง (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เฮียหนิง (อมพาย 13,000 บ.)">🚛 6 ล้อ เฮียหนิง (อมพาย แม่สะเรียง 13,000 บ.)</option>
+              <option value="6 ล้อ พี่อั๋น (ฮอด 12,000 บ.)">🚛 6 ล้อ พี่อั๋น (ฮอด 12,000 บ. - 1.50 บ./กก.)</option>
+              <option value="6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ.)">🚛 6 ล้อ เจ๊อารีย์ (แม่แจ่ม 14,000 บ. - 1.75 บ./กก.)</option>
+              <option value="6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)">🚛 6 ล้อ พี่อั๋น (เชียงดาว 13,000 บ.)</option>
+              <option value="รถ 4 ล้อ (2 คัน)">🛻 รถ 4 ล้อ (2 คัน)</option>
+              <option value="__custom__">✍️ พิมพ์ระบุรถขนส่งเอง...</option>
+            </select>
+            <input type="text" class="mobile-custom-input" id="custom_truck_salaya_1409" placeholder="✏️ พิมพ์ระบุชื่อคนขับ / ทะเบียนรถ / สายส่งเองที่นี่..." style="display:none;" oninput="onCustomInput('salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')">
+          </div>
+          <div class="check-row">
+            <label class="check-btn" id="lbl_order_salaya_1409">
+              <input type="checkbox" id="chk_order_salaya_1409" onchange="toggleCard('salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')"> สั่งของ 6 ล้อแล้ว
+            </label>
+            <label class="check-btn" id="lbl_truck_salaya_1409">
+              <input type="checkbox" id="chk_truck_salaya_1409" onchange="toggleCard('salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')"> สั่งรถ 6 ล้อแล้ว
+            </label>
+          </div>
+          <button type="button" class="btn-complete-card" onclick="completeCard('salaya_1409', 'โรงงานศาลายา', 'กะหล่ำปลี', 8500, '2026-09-14')">
             <span>✓</span> ขึ้นของเสร็จแล้ว (ย้ายไปตารางส่งมอบ)
           </button>
         </div>
@@ -412,7 +461,7 @@
     <div class="card" id="delivery_log_card" style="margin-top:12px;">
       <div class="card-header">
         <div class="card-title">📋 รายงานการขึ้นของ & บันทึกส่งมอบ (ส่งรายงานเลขาแล้ว)</div>
-        <span class="badge badge-success" id="log_count_badge">0 รายการ (อัปเดต: 05/09/69 17:00 น.)</span>
+        <span class="badge badge-success" id="log_count_badge">อัปเดตล่าสุด: 11/09/69</span>
       </div>
       <div class="table-container">
         <table class="log-table" id="delivery_log_table">
@@ -505,8 +554,8 @@
 <!-- SECTION: EXACT STOCK 02/09/69 & RUNWAY FORECAST -->
     <div class="card" id="stock_card_0209" style="border-left: 4px solid #38bdf8; margin-bottom: 14px;">
       <div class="card-header" style="margin-bottom: 8px;">
-        <div class="card-title" id="stock_card_title" style="font-size: 15px; font-weight: 700; color: #3391b8;">📦 สต็อกตรวจนับจริงล่าสุด (10/09/69) & คาดการณ์</div>
-        <span class="badge badge-success" id="stock_as_of_badge">อัปเดตสต็อก: 10/09/69 13:00 น.</span>
+        <div class="card-title" id="stock_card_title" style="font-size: 15px; font-weight: 700; color: #3391b8;">📦 สต็อกตรวจนับจริงล่าสุด (11/09/69) & คาดการณ์</div>
+        <span class="badge badge-success" id="stock_as_of_badge">อัปเดตสต็อก: 11/09/69 10:05 น.</span>
       </div>
       <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 8px; padding: 10px 14px;">
         
@@ -514,11 +563,11 @@
         <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13.5px;">🥬 <b>กะหล่ำปลี</b></span>
-            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_cabbage">5,025 กก.</span>
+            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_cabbage">11,975 กก.</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
             <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #f59e0b; font-weight: 600;">~17/09/69 (สต็อก 5,025 กก. | รอบเติม 12/09)</span>
+            <span style="color: #3391b8; font-weight: 600;">~18/09/69 (สต็อก 12,500 กก. ปอกส่งต่อเนื่องได้สบาย)</span>
           </div>
         </div>
 
@@ -526,7 +575,7 @@
         <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13.5px;">🧅 <b>หอม AFT</b></span>
-            <span style="font-weight: 700; color: #10b981; font-size: 14px;" id="stk_val_onion_aft">20,280 กก.</span>
+            <span style="font-weight: 700; color: #10b981; font-size: 14px;" id="stk_val_onion_aft">19,140 กก.</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
             <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
@@ -554,7 +603,7 @@
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
             <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #10b981; font-weight: 600;">~17/09/69 (สต็อก 3,950 กก. ส่งได้ต่อเนื่อง)</span>
+            <span style="color: #10b981; font-weight: 600;">~12/09/69 (สต็อก 4,090 กก. ส่งได้ต่อเนื่อง)</span>
           </div>
         </div>
 
@@ -570,45 +619,46 @@
           </div>
         </div>
 
+        <!-- SECTION: 2-AUDIT STOCK COMPARISON TABLE -->
         <div style="margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <span style="font-size:12.5px; font-weight:700; color:#38bdf8;">📊 เปรียบเทียบยอดตรวจนับจริง 2 รอบล่าสุด</span>
-            <span style="font-size:11px; color:#94a3b8;" id="audit_compare_label">10/09/69 เทียบกับ 08/09/69</span>
+            <span style="font-size:11px; color:#94a3b8;" id="audit_compare_label">11/09/69 เทียบกับ 10/09/69</span>
           </div>
           <div style="overflow-x:auto;">
             <table style="width:100%; font-size:12px; border-collapse:collapse; text-align:left;">
               <thead>
                 <tr style="background:rgba(255,255,255,0.04); color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.08);">
                   <th style="padding:6px 8px;">รายการผัก</th>
-                  <th style="padding:6px 8px; text-align:right;">08/09 (เดิม)</th>
-                  <th style="padding:6px 8px; text-align:right;">10/09 (ล่าสุด)</th>
+                  <th style="padding:6px 8px; text-align:right;">10/09 (เดิม)</th>
+                  <th style="padding:6px 8px; text-align:right;">11/09 (ล่าสุด)</th>
                   <th style="padding:6px 8px; text-align:right;">ผลต่าง</th>
                 </tr>
               </thead>
               <tbody id="stock_compare_tbody">
                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                   <td style="padding:6px 8px;">🥬 กะหล่ำปลี</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">8,500 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">5,025 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#f59e0b;">-3,475 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">5,025 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">11,975 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#10b981;">+6,950 กก.</td>
                 </tr>
                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                   <td style="padding:6px 8px;">🧅 หอม AFT</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">22,620 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">20,280 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#f59e0b;">-2,340 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">20,280 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">19,140 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#f59e0b;">-1,140 กก.</td>
                 </tr>
                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                   <td style="padding:6px 8px;">🧅 หอมจีน</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">7,010 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">5,440 กก.</td>
                   <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">5,440 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#f59e0b;">-1,570 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#94a3b8;">0 กก.</td>
                 </tr>
                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                   <td style="padding:6px 8px;">🥕 แครอทสวย</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">4,090 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">3,950 กก.</td>
                   <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">3,950 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#f59e0b;">-140 กก.</td>
+                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#94a3b8;">0 กก.</td>
                 </tr>
                 <tr>
                   <td style="padding:6px 8px;">🍠 มันม่วงหัวเล็ก</td>
@@ -631,9 +681,9 @@
     <div class="card" style="border-left: 4px solid #38bdf8;">
       <div class="card-header">
         <div class="card-title" style="color: #3391b8;">📅 ปฏิทินรอบส่งมอบรายสัปดาห์ (กำหนดการจัดส่งตามคำสั่งซื้อยืนยัน)</div>
-        <span class="badge badge-primary">กันยายน 2569 (อัปเดต: 05/09/69 17:00 น.)</span>
+        <span class="badge badge-primary">กันยายน 2569 (อัปเดต: 11/09/69 10:00 น.)</span>
       </div>
-      <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update">05 ก.ย. 2569 17:00 น.</span></div>
+      <div style="font-size: 11px; color: #94a3b8; margin-bottom: 12px; margin-top: -4px;">🕒 อัปเดตล่าสุด: <span id="cal_last_update">11 ก.ย. 2569 10:00 น.</span></div>
 
       <!-- Customer Filter Selector for Calendar -->
       <div class="cal-filter-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; touch-action: manipulation; -webkit-overflow-scrolling: touch;">
@@ -703,7 +753,7 @@
           <b style="color:#f8fafc;">10/09 (พฤ.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">AFT</span> กะหล่ำ 2,000 kg, หอมใหญ่ 2,000 kg
         </div>
         <div class="cal-event-item cal-aft" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
-          <b style="color:#f8fafc;">10/09 (พฤ.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">ศาลายา</span> <b style="color:#f59e0b;">กะหล่ำปลี 8,000 kg (เข้าศาลายา - เลื่อนจาก 08/09)</b>
+          <b style="color:#f8fafc;">10/09 (พฤ.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">ศาลายา</span> <b style="color:#34d399;">กะหล่ำปลี รับเข้าจริง 8,450 kg ✓</b> <span style="color:#facc15; font-size:11px;">(ขึ้นสวน 9,280 kg, Yield 75.34%)</span>
         </div>
         <div class="cal-event-item cal-yamamori" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
           <b style="color:#f8fafc;">10/09 (พฤ.):</b> <span class="badge badge-warning" style="font-size:9.5px;">Yamamori</span> แครอท 136 kg, หอมใหญ่ 1,300 kg (PO2358 Rev)
@@ -729,6 +779,9 @@
           <span class="badge badge-primary">กลางเดือน</span>
         </div>
         
+        <div class="cal-event-item cal-aft" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
+          <b style="color:#f8fafc;">14/09 (จ.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">ศาลายา</span> <b style="color:#f59e0b;">กะหล่ำปลี 6 ล้อ 1 คัน (~8.5 ตัน - เข้าศาลายา)</b>
+        </div>
         <div class="cal-event-item cal-aft" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
           <b style="color:#f8fafc;">14/09 (จ.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">AFT</span> กะหล่ำ 2,500 kg, หอมใหญ่ 1,500 kg
         </div>
@@ -759,6 +812,9 @@
         <div class="cal-event-item cal-tns" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
           <b style="color:#f8fafc;">18/09 (ศ.):</b> <span class="badge badge-tns" style="font-size:9.5px;">TNS</span> แครอท 600 kg, กะหล่ำ 600 kg
         </div>
+        <div class="cal-event-item cal-yamamori" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
+          <b style="color:#f8fafc;">19/09 (ส.):</b> <span class="badge badge-warning" style="font-size:9.5px;">Yamamori</span> แครอท 156 kg, หอมใหญ่ 300 kg, มะเขือเปราะ 544 kg (PO2462)
+        </div>
         <div class="cal-event-item cal-aft" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
           <b style="color:#f8fafc;">19/09 (ส.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">AFT</span> กะหล่ำ 2,000 kg, แครอท 630 kg, หอมใหญ่ 500 kg
         </div>
@@ -785,6 +841,9 @@
         </div>
         <div class="cal-event-item cal-tns" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
           <b style="color:#f8fafc;">22/09 (อ.):</b> <span class="badge badge-tns" style="font-size:9.5px;">TNS</span> แครอท 1,000 kg, กะหล่ำ 700 kg, ขิง 150 kg
+        </div>
+        <div class="cal-event-item cal-yamamori" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
+          <b style="color:#f8fafc;">23/09 (พ.):</b> <span class="badge badge-warning" style="font-size:9.5px;">Yamamori</span> แครอท 360 kg, หอมใหญ่ 1,350 kg (PO2463)
         </div>
         <div class="cal-event-item cal-aft" style="padding:6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-size:12px;">
           <b style="color:#f8fafc;">24/09 (พฤ.):</b> <span class="badge badge-salaya" style="font-size:9.5px;">AFT</span> กะหล่ำ 2,500 kg, หอมใหญ่ 1,000 kg
@@ -903,6 +962,63 @@
         </table>
       </div>
     </div>
+</div>
+
+<!-- ===== SECTION: รายงานการขนของ & บันทึกส่งมอบ ===== -->
+<div id="sec_report" class="app-section">
+  <div class="card" style="border-left:4px solid #f59e0b;">
+    <div class="card-header">
+      <div class="card-title" style="color:#fbbf24;">🚚 รายงานการขนของ & บันทึกส่งมอบ</div>
+      <span class="badge badge-warning" id="report_count_badge">กำลังโหลด...</span>
+    </div>
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:12px;">
+      รายการส่งมอบทั้งหมด เรียงตามวันที่ส่งของ (ล่าสุดก่อน)
+    </div>
+    <div class="table-container">
+      <table class="log-table" id="report_table">
+        <thead>
+          <tr>
+            <th>วันที่ส่ง</th>
+            <th>ลูกค้า</th>
+            <th>สวน / แหล่งสินค้า</th>
+            <th>สินค้า</th>
+            <th>น้ำหนัก (kg)</th>
+            <th>รถ / ขนส่ง</th>
+            <th>สถานะ</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="report_tbody">
+          <tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:20px;">⏳ กำลังโหลดข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- History Logs Section -->
+  <div class="card" style="margin-top:12px; border-left:4px solid #6366f1;">
+    <div class="card-header">
+      <div class="card-title" style="color:#818cf8;">📜 ประวัติการรับเข้าโรงงาน</div>
+      <span class="badge" style="background:#312e81; color:#a5b4fc;" id="history_count_badge">–</span>
+    </div>
+    <div class="table-container">
+      <table class="log-table" id="history_table">
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>รายการ</th>
+            <th>น้ำหนัก</th>
+            <th>ค่าขนส่ง</th>
+            <th>การชำระ</th>
+            <th>สถานที่</th>
+          </tr>
+        </thead>
+        <tbody id="history_tbody">
+          <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">⏳ กำลังโหลดข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
     <footer>

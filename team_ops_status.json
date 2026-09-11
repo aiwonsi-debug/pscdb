@@ -1,31 +1,31 @@
 {
-  "last_updated": "2026-09-09T20:08:00.000Z",
+  "last_updated": "2026-09-11T03:30:00.000Z",
   "active_operations": [
     {
-      "id": "OPS-20260909-CABBAGE",
-      "timestamp": "2026-09-09T20:08:00.000Z",
+      "id": "OPS-20260910-8450",
+      "timestamp": "2026-09-10T10:00:00.000Z",
       "customer": "โรงงานศาลายา",
-      "delivery_date": "2026-09-09",
-      "farm": "เฮียหนิง (โกดัง อมพาย แม่สะเรียง)",
+      "delivery_date": "2026-09-10",
+      "farm": "เฮียหนิง (อมพาย แม่สะเรียง)",
       "product": "กะหล่ำปลี",
-      "qty_kg": 9280,
-      "truck": "6 ล้อ (ค่ารถ 13,000 บ. เก็บปลายทาง)",
-      "status": "ขึ้นของและส่งรายงานแล้ว",
-      "recorder": "รายงานทาง Telegram",
-      "notes": "วันที่ 09/09/26 ขึ้นกะหล่ำปลีเฮียหนิง น้ำหนักสุทธิ=9,280kg ค่ารถ 13,000บาท เก็บปลายทาง 13,000 บาท (ขึ้นที่โกดัง อมพาย แม่สะเรียง) ราคา 4 บาท"
+      "qty_kg": 8450,
+      "truck": "6 ล้อ เฮียหนิง (อมพาย แม่สะเรียง 13,000 บ.)",
+      "status": "ขึ้นของและส่งมอบเรียบร้อย (Yield 75.34%)",
+      "recorder": "ทีมงานมือถือภาคสนาม",
+      "notes": "ขึ้นของ 09/09 หนัก 9,280 kg รับเข้าจริง 8,450 kg Loss 830 kg (8.94%) ค่ารถ 13,000 บ. จ่ายปลายทาง ปอก 100 kg ได้ 75.34 kg"
     },
     {
-      "id": "OPS-20260906-SHALLOT",
-      "timestamp": "2026-09-06T14:10:31.000Z",
-      "customer": "TNS",
-      "delivery_date": "2026-09-07",
-      "farm": "ป้าผา (เจ้าประจำหอมแดง)",
-      "product": "หอมแดง",
-      "qty_kg": 500,
-      "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
-      "status": "ขึ้นของและส่งรายงานแล้ว",
-      "recorder": "รายงานหน้างาน (Chat)",
-      "notes": "หอมแดง ของป้าผา ไปกับรถนิ่ม 50 ถุง (500 kg)"
+      "id": "OPS-20260911-1409",
+      "timestamp": "2026-09-11T03:05:00.000Z",
+      "customer": "โรงงานศาลายา",
+      "delivery_date": "2026-09-14",
+      "farm": "เฮียหนิง (โกดังฮอด - 3.00 บ.)",
+      "product": "กะหล่ำปลี",
+      "qty_kg": 8500,
+      "truck": "6 ล้อ 1 คัน",
+      "status": "รอดำเนินการ",
+      "recorder": "ทีมงานมือถือภาคสนาม",
+      "notes": "เพิ่มกะหล่ำเข้าจันทร์ 14/9 หกล้อ 1 คัน"
     },
     {
       "id": "OPS-20260901-7833",
@@ -316,26 +316,27 @@
   ],
   "history_logs": [
     {
-      "id": "LOG-20260909-CABBAGE",
-      "timestamp": "2026-09-09T20:08:00.000Z",
+      "id": "LOG-1788500000000",
+      "timestamp": "2026-09-10T10:00:00.000Z",
+      "date": "10/09/69",
+      "item": "รับเข้ากะหล่ำปลี เฮียหนิง (อมพาย แม่สะเรียง)",
+      "weight": "8,450 kg",
+      "freight": "13,000 บาท",
+      "payment": "เก็บปลายทาง",
+      "location": "โรงงานศาลายา",
+      "yield": 75.34,
+      "cardId": "salaya_0809"
+    },
+    {
+      "id": "LOG-1788490000000",
+      "timestamp": "2026-09-09T12:00:00.000Z",
       "date": "09/09/69",
-      "item": "ขึ้นกะหล่ำปลีเฮียหนิง (โกดัง อมพาย แม่สะเรียง)",
+      "item": "ขึ้นกะหล่ำปลีเฮียหนิง (อมพาย แม่สะเรียง)",
       "weight": "9,280 kg",
       "freight": "13,000 บาท",
       "payment": "เก็บปลายทาง 13,000 บาท",
-      "location": "โกดัง อมพาย แม่สะเรียง → โรงงานศาลายา",
-      "cardId": "OPS-20260909-CABBAGE"
-    },
-    {
-      "id": "LOG-1788721831000",
-      "timestamp": "2026-09-06T14:10:31.000Z",
-      "date": "06/09/69",
-      "item": "หอมแดง (ป้าผา)",
-      "weight": "50 ถุง (500 kg)",
-      "freight": "รถนิ่มซี่เส็ง สาขาท่าลี่",
-      "payment": "",
-      "location": "ท่าลี่",
-      "cardId": "tns_shallot_0709"
+      "location": "โกดัง อมพาย แม่สะเรียง",
+      "cardId": "salaya_0809"
     },
     {
       "id": "LOG-1788424977069",
@@ -373,7 +374,7 @@
   "cards_state": {
     "salaya_0209": {
       "id": "salaya_0209",
-      "loadedReported": true,
+      "loadedReported": false,
       "loadedDate": "01/09/26",
       "loadedItem": "กะหล่ำปลี<br>เฮียหนิง",
       "loadedWeight": "8,715 kg (รับเข้า 8,500 kg)",
@@ -416,28 +417,43 @@
     },
     "salaya_0809": {
       "id": "salaya_0809",
+      "supplier": "เฮียหนิง (อมพาย แม่สะเรียง)",
+      "truck": "6 ล้อ เฮียหนิง (อมพาย แม่สะเรียง 13,000 บ.)",
+      "orderChecked": true,
+      "truckChecked": true,
+      "loadedReported": true,
+      "reportedAt": "2026-09-09T12:00:00.000Z",
+      "loadedDate": "09/09/69",
+      "loadedItem": "กะหล่ำปลี<br>เฮียหนิง (อมพาย)",
+      "loadedWeight": "9,280 kg (รับเข้า 8,450 kg)",
+      "loadedFreight": "13,000 บาท",
+      "loadedPayment": "เก็บปลายทาง 13,000 บาท",
+      "loadedLocation": "โกดัง อมพาย แม่สะเรียง",
+      "deliveryDate": "10/09/69",
+      "intakeDate": "10/09/69",
+      "intakeWeight": "8,450 kg",
+      "receivedYield": 75.34,
+      "receivedSize": "กลาง",
+      "receivedCondition": "สภาพโดยรวมดี แมลงและราเล็กน้อย",
+      "receivedPrice": 4.00,
+      "transitLoss": "830 kg (8.94%)",
+      "rawReport": "วันที่ 09/09/26\nขึ้นกะหล่ำปลีเฮียหนิง\nน้ำหนักสุทธิ =9,280kg\n\nค่ารถ 13,000บาท\nเก็บปลายทาง 13,000 บาท\n(ขึ้นที่โกดัง  อมพาย แม่สะเรียง ราคา 4 บาท)"
+    },
+    "salaya_1409": {
+      "id": "salaya_1409",
       "supplier": "เฮียหนิง (โกดังฮอด - 3.00 บ.)",
-      "truck": "6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)",
+      "truck": "6 ล้อ 1 คัน",
       "orderChecked": false,
       "truckChecked": false,
       "loadedReported": false
     },
     "tns_shallot_0709": {
       "id": "tns_shallot_0709",
-      "supplier": "ป้าผา (เจ้าประจำหอมแดง)",
+      "supplier": "ป้าผา (หอมแดง)",
       "truck": "นิ่มซี่เส็ง สาขาท่าลี่",
-      "orderChecked": true,
-      "truckChecked": true,
-      "loadedReported": true,
-      "loadedDate": "06/09/69",
-      "loadedItem": "หอมแดง (ป้าผา)",
-      "loadedWeight": "50 ถุง (500 kg)",
-      "loadedFreight": "นิ่มซี่เส็ง สาขาท่าลี่",
-      "loadedPayment": "",
-      "loadedLocation": "ท่าลี่",
-      "rawReport": "หอมแดง\nของปาผา\nไปกบรถนม 50ถงคะ",
-      "reportedAt": "2026-09-06T14:10:31.000Z",
-      "deliveryDate": "07/09/69"
+      "orderChecked": false,
+      "truckChecked": false,
+      "loadedReported": false
     },
     "tns_pepper_1609": {
       "id": "tns_pepper_1609",
@@ -474,6 +490,16 @@
   ],
   "intake_records": [
     {
+      "date": "10/09/69",
+      "item": "กะหล่ำปลี (เฮียหนิง)",
+      "weight": "8,450 kg",
+      "yield": 75.34,
+      "size": "กลาง",
+      "condition": "สภาพโดยรวมดี พบแมลงและราเล็กน้อย",
+      "sample": "สุ่ม 100 kg ปอกได้ 75.34 kg (Yield 75.34%)",
+      "reportedAt": "2026-09-11T03:05:00.000Z"
+    },
+    {
       "date": "05/09/69",
       "item": "กะหล่ำปลี (เจ๊นก - ทางศาลายาสั่งเอง)",
       "weight": "8,875 kg",
@@ -486,6 +512,32 @@
   ],
   "field_reports": [
     {
+      "cardId": "salaya_0909",
+      "date": "09/09/69",
+      "item": "กะหล่ำปลี (เฮียหนิง)",
+      "weight": "9,280 kg (รับเข้า 8,450 kg)",
+      "freight": "13,000 บาท",
+      "payment": "เก็บปลายทาง 13,000 บาท",
+      "location": "โกดัง อมพาย แม่สะเรียง",
+      "receivedYield": 75.34,
+      "receivedSize": "กลาง",
+      "receivedCondition": "สภาพโดยรวมดี แมง+ราเล็กน้อย",
+      "receivedPrice": 4.00,
+      "transitLoss": "830 kg (8.94%)"
+    },
+    {
+      "cardId": "salaya_1009",
+      "date": "10/09/69",
+      "item": "กะหล่ำปลี (เฮียหนิง)",
+      "weight": "8,450 kg",
+      "freight": "13,000 บาท",
+      "payment": "เก็บปลายทาง",
+      "location": "ศาลายา",
+      "receivedYield": 75.34,
+      "receivedSize": "กลาง",
+      "receivedCondition": "สภาพโดยรวมดี พบแมลงและราเล็กน้อย"
+    },
+    {
       "cardId": "salaya_0509",
       "date": "05/09/69",
       "item": "กะหล่ำปลี (เจ๊นก)",
@@ -496,19 +548,6 @@
       "receivedYield": 64,
       "receivedSize": "กลาง",
       "receivedCondition": "สภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ"
-    }
-  ],
-  "other_tasks": [
-    {
-      "id": "TASK-20260907-001",
-      "task_type": "งานปลูก",
-      "seller": "สวนลุงสม / ป้าผา (เจ้าประจำ)",
-      "crop": "ต้นหอม",
-      "target_customer": "TNS",
-      "target_delivery": "ปลายเดือน 9 (24-30/09/69)",
-      "status": "กำลังเพาะปลูก / สุ่มตรวจแปลง",
-      "notes": "ตัวอย่างงานส่ง TNS ปลายเดือน 9 ตรวจสอบแปลงและเตรียมเก็บเกี่ยว",
-      "updated_at": "2026-09-07T11:00:00.000Z"
     }
   ]
 }
