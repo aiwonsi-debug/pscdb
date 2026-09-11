@@ -556,9 +556,19 @@ if (cat === 'all') {
           if (!data) return;
 
           // --- Active Operations table ---
-          var ops = (data.active_operations || []).filter(function(o) {
+          var rawOps = (data.active_operations || []).filter(function(o) {
             return o.delivery_date;
           });
+          // Deduplicate operations
+          var seenKeys = {};
+          var ops = [];
+          for (var i = 0; i < rawOps.length; i++) {
+            var k = (rawOps[i].delivery_date || '') + '|' + (rawOps[i].customer || '') + '|' + (rawOps[i].product || '') + '|' + (rawOps[i].qty_kg || '');
+            if (!seenKeys[k]) {
+              seenKeys[k] = true;
+              ops.push(rawOps[i]);
+            }
+          }
           // Sort newest first
           ops.sort(function(a, b) {
             return new Date(b.delivery_date) - new Date(a.delivery_date);

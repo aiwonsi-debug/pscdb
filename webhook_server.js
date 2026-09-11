@@ -842,21 +842,42 @@ const server = http.createServer(async (req, res) => {
             }
 
             if (activeSupplier && product && qty_kg) {
-                const opId = `OPS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-4)}`;
-                const newOp = {
-                    id: opId,
-                    timestamp: new Date().toISOString(),
-                    customer: customer || 'โรงงานศาลายา / TNS',
-                    delivery_date: delivery_date || '2026-09-01',
-                    farm: activeSupplier,
-                    product: product,
-                    qty_kg: parseFloat(qty_kg),
-                    truck: truck || 'รถ 6 ล้อ',
-                    status: status || 'สั่งของ/สั่งรถแล้ว',
-                    recorder: recorder || 'ทีมงาน PSC',
-                    notes: notes || ''
-                };
-                opsData.active_operations.push(newOp);
+                if (!opsData.active_operations) opsData.active_operations = [];
+                let existingIndex = -1;
+                if (id) {
+                    existingIndex = opsData.active_operations.findIndex(o => o.card_id === id || o.id === id);
+                }
+                if (existingIndex === -1 && delivery_date && product) {
+                    existingIndex = opsData.active_operations.findIndex(o => o.delivery_date === delivery_date && o.product === product && (!customer || o.customer === customer));
+                }
+
+                if (existingIndex >= 0) {
+                    const existing = opsData.active_operations[existingIndex];
+                    existing.farm = activeSupplier;
+                    existing.truck = truck || existing.truck || 'รถ 6 ล้อ';
+                    if (status) existing.status = status;
+                    if (recorder) existing.recorder = recorder;
+                    if (notes) existing.notes = notes;
+                    if (id && !existing.card_id) existing.card_id = id;
+                    existing.timestamp = new Date().toISOString();
+                } else {
+                    const opId = `OPS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-4)}`;
+                    const newOp = {
+                        id: opId,
+                        card_id: id || '',
+                        timestamp: new Date().toISOString(),
+                        customer: customer || 'โรงงานศาลายา / TNS',
+                        delivery_date: delivery_date || '2026-09-01',
+                        farm: activeSupplier,
+                        product: product,
+                        qty_kg: parseFloat(qty_kg),
+                        truck: truck || 'รถ 6 ล้อ',
+                        status: status || 'สั่งของ/สั่งรถแล้ว',
+                        recorder: recorder || 'ทีมงาน PSC',
+                        notes: notes || ''
+                    };
+                    opsData.active_operations.push(newOp);
+                }
             }
 
             saveTeamOps(opsData);
