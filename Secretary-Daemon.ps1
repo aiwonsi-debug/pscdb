@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Antigravity AI Secretary Background Daemon (Centralized in E:\agy)
 .DESCRIPTION
@@ -16,9 +16,46 @@ $configFile = Join-Path $AgyBaseDir "gmail_config.json"
 $processedFile = Join-Path $AgyBaseDir "processed_emails.json"
 $logFile = Join-Path $AgyBaseDir "secretary_activity.log"
 $tgConfigFile = Join-Path $AgyBaseDir "telegram_config.json"
+$lineConfigFile = Join-Path $AgyBaseDir "line_config.json"
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+
+function Send-LinePush {
+    param ([string]$text)
+    if (-not (Test-Path $lineConfigFile)) { return }
+    try {
+        $lineCfg = Get-Content $lineConfigFile -Raw | ConvertFrom-Json
+        $token = $lineCfg.line_channel_access_token
+        $target = if ($lineCfg.line_target_group_id) { $lineCfg.line_target_group_id } else { $lineCfg.line_target_user_id }
+        if (-not $token -or -not $target) { return }
+
+        $body = @{
+            to = $target
+            messages = @(
+                @{
+                    type = "text"
+                    text = $text
+                }
+            )
+        } | ConvertTo-Json -Compress
+
+        $utf8Bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+        $req = [System.Net.WebRequest]::Create("https://api.line.me/v2/bot/message/push")
+        $req.Method = "POST"
+        $req.ContentType = "application/json; charset=utf-8"
+        $req.Headers.Add("Authorization", "Bearer $token")
+        $req.ContentLength = $utf8Bytes.Length
+        $reqStream = $req.GetRequestStream()
+        $reqStream.Write($utf8Bytes, 0, $utf8Bytes.Length)
+        $reqStream.Close()
+        $resp = $req.GetResponse()
+        $resp.Close()
+        Write-Log "LINE push sent successfully!" "Green"
+    } catch {
+        Write-Log "LINE push error: $_" "DarkGray"
+    }
+}
 
 function Write-Log {
     param ([string]$msg, [string]$color = "White")
@@ -370,12 +407,17 @@ while ($true) {
                             $filesStr = $downloadedInThisMsg -join ", "
                             Show-Notification -title "🔔 [เลขา AI] ได้รับใบสั่งซื้อ PO ใหม่!" -message "ไฟล์แนบ: $filesStr`nบันทึกเข้าโฟลเดอร์ $targetMonth/ เรียบร้อยแล้ว"
                             
-                            # Push to Telegram on mobile
                             $tgMsg = "🔔 *[เลขา AI] ได้รับใบสั่งซื้อ PO ใหม่เข้า Gmail!*`n`n" +
                                      "📧 *หัวข้อ:* $subject`n" +
                                      "📄 *ไฟล์แนบ:* $filesStr`n" +
                                      "📁 *จัดเก็บ:* `PO/$targetMonth/``n`n" +
                                      "📊 ระบบได้อัปเดตไฟล์ Excel และ GT Schedule ให้เรียบร้อยแล้วครับ!"
+                            $lineMsg = "🔔 [เลขา AI] ได้รับใบสั่งซื้อ PO ใหม่เข้า Gmail!`n`n" +
+                                       "📧 หัวข้อ: $subject`n" +
+                                       "📄 ไฟล์แนบ: $filesStr`n" +
+                                       "📁 จัดเก็บ: PO/$targetMonth/`n`n" +
+                                       "📊 ระบบอัปเดตไฟล์ Excel และ GT Schedule เรียบร้อยแล้วครับ!"
+                            Send-LinePush -text $lineMsg
                             Send-TelegramPush -text $tgMsg -filePaths $downloadedFullPaths
                         }
                     }
