@@ -10,6 +10,12 @@ const QUOTA_FILE = process.env.AI_QUOTA_USAGE_FILE || path.join(__dirname, 'ai_q
 const PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
 const RENDER_DASHBOARD_URL = process.env.RENDER_DASHBOARD_URL || 'https://pscdb.onrender.com';
 
+function formatPct(val) {
+  const num = Number(val);
+  if (!Number.isFinite(num)) return '0.00%';
+  return num.toFixed(2) + '%';
+}
+
 // True defaults only — no live/runtime data hardcoded here.
 // Real numbers should come from the persisted QUOTA_FILE or from updateAgyQuota() calls.
 const DEFAULT_DATA = {
@@ -293,10 +299,10 @@ function formatUsageForTelegram() {
     '🚀 <b>Google Antigravity CLI (AGY)</b>',
     '• <b>บัญชี:</b> <code>' + (agy.account || 'aiwonsi@gmail.com') + '</code>',
     '• <b>Gemini (Flash / Pro):</b>',
-    '  └ สัปดาห์: <b>' + gemWeek + '%</b> (' + (gem.weekly_refresh || '168h 0m') + ')',
-    '  └ 5 ชั่วโมง: <b>' + gemFive + '%</b> (' + (gem.five_hour_refresh || '5h 0m') + ')',
+    '  └ สัปดาห์: <b>' + formatPct(gemWeek) + '</b> (' + (gem.weekly_refresh || '168h 0m') + ')',
+    '  └ 5 ชั่วโมง: <b>' + formatPct(gemFive) + '</b> (' + (gem.five_hour_refresh || '5h 0m') + ')',
     '• <b>Claude / GPT (Sonnet/Opus):</b>',
-    '  └ สัปดาห์: <b>' + cgWeek + '%</b> (รีเฟรช ' + (cg.weekly_refresh || '168h 0m') + ')',
+    '  └ สัปดาห์: <b>' + formatPct(cgWeek) + '</b> (รีเฟรช ' + (cg.weekly_refresh || '168h 0m') + ')',
     '• <b>เรียกใช้สะสม:</b> ' + (agy.total_prompts || 0) + ' ครั้ง',
     '',
     '🤖 <b>Groq Fast API (Auto-Failover)</b>',
@@ -317,5 +323,6 @@ module.exports = {
   recordGlmUsage,
   recordOkmdUsage,
   formatUsageForTelegram,
+  formatPct,
   QUOTA_FILE
 };

@@ -2066,9 +2066,10 @@ function handleCommand(chatId, text, msg = null) {
                 }
             });
 
+            const formatPct = quotaTracker.formatPct || (v => Number(v).toFixed(2) + '%');
             const reply = '✅ <b>[อัปเดตโควต้า AGY สำเร็จ & ซิงค์ขึ้นคลาวด์แล้ว]</b>\n\n' +
-                          '• Gemini Weekly: <b>' + weekVal + '%</b>\n' +
-                          '• Gemini 5-Hour: <b>' + fiveVal + '%</b> (รีเฟรชใน ' + fiveRef + ')\n\n' +
+                          '• Gemini Weekly: <b>' + formatPct(weekVal) + '</b>\n' +
+                          '• Gemini 5-Hour: <b>' + formatPct(fiveVal) + '</b> (รีเฟรชใน ' + fiveRef + ')\n\n' +
                           '📱 <i>ข้อมูลอัปเดตตรงเข้า Mini App เรียบร้อยแล้วค่ะ</i>';
             sendMessageWithKeyboard(chatId, reply, getDashboardInlineMarkup());
             return;
