@@ -1236,7 +1236,7 @@ if (cat === 'all') {
     }
 
       function switchAppTab(tabId) {
-      const tabs = ['ops', 'stock', 'sec'];
+      const tabs = ['ops', 'stock', 'sec', 'other', 'report'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab_btn_' + t);
         const sec = document.getElementById('sec_' + t);
