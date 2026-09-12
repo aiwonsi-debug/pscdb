@@ -190,14 +190,41 @@ class GroundTruthValidator {
     /**
      * Build ground-truth validation block for AI prompt
      */
-    buildGroundTruthContext() {
+    /**
+     * Build ground-truth validation block for AI prompt.
+     * Accepts the user's prompt text so we only include records relevant to
+     * what was actually asked, instead of dumping every record every time
+     * (which grows the token cost of every AI call as more POs accumulate).
+     */
+    buildGroundTruthContext(userPrompt = '') {
         const records = this.loadGroundTruth();
+        const promptLower = (userPrompt || '').toLowerCase();
+
+        // Try to match records to the user's prompt by customer name or product name.
+        let relevant = records.filter(r => {
+            const custMatch = promptLower.includes(r.customer.toLowerCase()) ||
+                               promptLower.includes(r.customerFull.toLowerCase());
+            const prodMatch = r.product && promptLower.includes(r.product.toLowerCase());
+            return custMatch || prodMatch;
+        });
+
+        // No specific match found (generic question) -> fall back to a small
+        // recent slice instead of the entire dataset.
+        const usedFallback = relevant.length === 0;
+        if (usedFallback) {
+            relevant = records.slice(-10);
+        }
+
         let out = '🔒 [STRICT GROUND-TRUTH DATA - ตรวจสอบตรงจากไฟล์และอีเมลจริงล่าสุด 100%]:\n';
         out += '⚠️ กฎเหล็ก: ห้ามสมมติหรือสร้างตัวเลขขึ้นมาเองเด็ดขาด ให้ใช้เฉพาะข้อมูลที่ระบุด้านล่างนี้เท่านั้น\n';
-        out += 'หากผู้ใช้ถามหาวันที่หรือสินค้าที่ไม่มีในรายการนี้ ให้ตอบชัดเจนว่า "ไม่พบข้อมูลในไฟล์อีเมลล่าสุด"\n\n';
+        out += 'หากผู้ใช้ถามหาวันที่หรือสินค้าที่ไม่มีในรายการนี้ ให้ตอบชัดเจนว่า "ไม่พบข้อมูลในไฟล์อีเมลล่าสุด"\n';
+        if (usedFallback) {
+            out += '(หมายเหตุ: ไม่พบชื่อลูกค้า/สินค้าที่ตรงกับคำถามในข้อความ จึงแสดงรายการล่าสุดแทน)\n';
+        }
+        out += '\n';
 
         const byCustomer = {};
-        records.forEach(r => {
+        relevant.forEach(r => {
             if (!byCustomer[r.customer]) byCustomer[r.customer] = [];
             byCustomer[r.customer].push(r);
         });

@@ -234,21 +234,14 @@ function buildAgyContextPrompt(userPrompt) {
     const groundTruth = (function() {
         try {
             const gtv = require('./ground_truth_validator.js');
-            return gtv.buildGroundTruthContext();
+            return gtv.buildGroundTruthContext(userPrompt);
         } catch(e) {
             return '';
         }
     })();
 
     let contextHeader = `==================================================\n`;
-    contextHeader += `🛡️ [ANTI-HALLUCINATION & STRICT GROUND-TRUTH POLICY]\n`;
-    contextHeader += `1. ตรวจสอบข้อมูลคำสั่งซื้อ วันที่ส่งมอบ และจำนวน กก. ตรงจากไฟล์อีเมลจริงเท่านั้น\n`;
-    contextHeader += `2. ห้ามคิดคำนวณ สมมติ หรือสร้างตัวเลขขึ้นเองโดยเด็ดขาด หากไม่มีในไฟล์ ให้ตอบว่า "ไม่พบข้อมูลในเอกสารล่าสุด"\n`;
-    contextHeader += `3. ทุกครั้งที่ตอบเรื่องตัวเลข ให้ระบุชื่อไฟล์อ้างอิงและรอบ Rev. ประกอบเสมอ\n\n`;
-    contextHeader += `📱 [MOBILE-OPTIMIZED TELEGRAM FORMATTING DIRECTIVE]\n`;
-    contextHeader += `• จัดรูปแบบข้อความให้อ่านง่ายบนจอมือถือ (Mobile Screen Friendly)\n`;
-    contextHeader += `• ห้ามใช้ตาราง Markdown แบบหลายคอลัมน์แนวนอน เพราะจะล้นจอและอ่านยากบนมือถือ\n`;
-    contextHeader += `• ให้ใช้รูปแบบ "การ์ดข้อความ (Card Format)" หัวข้อสั้นชัดเจน มี Emoji นำหน้า และแบ่งวรรคตอนด้วยเส้นคั่น ──────────────────\n`;
+    contextHeader += `[ข้อมูลอ้างอิงสำหรับคำถามนี้]\n`;
     contextHeader += `==================================================\n\n`;
 
     if (groundTruth) {
