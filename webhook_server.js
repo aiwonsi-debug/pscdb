@@ -18,6 +18,16 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+function sanitizeSupplierName(name) {
+    if (typeof name !== 'string' || !name.trim()) return name || '';
+    let cleaned = name.replace(/\s*-?\s*[\d,]+(?:\.\d+)?\s*(?:บาท|บ\.?)/g, '');
+    cleaned = cleaned.replace(/\(\s*\)/g, '');
+    cleaned = cleaned.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+    cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+    cleaned = cleaned.replace(/[-,]\s*$/, '').trim();
+    return cleaned;
+}
+
 
 const PORT = process.env.PORT || 8080;
 function resolveOpsHtmlPath() {
@@ -682,12 +692,14 @@ const server = http.createServer(async (req, res) => {
                 stockFile + '.example'
             ].find(f => fs.existsSync(f));
             if (targetStockFile) {
-                try {
-                    stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));
-                } catch (e) {}
-            }
-            res.writeHead(200);
-            return res.end(JSON.stringify(stockData, null, 2));
+          try {
+            stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));
+          } catch (e) {}
+        }
+        // Prevent caching of stock data to ensure UI reflects latest values
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.writeHead(200);
+        return res.end(JSON.stringify(stockData, null, 2));
         }
 
         // 2. Health Check
@@ -816,13 +828,15 @@ const server = http.createServer(async (req, res) => {
             const opsData = loadTeamOps();
             if (!opsData.cards_state) opsData.cards_state = {};
 
-            const activeSupplier = supplier || farm;
+            const rawSupplier = supplier || farm;
+            const activeSupplier = rawSupplier ? sanitizeSupplierName(rawSupplier) : rawSupplier;
+            const cleanTruck = truck ? sanitizeSupplierName(truck) : truck;
 
             if (id) {
                 const nowIso = new Date().toISOString();
                 if (!opsData.cards_state[id]) opsData.cards_state[id] = { id: id };
                 if (activeSupplier !== undefined) opsData.cards_state[id].supplier = activeSupplier;
-                if (truck !== undefined) opsData.cards_state[id].truck = truck;
+                if (cleanTruck !== undefined) opsData.cards_state[id].truck = cleanTruck;
                 if (orderChecked !== undefined) opsData.cards_state[id].orderChecked = orderChecked;
                 if (truckChecked !== undefined) opsData.cards_state[id].truckChecked = truckChecked;
                 opsData.cards_state[id].updatedAt = nowIso;
@@ -869,7 +883,7 @@ const server = http.createServer(async (req, res) => {
                 if (existingIndex >= 0) {
                     const existing = opsData.active_operations[existingIndex];
                     existing.farm = activeSupplier;
-                    existing.truck = truck || existing.truck || 'รถ 6 ล้อ';
+                    existing.truck = cleanTruck || existing.truck || 'รถ 6 ล้อ';
                     if (status) existing.status = status;
                     if (recorder) existing.recorder = recorder;
                     if (notes) existing.notes = notes;
@@ -886,7 +900,7 @@ const server = http.createServer(async (req, res) => {
                         farm: activeSupplier,
                         product: product,
                         qty_kg: parseFloat(qty_kg),
-                        truck: truck || 'รถ 6 ล้อ',
+                        truck: cleanTruck || 'รถ 6 ล้อ',
                         status: status || 'สั่งของ/สั่งรถแล้ว',
                         recorder: recorder || 'ทีมงาน PSC',
                         notes: notes || ''

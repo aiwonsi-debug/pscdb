@@ -2,6 +2,16 @@
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
+    function sanitizeSupplierName(name) {
+      if (typeof name !== 'string' || !name.trim()) return name || '';
+      let cleaned = name.replace(/\s*-?\s*[\d,]+(?:\.\d+)?\s*(?:บาท|บ\.?)/g, '');
+      cleaned = cleaned.replace(/\(\s*\)/g, '');
+      cleaned = cleaned.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+      cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+      cleaned = cleaned.replace(/[-,]\s*$/, '').trim();
+      return cleaned;
+    }
+
     // Mobile Push Notification & Haptic Sound Engine
     let pushPermission = (typeof Notification !== 'undefined') ? Notification.permission : 'default';
 
@@ -636,10 +646,10 @@ if (cat === 'all') {
                 return '<tr>' +
                   '<td style="white-space:nowrap;font-weight:600;">' + delivLabel + '</td>' +
                   '<td>' + (o.customer||'–') + '</td>' +
-                  '<td>' + (o.farm||'–') + '</td>' +
+                  '<td>' + sanitizeSupplierName(o.farm||'–') + '</td>' +
                   '<td>' + (o.product||'–') + '</td>' +
                   '<td style="text-align:right;">' + (o.qty_kg ? o.qty_kg.toLocaleString() : '–') + '</td>' +
-                  '<td>' + (o.truck||'–') + '</td>' +
+                  '<td>' + sanitizeSupplierName(o.truck||'–') + '</td>' +
                   '<td style="color:'+statusColor+';">' + (o.status||'–') + '</td>' +
                   '<td style="font-size:11px;color:#94a3b8;">' + (o.notes||'') + '</td>' +
                   '</tr>';

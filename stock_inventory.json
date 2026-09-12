@@ -1,10 +1,10 @@
 {
-  "AsOfDate": "11/09/69",
+  "AsOfDate": "12/09/69",
   "LastUpdated": "2026-09-11T03:05:00.000Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 11975,
+      "StockKg": 9650,
       "Yield": {
         "AFT": 0.64,
         "TNS": 0.99
@@ -12,7 +12,7 @@
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 19140
+      "StockKg": 44160
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
@@ -20,7 +20,7 @@
     },
     "Carrot": {
       "Name": "แครอทสวย",
-      "StockKg": 3950
+      "StockKg": 6560
     },
     "Purple_Sweet_Potato": {
       "Name": "มันม่วงหัวเล็ก",
@@ -109,10 +109,44 @@
       "Unit": "factor",
       "Source": "Telegram Sample Test Ingestion",
       "EventId": "telegram:1532466397:1319:Cabbage_Yield_AFT"
+    },
+    {
+      "Timestamp": "2026-09-12T01:22:46.533Z",
+      "ItemKey": "Cabbage",
+      "Field": "StockKg",
+      "PreviousValue": 11975,
+      "NewValue": 9650,
+      "Unit": "kg",
+      "Source": "Stock 12/09/69",
+      "EventId": "update_Cabbage_1789176166548"
+    },
+    {
+      "Timestamp": "2026-09-12T01:22:46.626Z",
+      "ItemKey": "Onion_AFT",
+      "Field": "StockKg",
+      "PreviousValue": 19140,
+      "NewValue": 44160,
+      "Unit": "kg",
+      "Source": "Stock 12/09/69",
+      "EventId": "update_Onion_AFT_1789176166626"
+    },
+    {
+      "Timestamp": "2026-09-12T01:22:46.781Z",
+      "ItemKey": "Carrot",
+      "Field": "StockKg",
+      "PreviousValue": 3950,
+      "NewValue": 6560,
+      "Unit": "kg",
+      "Source": "Stock 12/09/69",
+      "EventId": "update_Carrot_1789176166782"
     }
   ],
   "ProcessedEvents": [
-    "telegram:1532466397:1319:Cabbage_Yield_AFT"
+    "telegram:1532466397:1319:Cabbage_Yield_AFT",
+    "update_Cabbage_1789176166548",
+    "update_Onion_AFT_1789176166626",
+    "update_Onion_Chinese_1789176166708",
+    "update_Carrot_1789176166782"
   ],
   "RecentAudits": [
     {
