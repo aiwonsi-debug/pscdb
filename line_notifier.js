@@ -67,6 +67,11 @@ function sendLineMessage(messageText, targetOverride) {
       res.on('data', d => body += d);
       res.on('end', () => {
         console.log(`[LINE PUSH] Status: ${res.statusCode}`, body);
+        if (res.statusCode !== 200 && !targetOverride && config.line_target_user_id && targetId !== config.line_target_user_id) {
+          console.log('[LINE PUSH] Retrying push to target user fallback...');
+          sendLineMessage(messageText, config.line_target_user_id).then(resolve).catch(reject);
+          return;
+        }
         resolve({ success: res.statusCode === 200, statusCode: res.statusCode, response: body });
       });
     });
@@ -82,7 +87,7 @@ function sendLineMessage(messageText, targetOverride) {
 }
 
 /**
- * Generate D-1 Alert message for LINE with Dynamic Dashboard Sync
+ * Generate Pending Tasks Summary message for LINE (Daily 08:00 AM)
  */
 function generateD1LineMessage(dateStr) {
   let opsStatus = {};
@@ -92,50 +97,58 @@ function generateD1LineMessage(dateStr) {
     } catch(e) {}
   }
 
-  const stockFile = path.join(__dirname, 'stock_inventory.json');
-  let stock = { Items: {} };
-  if (fs.existsSync(stockFile)) {
-    try {
-      stock = JSON.parse(fs.readFileSync(stockFile, 'utf8'));
-    } catch (e) {}
-  }
-
-  // Find nearest upcoming cabbage operation
   const activeOps = opsStatus.active_operations || [];
-  const cabOp = activeOps.find(o => o.product && o.product.includes('กะหล่ำ') && o.status !== 'ขึ้นของและส่งมอบเรียบร้อย') || activeOps[0] || {
-    delivery_date: '2026-09-14',
-    product: 'กะหล่ำปลี',
-    qty_kg: 8500,
-    farm: 'เฮียหนิง (โกดังฮอด - 3.00 บ.)',
-    truck: '6 ล้อ 1 คัน',
-    notes: 'เตรียมขึ้นของล่วงหน้า เข้าโรงงานศาลายา'
-  };
+  const pendingOps = activeOps.filter(o => !String(o.status || '').includes('ขึ้นของและส่งมอบเรียบร้อย'));
 
-  const cabStock = stock.Items && stock.Items.Cabbage ? Number(stock.Items.Cabbage.StockKg).toLocaleString() : '9,650';
-  const carrotStock = stock.Items && stock.Items.Carrot ? Number(stock.Items.Carrot.StockKg).toLocaleString() : '6,560';
-  const aftStock = stock.Items && stock.Items.Onion_AFT ? Number(stock.Items.Onion_AFT.StockKg).toLocaleString() : '44,160';
-  const cnStock = stock.Items && stock.Items.Onion_Chinese ? Number(stock.Items.Onion_Chinese.StockKg).toLocaleString() : '5,440';
+  // Sort by delivery date ascending
+  pendingOps.sort((a, b) => {
+    const da = a.delivery_date || '9999-99-99';
+    const db = b.delivery_date || '9999-99-99';
+    return da.localeCompare(db);
+  });
+
+  const otherTasks = opsStatus.other_tasks || [];
+  const pendingOther = otherTasks.filter(t => !String(t.status || '').includes('เสร็จ') && !String(t.status || '').includes('เรียบร้อย'));
 
   const opsUrl = getOpsWebUrl();
 
-  return `🚨 [เลขา PSC] แจ้งเตือนเตรียมขึ้นของล่วงหน้า
-──────────────────
-📅 รอบขึ้นของที่สวน: พรุ่งนี้
-🏢 โรงงานปลายทาง: ${cabOp.customer || 'โรงงานศาลายา'} (ส่งมอบ ${cabOp.delivery_date ? cabOp.delivery_date.split('-').reverse().join('/') : '14/09/69'})
-🥬 สินค้า: ${cabOp.product || 'กะหล่ำปลี'} ${Number(cabOp.qty_kg || 8500).toLocaleString()} กก.
- • สวน: ${cabOp.farm || 'เฮียหนิง (โกดังฮอด)'}
- • ขนส่ง: ${cabOp.truck || '6 ล้อ 1 คัน'}
- • สถานะ: ${cabOp.status || 'รอดำเนินการ'}
-──────────────────
-📊 [สต็อกคงเหลือล่าสุด (${stock.AsOfDate || '12/09/69'})]
- • กะหล่ำปลี: ${cabStock} กก.
- • แครอทสวย: ${carrotStock} กก.
- • หอม AFT: ${aftStock} กก.
- • หอมจีน: ${cnStock} กก.
-──────────────────
-🌐 ตรวจสอบและบันทึกงาน:
-${opsUrl}
-🔑 Team Access Code: 9624`;
+  let msg = `📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]\n`;
+  msg += `⏰ อัปเดต: 08:00 น. (${dateStr || new Date().toISOString().slice(0, 10)})\n`;
+  msg += `──────────────────\n`;
+
+  if (pendingOps.length === 0) {
+    msg += `✅ ไม่มีรายการส่งมอบค้างในระบบ\n`;
+  } else {
+    msg += `🚚 [รายการส่งมอบที่รอดำเนินการ (${pendingOps.length} รายการ)]:\n`;
+    pendingOps.forEach((op, idx) => {
+      let dStr = '-';
+      if (op.delivery_date) {
+        const parts = op.delivery_date.split('-');
+        dStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0].slice(2)}` : op.delivery_date;
+      }
+      const qtyStr = Number(op.qty_kg || 0).toLocaleString();
+      msg += `\n${idx + 1}. 📅 ส่ง: ${dStr} | ${op.customer || '-'}\n`;
+      msg += `   🥬 สินค้า: ${op.product || '-'} ${qtyStr} กก.\n`;
+      msg += `   🏡 สวน: ${op.farm || '-'}\n`;
+      msg += `   🚛 ขนส่ง: ${op.truck || '-'}\n`;
+      msg += `   📌 สถานะ: ${op.status || 'รอดำเนินการ'}\n`;
+    });
+  }
+
+  if (pendingOther.length > 0) {
+    msg += `──────────────────\n`;
+    msg += `🌱 [งานแปลงปลูก/งานติดตาม (${pendingOther.length} รายการ)]:\n`;
+    pendingOther.forEach((ot, idx) => {
+      msg += ` • ${ot.crop || ot.task_type || 'งาน'}: ลูกค้า ${ot.target_customer || '-'} (ส่ง ${ot.target_delivery || '-'}) [${ot.status || '-'}]\n`;
+    });
+  }
+
+  msg += `──────────────────\n`;
+  msg += `🌐 ตรวจสอบสถานะ & บันทึกงาน:\n`;
+  msg += `${opsUrl}\n`;
+  msg += `🔑 Team Code: 9624`;
+
+  return msg;
 }
 
 /**

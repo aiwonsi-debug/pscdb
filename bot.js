@@ -58,6 +58,13 @@ try {
 } catch(e) {
     console.error('Webhook server init error:', e);
 }
+
+// Launch Daily 08:00 AM LINE Notification Scheduler for Field Ops
+try {
+    lineNotifier.initDailyLineScheduler();
+} catch(e) {
+    console.error('LINE Scheduler init error:', e);
+}
 const logFile = path.join(agyBaseDir, 'secretary_activity.log');
 const backupDir = path.join(agyBaseDir, 'backups', 'stock');
 
@@ -1143,18 +1150,21 @@ async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota R
         return;
     }
 
-    if (!String(chatId).startsWith('LINE:')) { sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\nกำลังส่งต่อคำสั่งไปยัง Groq Fast Engine (${GROQ_CONFIG.Model}) อัตโนมัติ...`); }
+    const isLine = String(chatId).startsWith('LINE:');
+    if (!isLine) { sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\nกำลังส่งต่อคำสั่งไปยัง Groq Fast Engine (${GROQ_CONFIG.Model}) อัตโนมัติ...`); }
     sendChatAction(chatId, 'typing');
 
-    const systemPrompt = 'คุณเป็นระบบปฏิบัติการ AI (Bot Mode). ตอบเป็นภาษาไทยแบบหุ่นยนต์ ตรงไปตรงมา กระชับที่สุด ไม่ต้องมีคำนำหน้า ไม่ต้องมีคำลงท้าย (ห้ามมี ครับ/ค่ะ) และมุ่งเน้นข้อมูลที่จำเป็นเท่านั้น';
+    const fullContextPrompt = memoryEngine.buildAgyContextPrompt(promptText);
+    const systemPrompt = 'คุณคือ "น้องเลขา AI" ผู้ช่วยบริหารจัดการงานปฏิบัติการ PSC Operations (ผักสด, ขนส่ง, สต็อก, คำสั่งซื้อ)\n' +
+                         'ตอบเป็นภาษาไทยอย่างสุภาพ กระชับ ชัดเจน อ้างอิงข้อมูลจริงในระบบเสมอ';
     const postData = JSON.stringify({
         model: GROQ_CONFIG.Model,
         messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: promptText }
+            { role: 'user', content: fullContextPrompt }
         ],
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.5,
+        max_tokens: 600
     });
 
     try {
@@ -1179,11 +1189,12 @@ async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota R
                             quotaTracker.recordGroqUsage(parsed.usage || {}, res.headers, GROQ_CONFIG.Model, promptText);
                         } catch(e) {}
                         memoryEngine.addConversationTurn(promptText, reply);
-                        sendMessage(chatId, `🚀 [Groq ${GROQ_CONFIG.Model}]:\n\n${reply}`);
+                        const header = isLine ? '🤖 [น้องเลขา AI]:\n\n' : `🚀 [Groq ${GROQ_CONFIG.Model}]:\n\n`;
+                        sendMessage(chatId, `${header}${reply}`);
                     } else if (parsed.error) {
-                        sendMessage(chatId, `❌ [Groq Error]: ${parsed.error.message}`);
+                        if (!isLine) sendMessage(chatId, `❌ [Groq Error]: ${parsed.error.message}`);
                     } else {
-                        sendMessage(chatId, resData);
+                        if (!isLine) sendMessage(chatId, resData);
                     }
                 } catch(e) {
                     sendMessage(chatId, `❌ [Groq Parse Error]: ${resData}`);
