@@ -334,7 +334,6 @@
       salaya_0809: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9280, pickup_date: '09/09/69', delivery_date: '10/09/69', title: '🥬 กะหล่ำปลี 9.28 ตัน (รับเข้า 8,450 kg)', cat: 'salaya' },
       salaya_1409: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8500, pickup_date: '13/09/69', delivery_date: '14/09/69', title: '🥬 กะหล่ำปลี 6 ล้อ (~8.5 ตัน)', cat: 'salaya' },
       salaya_1509: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '14/09/69', delivery_date: '15/09/69', title: '🥬 กะหล่ำปลี 8 ตัน', cat: 'salaya' },
-      salaya_1709: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '16/09/69', delivery_date: '17/09/69', title: '🥬 กะหล่ำปลี 8 ตัน (เจ๊นก)', cat: 'salaya' },
       tns_shallot_0709: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '06/09/69', delivery_date: '07/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' },
       tns_pepper_1609: { customer: 'TNS', product: 'พริกหวานเขียว', qty_kg: 2000, pickup_date: '15/09/69', delivery_date: '16/09/69', title: '🫑 พริกหวานเขียว 2,000 kg', cat: 'tns' },
       tns_shallot_2109: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '20/09/69', delivery_date: '21/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' }

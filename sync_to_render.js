@@ -85,20 +85,6 @@ async function main() {
       notes: 'กะหล่ำเข้าอังคาร 15/9 8 ตัน (8,000 กก.)',
       orderChecked: false,
       truckChecked: false
-    },
-    {
-      id: 'salaya_1709',
-      customer: 'โรงงานศาลายา',
-      delivery_date: '2026-09-17',
-      farm: 'เจ๊นก',
-      product: 'กะหล่ำปลี',
-      qty_kg: 8000,
-      truck: '6 ล้อ 1 คัน',
-      status: 'รอดำเนินการ (Salaya สั่งของเจ๊นกเอง)',
-      recorder: 'ทีมงานมือถือภาคสนาม',
-      notes: 'ทางSalaya สั่งของเจ๊นกเองแล้ว 8 ตัน (8,000 กก.)',
-      orderChecked: false,
-      truckChecked: false
     }
   ];
 
