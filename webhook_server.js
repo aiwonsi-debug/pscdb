@@ -177,6 +177,7 @@ function syncToRender(endpoint, payload) {
     try {
         const postData = JSON.stringify(payload);
         const parsed = url.parse(RENDER_DASHBOARD_URL);
+        const sessionToken = generateWebSessionToken(true);
         const req = https.request({
             hostname: parsed.hostname,
             port: 443,
@@ -185,7 +186,8 @@ function syncToRender(endpoint, payload) {
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData),
-                'X-PSC-API-KEY': PSC_API_KEY
+                'X-PSC-API-KEY': PSC_API_KEY,
+                'Cookie': `psc_session=${sessionToken}`
             },
             timeout: 10000
         }, (res) => {

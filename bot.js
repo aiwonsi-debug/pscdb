@@ -1896,13 +1896,23 @@ function handleCommand(chatId, text, msg = null) {
                     );
 
                     if (isIntakeOrLoading) {
-                        let cardId = 'salaya_0309';
+                        let cardId = 'salaya_1409';
                         const rawTextLower = text.toLowerCase();
                         const dateStr = result.date || '';
                         if (text.includes('หอมแดง')) {
                             cardId = (dateStr.includes('21') || dateStr.includes('20')) ? 'tns_shallot_2109' : 'tns_shallot_0709';
                         } else if (text.includes('พริก')) {
                             cardId = 'tns_pepper_1609';
+                        } else if (dateStr.includes('13') || dateStr.includes('14')) {
+                            cardId = 'salaya_1409';
+                        } else if (dateStr.includes('15') || dateStr.includes('16')) {
+                            cardId = 'salaya_1509';
+                        } else if (dateStr.includes('17') || dateStr.includes('18')) {
+                            cardId = 'salaya_1709';
+                        } else if (dateStr.includes('09') || dateStr.includes('10')) {
+                            cardId = 'salaya_0809';
+                        } else if (dateStr.includes('04') || dateStr.includes('05')) {
+                            cardId = 'salaya_0509';
                         } else if (dateStr.includes('07') || dateStr.includes('08')) {
                             cardId = 'salaya_0809';
                         } else if (dateStr.includes('01') || dateStr.includes('02')) {
