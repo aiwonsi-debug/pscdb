@@ -867,23 +867,33 @@ const server = http.createServer(async (req, res) => {
 
             const events = payload.events || [];
             for (const event of events) {
-                if (event.type !== 'message' || !event.message || event.message.type !== 'text') continue;
-
-                const text = event.message.text.trim();
-                // Route replies to whichever group/user actually sent the message.
+                if (event.type !== 'message' || !event.message) continue;
                 const sourceId = event.source.groupId || event.source.roomId || event.source.userId;
-                if (!sourceId || !text) continue;
+                if (!sourceId) continue;
 
-                writeLog(`[LINE Message] From ${sourceId}: ${text}`);
+                if (event.message.type === 'text') {
+                    const text = (event.message.text || '').trim();
+                    if (!text) continue;
 
-                try {
-                    // Lazy require to avoid a circular-require issue at module load time
-                    // (bot.js requires this file to start the server; requiring bot.js
-                    // back at the top of this file would see an incomplete module).
-                    const bot = require('./bot.js');
-                    bot.handleCommand(`LINE:${sourceId}`, text, null);
-                } catch (err) {
-                    writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
+                    writeLog(`[LINE Message] From ${sourceId}: ${text}`);
+
+                    try {
+                        const bot = require('./bot.js');
+                        bot.handleCommand(`LINE:${sourceId}`, text, null);
+                    } catch (err) {
+                        writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
+                    }
+                } else if (event.message.type === 'image') {
+                    const messageId = event.message.id;
+                    writeLog(`[LINE Image] Received from ${sourceId}, messageId=${messageId}`);
+                    try {
+                        const bot = require('./bot.js');
+                        if (typeof bot.handleLineImage === 'function') {
+                            bot.handleLineImage(`LINE:${sourceId}`, messageId);
+                        }
+                    } catch (err) {
+                        writeLog(`[LINE Image Error]: ${err.message}`);
+                    }
                 }
             }
             return;

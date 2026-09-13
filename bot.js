@@ -2522,5 +2522,83 @@ if (require.main === module) {
 
 // Exported so webhook_server.js can route LINE messages through the same
 // command/report-parsing pipeline that Telegram messages already use.
-module.exports = { handleCommand };
+
+function downloadLineContent(messageId, destPath, token) {
+    return new Promise((resolve, reject) => {
+        const req = https.get(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        }, (res) => {
+            if (res.statusCode !== 200) {
+                return reject(new Error(`HTTP ${res.statusCode}`));
+            }
+            const fileStream = fs.createWriteStream(destPath);
+            res.pipe(fileStream);
+            fileStream.on('finish', () => {
+                fileStream.close(() => resolve(destPath));
+            });
+            fileStream.on('error', reject);
+        });
+        req.on('error', reject);
+    });
+}
+
+async function handleLineImage(chatId, messageId) {
+    const chatIdStr = chatId.toString();
+    const lineSourceId = chatIdStr.slice(5);
+    let lineCfg = {};
+    try { lineCfg = JSON.parse(fs.readFileSync(path.join(agyBaseDir, 'line_config.json'), 'utf8')); } catch (e) {}
+    const allowedLineIds = [lineCfg.line_target_group_id, lineCfg.line_target_user_id].filter(Boolean);
+    if (!allowedLineIds.includes(lineSourceId)) {
+        sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized LINE User)');
+        return;
+    }
+
+    const token = (lineCfg.line_channel_access_token || '').trim();
+    if (!token) {
+        sendMessage(chatId, '❌ ไม่พบคีย์ LINE Channel Access Token');
+        return;
+    }
+
+    const imagesDir = path.join(agyBaseDir, 'received_images');
+    if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
+
+    const localImagePath = path.join(imagesDir, `line_${messageId}.jpg`);
+    sendMessage(chatId, '📸 [เลขา AI]: ได้รับรูปภาพแล้ว กำลังดาวน์โหลดและวิเคราะห์ข้อมูล...');
+
+    try {
+        await downloadLineContent(messageId, localImagePath, token);
+        writeLog(`[LINE Image Downloaded]: saved to ${localImagePath}`);
+
+        const visionPrompt = `มีรูปภาพใหม่จากทีมงาน: ${localImagePath}\n` +
+            `ให้ใช้ tool view_file เปิดดูรูปภาพนี้ แล้ววิเคราะห์ว่าเป็นเอกสารอะไร (เช่น ตั๋วชั่งน้ำหนัก, ใบเสร็จ, รายงานราคากะหล่ำ, เอกสารขนส่ง)\n` +
+            `ให้สกัดข้อมูลตัวเลขที่สำคัญ เช่น วันที่, ชื่อสวน/ผู้ส่ง, ชนิดผัก, น้ำหนักสุทธิ (กก.), ค่ารถ (บาท), สถานที่ ออกมาเป็นข้อความสรุปภาษาไทยแบบสั้นกระชับ`;
+
+        const child = spawn(agyExe, ['-p', visionPrompt], {
+            cwd: agyBaseDir,
+            windowsHide: true,
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: Object.assign({}, process.env, {
+                PATH: `C:\\Users\\624\\AppData\\Local\\agy\\bin;C:\\Users\\624\\tools\\nodejs;${process.env.PATH}`
+            })
+        });
+
+        let stdoutData = '';
+        child.stdout.on('data', d => stdoutData += d.toString('utf8'));
+        child.on('close', code => {
+            const cleanOutput = stdoutData.trim();
+            if (cleanOutput) {
+                sendMessage(chatId, `🔍 <b>[ผลการวิเคราะห์รูปภาพจากเลขา AI]</b>\n──────────────────\n${cleanOutput}`);
+            } else {
+                sendMessage(chatId, '⚠️ ไม่สามารถอ่านข้อมูลตัวเลขจากภาพได้ชัดเจน กรุณาส่งภาพที่คมชัดขึ้นหรือพิมพ์เป็นข้อความครับ');
+            }
+        });
+    } catch (err) {
+        writeLog('[LINE Image Error]: ' + err.message);
+        sendMessage(chatId, `❌ เกิดข้อผิดพลาดในการโหลดรูปภาพ: ${err.message}`);
+    }
+}
+
+module.exports = { handleCommand, handleLineImage };
 
