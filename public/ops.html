@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PSC Mobile</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/ops.css?v=20260906_1530">
+    <link rel="stylesheet" href="/css/ops.css?v=20260914_uxui">
   <script>
     // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
@@ -89,20 +89,22 @@
       <span>✓</span> บันทึกข้อมูลเรียบร้อย!
     </div>
 
-    <!-- Top Mobile Header (Dark Reader Extension Aesthetic) -->
-    <header style="background:#151b22; border:1px solid #203239; border-radius:6px; padding:12px 14px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+    <!-- Top Mobile Header (Modern Clean Green Card) -->
+    <header style="background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:14px 16px; margin-bottom:12px; box-shadow:0 4px 18px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h1 style="font-size:19px; font-weight:900; color:#e96c4c; letter-spacing:0.8px; text-transform:uppercase; margin:0;">
-          PSC OPERATIONS
-        </h1>
-        <div style="display:grid; grid-template-columns:1fr 1fr; width:110px; height:28px; background:#0d1215; border:1px solid #203239; border-radius:3px; padding:2px; text-align:center;">
-          <div style="background:#35727a; color:#fff; font-size:11px; font-weight:700; border-radius:2px; display:flex; align-items:center; justify-content:center;">On</div>
-          <div style="color:#6e8490; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">Off</div>
+        <div>
+          <div style="font-size:11px; font-weight:700; color:#5cb85c; text-transform:uppercase; letter-spacing:0.5px;">PSC Field Operations</div>
+          <h1 style="font-size:18px; font-weight:800; color:#0f172a; margin:2px 0 0 0; letter-spacing:0.2px;">
+            รายการจัดส่ง & สต็อก
+          </h1>
+        </div>
+        <div style="background:#e8f5e9; border:1px solid rgba(92,184,92,0.3); border-radius:20px; padding:4px 12px; font-size:11.5px; font-weight:700; color:#2e7d32; display:flex; align-items:center; gap:5px;">
+          <span style="width:7px; height:7px; border-radius:50%; background:#5cb85c; display:inline-block;"></span> เชื่อมต่อระบบ
         </div>
       </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#6e8490; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
-        <span>✓ pscdb.onrender.com</span>
-        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#d8e2ea;">05/09/69 17:00 น.</span></span>
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b; border-top:1px solid #f1f5f9; padding-top:8px;">
+        <span>🌐 pscdb.onrender.com</span>
+        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#0f172a; font-weight:600;">05/09/69 17:00 น.</span></span>
       </div>
     </header>
 
@@ -557,77 +559,79 @@
 <!-- SECTION: PRICES -->
 <div id="sec_price" class="app-section">
 <!-- SECTION: LIVE PRICE UPDATE & FREIGHT (READ-ONLY DISPLAY) -->
-    <div class="card" id="price_board_card">
+    <div class="card" id="price_board_card" style="border-left: 5px solid #5cb85c;">
       <div class="card-header">
         <div class="card-title">💰 ราคาวัตถุดิบ & ค่าขนส่งล่าสุด</div>
         <span class="badge badge-success" id="price_sync_badge">อัปเดตราคา: 12/09/69 13:40 น.</span>
       </div>
 
-      <!-- Vegetable Prices Grid (Read-Only - Confirmed Only) -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
-        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
-          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (ฮอด/เฮียหนิง):</span>
-          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_ning">4.50 บ./กก.</span>
+      <!-- Vegetable Prices Grid -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (ฮอด/เฮียหนิง):</span>
+          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_ning">4.50 บ./กก.</span>
         </div>
 
-        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
-          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (อมพาย/เฮียหนิง):</span>
-          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_ompai">4.50 บ./กก.</span>
+        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (อมพาย/เฮียหนิง):</span>
+          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_ompai">4.50 บ./กก.</span>
         </div>
 
-        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
-          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (แม่แจ่ม/เจ๊อารีย์):</span>
-          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_aree">4.50 บ./กก.</span>
+        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (แม่แจ่ม/เจ๊อารีย์):</span>
+          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_aree">4.50 บ./กก.</span>
         </div>
 
-        <div style="background:#090d16; padding:8px 10px; border-radius:8px; border:1px solid #334155;">
-          <span style="font-size:11px; color:#94a3b8; display:block;">🥬 กะหล่ำ (เฮียบุญชู):</span>
-          <span style="font-size:14px; font-weight:700; color:#38bdf8;" id="dsp_cabbage_boonchu">4.50 บ./กก.</span>
+        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (เฮียบุญชู):</span>
+          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_boonchu">4.50 บ./กก.</span>
         </div>
       </div>
 
-      <!-- Freight Summary Grid (Read-Only) -->
-      <div style="background:rgba(255,255,255,0.02); border:1px solid #23334d; border-radius:8px; padding:10px;">
-        <div style="font-size:12px; font-weight:600; color:#38bdf8; margin-bottom:6px;">🚛 อัตราค่าขนส่งมาตรฐาน (12/09/69):</div>
+      <!-- Freight Summary Grid -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px;">
+        <div style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <span>🚛</span> อัตราค่าขนส่งมาตรฐาน (12/09/69):
+        </div>
         <div class="stock-row">
           <span>• 6 ล้อ ฮอด (เฮียหนิง / พี่อั๋น 8 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">12,000 บ. (1.50 บ./กก.)</span>
+          <span style="color:#0f172a; font-weight:700;">12,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.50 บ./กก.)</span></span>
         </div>
         <div class="stock-row">
           <span>• 6 ล้อ อมพาย แม่สะเรียง + บ่อสลี (เฮียหนิง 8 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">13,000 บ. (1.63 บ./กก.)</span>
+          <span style="color:#0f172a; font-weight:700;">13,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.63 บ./กก.)</span></span>
         </div>
         <div class="stock-row">
           <span>• 6 ล้อ เชียงดาว/แม่เหาะ (พี่อั๋น 8 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">13,000 บ. (1.63 บ./กก.)</span>
+          <span style="color:#0f172a; font-weight:700;">13,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.63 บ./กก.)</span></span>
         </div>
         <div class="stock-row">
           <span>• 6 ล้อ แม่แจ่ม (เจ๊อารีย์ 8 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">14,000 บ. (1.75 บ./กก.)</span>
+          <span style="color:#0f172a; font-weight:700;">14,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.75 บ./กก.)</span></span>
         </div>
         <div class="stock-row">
           <span>• 6 ล้อ เฮียบุญชู (8 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">13,000 บ. (1.63 บ./กก.)</span>
+          <span style="color:#0f172a; font-weight:700;">13,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.63 บ./กก.)</span></span>
         </div>
         <div class="stock-row">
           <span>• 4 ล้อ ฮอด (เฮียหนิง 4 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">7,000 บ.</span>
+          <span style="color:#0f172a; font-weight:700;">7,000 บ.</span>
         </div>
         <div class="stock-row">
           <span>• 4 ล้อ บ่อสลี (เฮียหนิง 4 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">7,500 บ.</span>
+          <span style="color:#0f172a; font-weight:700;">7,500 บ.</span>
         </div>
         <div class="stock-row">
           <span>• 4 ล้อ อมพาย (เฮียหนิง 4 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">8,000 บ.</span>
+          <span style="color:#0f172a; font-weight:700;">8,000 บ.</span>
         </div>
         <div class="stock-row">
           <span>• 4 ล้อ แม่แจ่ม+บ่อสลี (เจ๊อารีย์ 4 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">8,500 บ.</span>
+          <span style="color:#0f172a; font-weight:700;">8,500 บ.</span>
         </div>
         <div class="stock-row">
           <span>• 4 ล้อ เฮียบุญชู (4 ตัน):</span>
-          <span style="color:#f8fafc; font-weight:600;">8,500 บ.</span>
+          <span style="color:#0f172a; font-weight:700;">8,500 บ.</span>
         </div>
       </div>
     </div>
@@ -636,116 +640,116 @@
 <!-- SECTION: STOCK -->
 <div id="sec_stock" class="app-section">
 <!-- SECTION: EXACT STOCK 02/09/69 & RUNWAY FORECAST -->
-    <div class="card" id="stock_card_0209" style="border-left: 4px solid #38bdf8; margin-bottom: 14px;">
-      <div class="card-header" style="margin-bottom: 8px;">
-        <div class="card-title" id="stock_card_title" style="font-size: 15px; font-weight: 700; color: #3391b8;">📦 สต็อกตรวจนับจริงล่าสุด (12/09/69) & คาดการณ์</div>
+    <div class="card" id="stock_card_0209" style="border-left: 5px solid #5cb85c; margin-bottom: 14px;">
+      <div class="card-header" style="margin-bottom: 10px;">
+        <div class="card-title" id="stock_card_title" style="font-size: 14.5px; font-weight: 700; color: #0f172a;">📦 สต็อกตรวจนับจริงล่าสุด (12/09/69) & คาดการณ์</div>
         <span class="badge badge-success" id="stock_as_of_badge">อัปเดตสต็อก: 12/09/69 08:22 น.</span>
       </div>
-      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #35393b; border-radius: 8px; padding: 10px 14px;">
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px;">
         
         <!-- 1. กะหล่ำ -->
-        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px;">🥬 <b>กะหล่ำปลี</b></span>
-            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_cabbage">9,650 กก.</span>
+            <span style="font-size: 13.5px; color:#0f172a;">🥬 <b>กะหล่ำปลี</b></span>
+            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_cabbage">9,650 กก.</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
-            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #3391b8; font-weight: 600;">~18/09/69 (สต็อก 9,650 กก. ปอกส่งต่อเนื่องได้)</span>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
+            <span style="color: #64748b;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #2e7d32; font-weight: 600;">~18/09/69 (สต็อก 9,650 กก. ปอกส่งต่อเนื่องได้)</span>
           </div>
         </div>
 
         <!-- 2. แครอท -->
-        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px;">🥕 <b>แครอท</b></span>
-            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_carrot">4,550 กก.</span>
+            <span style="font-size: 13.5px; color:#0f172a;">🥕 <b>แครอท</b></span>
+            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_carrot">4,550 กก.</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
-            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #3391b8; font-weight: 600;">~20/09/69 (สต็อก 4,550 กก. เพียงพอส่งทั้งสัปดาห์)</span>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
+            <span style="color: #64748b;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #2e7d32; font-weight: 600;">~20/09/69 (สต็อก 4,550 กก. เพียงพอส่งทั้งสัปดาห์)</span>
           </div>
         </div>
 
         <!-- 3. หอมหัวใหญ่ -->
-        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px;">🧅 <b>หอมหัวใหญ่</b></span>
-            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_onion">14,940 กก.</span>
+            <span style="font-size: 13.5px; color:#0f172a;">🧅 <b>หอมหัวใหญ่</b></span>
+            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_onion">14,940 กก.</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
-            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #3391b8; font-weight: 600;">~28/09/69 (สต็อกหนา 14,940 กก. ปลอดภัยตลอดเดือน)</span>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
+            <span style="color: #64748b;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #2e7d32; font-weight: 600;">~28/09/69 (สต็อกหนา 14,940 กก. ปลอดภัยตลอดเดือน)</span>
           </div>
         </div>
 
         <!-- 4. ขิงแก่ -->
-        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px;">🫚 <b>ขิงแก่</b></span>
-            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_ginger">2,020 กก.</span>
+            <span style="font-size: 13.5px; color:#0f172a;">🫚 <b>ขิงแก่</b></span>
+            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_ginger">2,020 กก.</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
-            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #3391b8; font-weight: 600;">~26/09/69 (สต็อก 2,020 กก. ปลอดภัย)</span>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
+            <span style="color: #64748b;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #2e7d32; font-weight: 600;">~26/09/69 (สต็อก 2,020 กก. ปลอดภัย)</span>
           </div>
         </div>
 
         <!-- 5. ฟักทอง -->
-        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px;">🎃 <b>ฟักทอง</b></span>
-            <span style="font-weight: 700; color: #3391b8; font-size: 14px;" id="stk_val_pumpkin">1,690 กก.</span>
+            <span style="font-size: 13.5px; color:#0f172a;">🎃 <b>ฟักทอง</b></span>
+            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_pumpkin">1,690 กก.</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 3px;">
-            <span style="color: #94a3b8;">📅 คาดการณ์ใช้ได้ถึง:</span>
-            <span style="color: #3391b8; font-weight: 600;">สิ้นเดือน 09/69 (ไม่มีออเดอร์ตัดออกเพิ่ม)</span>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
+            <span style="color: #64748b;">📅 คาดการณ์ใช้ได้ถึง:</span>
+            <span style="color: #2e7d32; font-weight: 600;">สิ้นเดือน 09/69 (ไม่มีออเดอร์ตัดออกเพิ่ม)</span>
           </div>
         </div>
 
         <!-- Stock Audit Table -->
-        <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
-          <div style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">📊 รายละเอียดตรวจนับจริง (12/09/69):</div>
+        <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">📊 รายละเอียดตรวจนับจริง (12/09/69):</div>
           <div style="overflow-x: auto;">
-            <table style="width: 100%; font-size: 11.5px; border-collapse: collapse; text-align: left;">
+            <table style="width: 100%; font-size: 12px; border-collapse: collapse; text-align: left;">
               <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #64748b;">
-                  <th style="padding: 4px 6px;">สินค้า</th>
-                  <th style="padding: 4px 6px; text-align:right;">ระบบเดิม</th>
-                  <th style="padding: 4px 6px; text-align:right;">นับจริง (12/09)</th>
-                  <th style="padding: 4px 6px; text-align:right;">ผลต่าง</th>
+                <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+                  <th style="padding: 6px 8px;">สินค้า</th>
+                  <th style="padding: 6px 8px; text-align:right;">ระบบเดิม</th>
+                  <th style="padding: 6px 8px; text-align:right;">นับจริง (12/09)</th>
+                  <th style="padding: 6px 8px; text-align:right;">ผลต่าง</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                  <td style="padding:6px 8px;">🥬 กะหล่ำ</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">9,650 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">9,650 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">0 กก.</td>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding:8px 8px; font-weight:600;">🥬 กะหล่ำ</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">9,650 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">9,650 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">0 กก.</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                  <td style="padding:6px 8px;">🥕 แครอท</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">4,550 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">4,550 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">0 กก.</td>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding:8px 8px; font-weight:600;">🥕 แครอท</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">4,550 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">4,550 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">0 กก.</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                  <td style="padding:6px 8px;">🧅 หอมหัวใหญ่</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">14,940 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">14,940 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">0 กก.</td>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding:8px 8px; font-weight:600;">🧅 หอมหัวใหญ่</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">14,940 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">14,940 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">0 กก.</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                  <td style="padding:6px 8px;">🫚 ขิงแก่</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">2,020 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">2,020 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">0 กก.</td>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding:8px 8px; font-weight:600;">🫚 ขิงแก่</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">2,020 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">2,020 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">0 กก.</td>
                 </tr>
                 <tr>
-                  <td style="padding:6px 8px;">🎃 ฟักทอง</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">1,690 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; font-weight:700; color:#38bdf8;">1,690 กก.</td>
-                  <td style="padding:6px 8px; text-align:right; color:#94a3b8;">0 กก.</td>
+                  <td style="padding:8px 8px; font-weight:600;">🎃 ฟักทอง</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">1,690 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">1,690 กก.</td>
+                  <td style="padding:8px 8px; text-align:right; color:#64748b;">0 กก.</td>
                 </tr>
               </tbody>
             </table>
@@ -766,15 +770,15 @@
 
   
   <!-- Auth Unlock Modal -->
-  <div id="auth_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#161b22; border:1px solid #30363d; padding:24px; border-radius:12px; width:90%; max-width:340px; text-align:center;">
-      <div style="display:inline-block; background:rgba(16,185,129,0.15); color:#10b981; font-weight:600; font-size:11px; padding:3px 8px; border-radius:12px; margin-bottom:8px;">🌱 PSC Field Ops</div>
-      <h3 style="color:#fff; margin:0 0 6px 0; font-size:18px;">Team Access</h3>
-      <p style="color:#9ca3af; font-size:12.5px; margin:0 0 14px 0;">กรอก Team Access Code เพื่อเริ่มหรือต่ออายุการใช้งาน (จำเซสชัน 30 วัน)</p>
-      <input type="password" id="auth_input" placeholder="Team Access Code" style="width:100%; padding:11px; border-radius:8px; border:1px solid #374151; background:#0b1120; color:#fff; font-size:14px; box-sizing:border-box; margin-bottom:14px;" />
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <button onclick="document.getElementById('auth_modal').style.display='none'" style="padding:10px; border-radius:6px; border:1px solid #30363d; background:#21262d; color:#c9d1d9; font-weight:600; cursor:pointer;">ยกเลิก</button>
-        <button onclick="submitAuthKey(document.getElementById('auth_input').value)" style="padding:10px; border-radius:6px; border:none; background:#238636; color:#fff; font-weight:600; cursor:pointer;">ปลดล็อค</button>
+  <div id="auth_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#ffffff; border:1px solid #e2e8f0; padding:26px 22px; border-radius:20px; width:90%; max-width:340px; text-align:center; box-shadow:0 20px 35px rgba(0,0,0,0.15);">
+      <div style="display:inline-block; background:#e8f5e9; color:#2e7d32; font-weight:700; font-size:11px; padding:4px 10px; border-radius:14px; margin-bottom:10px;">🌱 PSC Field Ops</div>
+      <h3 style="color:#0f172a; margin:0 0 6px 0; font-size:18px; font-weight:800;">Team Access</h3>
+      <p style="color:#64748b; font-size:12px; margin:0 0 16px 0;">กรอก Team Access Code เพื่อเข้าใช้งานระบบ (จำเซสชัน 30 วัน)</p>
+      <input type="password" id="auth_input" placeholder="Team Access Code" style="width:100%; padding:11px 14px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; color:#0f172a; font-size:14px; box-sizing:border-box; margin-bottom:14px; outline:none;" />
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button onclick="document.getElementById('auth_modal').style.display='none'" style="padding:10px; border-radius:10px; border:1px solid #e2e8f0; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">ยกเลิก</button>
+        <button onclick="submitAuthKey(document.getElementById('auth_input').value)" style="padding:10px; border-radius:10px; border:none; background:#5cb85c; color:#fff; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(92,184,92,0.3);">ปลดล็อค</button>
       </div>
     </div>
   </div>
