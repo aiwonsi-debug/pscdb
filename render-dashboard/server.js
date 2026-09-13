@@ -6,7 +6,7 @@ const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
-const quotaTracker = require('./ai_quota_tracker.js');
+const quotaTracker = { loadQuotaData: () => ({}), saveQuotaData: () => {} };
 
 function escapeHtml(str) {
     if (!str || typeof str !== 'string') return '';

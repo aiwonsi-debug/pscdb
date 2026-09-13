@@ -1,6 +1,6 @@
 {
-  "AsOfDate": "08/09/69",
-  "LastUpdated": "2026-09-08T02:11:33.000Z",
+  "AsOfDate": "09/09/69",
+  "LastUpdated": "2026-09-09T19:19:44.000Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
@@ -12,15 +12,15 @@
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 22620
+      "StockKg": 21460
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
-      "StockKg": 7010
+      "StockKg": 5480
     },
     "Carrot": {
       "Name": "แครอทสวย",
-      "StockKg": 4090
+      "StockKg": 3950
     },
     "Purple_Sweet_Potato": {
       "Name": "มันม่วงหัวเล็ก",

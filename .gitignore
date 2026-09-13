@@ -37,3 +37,9 @@ MATERIAL_REPORT_TEMPLATE.json
 desktop.ini
 *.ini
 .aider*
+psc_api_key.txt
+ssh_host_key.pem
+*.pem
+.tmp.driveupload/ 
+archive/nested_zips/ 
+archive/agymemory_snapshot_20260913/ 

@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec, spawn } = require('child_process');
 const memoryEngine = require('./memory_engine.js');
-const quotaTracker = require('./ai_quota_tracker.js');
+const quotaTracker = { recordOkmdUsage: () => {}, recordGroqUsage: () => {}, recordAgyUsage: () => {}, recordGlmUsage: () => {}, updateAgyQuota: () => {}, formatUsageForTelegram: () => '⚡ ระบบ AI Quota ถูกปิดใช้งานแล้ว', formatPct: () => '-' };
 const { formatPoDetailsForNotification } = require('./po_detail_formatter.js');
 
 // Helper to execute commands in 100% hidden background mode (no popup cmd/powershell windows)
@@ -2180,7 +2180,7 @@ function handleCommand(chatId, text, msg = null) {
     }
     else if (lower === '/prep_gt' || lower === '📅 กำหนดส่ง gt') {
         sendMessage(chatId, 'กำลังตรวจสอบและจัดทำ GT ล่วงหน้า 2 วัน (Multi-Customer)...');
-        execSilent(`powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "${path.join(agyBaseDir, 'Auto-PrepareGT.ps1')}"`, (err, stdout) => {
+        execSilent(`"${process.execPath}" "${path.join(agyBaseDir, 'Auto-PrepareGT.js')}"`, (err, stdout) => {
             if (err) {
                 sendMessage(chatId, `ข้อผิดพลาด: ${err.message}`);
             } else {

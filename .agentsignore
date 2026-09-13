@@ -1,0 +1,23 @@
+# Files/folders the agent should NEVER read into context for record-entry
+# or PO-ingestion tasks. Add this pattern list wherever your agy config
+# reads ignore rules from (check ~/.gemini/settings.json "ignore" or
+# "contextExclude" key, or an .aiexclude / .geminiignore file if agy
+# supports one directly).
+
+node_modules/
+extracted_po_images/
+backups/
+ops_backup/
+render-dashboard/
+*.log
+*.log.*
+ALL_SOURCE_CODE_FOR_AUDIT.txt
+secretary_activity.log
+supervisor.log
+*.jpg
+*.jpeg
+*.png
+files.zip
+fixed-files.zip
+agymemory/
+cloud_secretary/

@@ -1,0 +1,9 @@
+{
+  "name": "psc-record-cli",
+  "version": "1.0.0",
+  "description": "Zero-LLM-token record entry and PO ingestion for PSC cold storage inventory.",
+  "main": "record_cli.js",
+  "dependencies": {
+    "pdf-parse": "^2.4.5"
+  }
+}

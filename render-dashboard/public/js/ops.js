@@ -330,8 +330,11 @@
     const ORDERS_META = {
       salaya_0209: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '01/09/69', delivery_date: '02/09/69', title: '🥬 กะหล่ำปลี 8 ตัน', cat: 'salaya' },
       salaya_0309: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9200, pickup_date: '02/09/69', delivery_date: '03/09/69', title: '🥬 กะหล่ำปลี 9.2 ตัน', cat: 'salaya' },
+      salaya_0509: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8875, pickup_date: '04/09/69', delivery_date: '05/09/69', title: '🥬 กะหล่ำปลี 8.875 ตัน (เจ๊นก)', cat: 'salaya' },
       salaya_0809: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9280, pickup_date: '09/09/69', delivery_date: '10/09/69', title: '🥬 กะหล่ำปลี 9.28 ตัน (รับเข้า 8,450 kg)', cat: 'salaya' },
       salaya_1409: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8500, pickup_date: '13/09/69', delivery_date: '14/09/69', title: '🥬 กะหล่ำปลี 6 ล้อ (~8.5 ตัน)', cat: 'salaya' },
+      salaya_1509: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '14/09/69', delivery_date: '15/09/69', title: '🥬 กะหล่ำปลี 8 ตัน', cat: 'salaya' },
+      salaya_1709: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '16/09/69', delivery_date: '17/09/69', title: '🥬 กะหล่ำปลี 8 ตัน (เจ๊นก)', cat: 'salaya' },
       tns_shallot_0709: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '06/09/69', delivery_date: '07/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' },
       tns_pepper_1609: { customer: 'TNS', product: 'พริกหวานเขียว', qty_kg: 2000, pickup_date: '15/09/69', delivery_date: '16/09/69', title: '🫑 พริกหวานเขียว 2,000 kg', cat: 'tns' },
       tns_shallot_2109: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '20/09/69', delivery_date: '21/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' }
@@ -616,35 +619,63 @@ if (cat === 'all') {
           var badge = document.getElementById('report_count_badge');
           if (tbody) {
             if (ops.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:16px;">ไม่มีข้อมูล</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:16px;">ไม่มีข้อมูล</td></tr>';
             } else {
+              function parseToDateObj(str) {
+                if (!str) return null;
+                if (str instanceof Date) return str;
+                try {
+                  if (typeof str === 'string' && str.indexOf('-') !== -1) {
+                    var p = str.split('T')[0].split('-');
+                    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                  } else if (typeof str === 'string' && str.indexOf('/') !== -1) {
+                    var parts = str.split('/');
+                    var dy = parseInt(parts[0], 10);
+                    var dm = parseInt(parts[1], 10) - 1;
+                    var dyr = parseInt(parts[2], 10);
+                    if (dyr > 2500) dyr -= 543;
+                    else if (dyr < 100) dyr += 2000;
+                    return new Date(dyr, dm, dy);
+                  }
+                } catch(e) {}
+                return null;
+              }
+
+              function formatThaiDateStr(d) {
+                if (!d || !(d instanceof Date) || isNaN(d.getTime())) return '–';
+                var day = ('0' + d.getDate()).slice(-2);
+                var mon = ('0' + (d.getMonth() + 1)).slice(-2);
+                var yr = (d.getFullYear() + 543).toString().slice(-2);
+                return day + '/' + mon + '/' + yr;
+              }
+
               tbody.innerHTML = ops.map(function(o) {
                 var statusColor = '#94a3b8';
                 if (o.status && o.status.includes('ขึ้นของ')) statusColor = '#34d399';
                 else if (o.status && o.status.includes('รอ')) statusColor = '#fbbf24';
-                var delivLabel = o.delivery_date;
-                try {
-                  var d;
-                  if (o.delivery_date.indexOf('-') !== -1) {
-                    d = new Date(o.delivery_date);
-                  } else if (o.delivery_date.indexOf('/') !== -1) {
-                    var parts = o.delivery_date.split('/');
-                    var dy = parseInt(parts[0], 10);
-                    var dm = parseInt(parts[1], 10) - 1;
-                    var dyr = parseInt(parts[2], 10);
-                    if (dyr < 100) dyr += 2000;
-                    if (dyr > 2500) dyr -= 543;
-                    d = new Date(dyr, dm, dy);
-                  }
-                  if (d && !isNaN(d.getTime())) {
-                    var day = ('0'+d.getDate()).slice(-2);
-                    var mon = ('0'+(d.getMonth()+1)).slice(-2);
-                    var yr = (d.getFullYear()+543).toString().slice(-2);
-                    delivLabel = day+'/'+mon+'/'+yr;
-                  }
-                } catch(e) {}
+
+                // Received Date (วันที่รับเข้า / ส่งมอบ)
+                var delivDateObj = parseToDateObj(o.delivery_date || o.received_date);
+                var delivLabel = delivDateObj ? formatThaiDateStr(delivDateObj) : (o.delivery_date || '–');
+
+                // Sent Date (วันที่ขึ้นของ / ส่งออก)
+                var rawSent = o.sent_date || o.pickup_date || o.loaded_date;
+                if (!rawSent && (o.card_id || o.id)) {
+                  var cMeta = ORDERS_META[o.card_id || o.id];
+                  var cState = serverCardsState && serverCardsState[o.card_id || o.id];
+                  rawSent = (cMeta && cMeta.pickup_date) || (cState && cState.loadedDate);
+                }
+                var sentDateObj = parseToDateObj(rawSent);
+                if (!sentDateObj && delivDateObj) {
+                  // Fallback: 1 day before delivery date (standard farm loading D-1)
+                  sentDateObj = new Date(delivDateObj.getTime());
+                  sentDateObj.setDate(sentDateObj.getDate() - 1);
+                }
+                var sentLabel = sentDateObj ? formatThaiDateStr(sentDateObj) : '–';
+
                 return '<tr>' +
-                  '<td style="white-space:nowrap;font-weight:600;">' + delivLabel + '</td>' +
+                  '<td style="white-space:nowrap;font-weight:600;color:#93c5fd;">' + sentLabel + '</td>' +
+                  '<td style="white-space:nowrap;font-weight:600;color:#fef08a;">' + delivLabel + '</td>' +
                   '<td>' + (o.customer||'–') + '</td>' +
                   '<td>' + sanitizeSupplierName(o.farm||'–') + '</td>' +
                   '<td>' + (o.product||'–') + '</td>' +
@@ -833,6 +864,16 @@ if (cat === 'all') {
       const tbody = document.getElementById('other_task_tbody');
       const badge = document.getElementById('other_task_count_badge');
       if (!tbody) return;
+
+      if (Array.isArray(tasks)) {
+        try { localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(tasks)); } catch(e) {}
+      } else {
+        try {
+          const cached = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS'));
+          if (Array.isArray(cached)) tasks = cached;
+        } catch(e) {}
+      }
+
       if (badge) badge.textContent = (tasks ? tasks.length : 0) + ' รายการ';
 
       if (!tasks || tasks.length === 0) {
@@ -921,7 +962,7 @@ if (cat === 'all') {
 
       fetch('/api/add-other-task', {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: reqHeaders,
         body: JSON.stringify(payload)
       })
@@ -939,8 +980,20 @@ if (cat === 'all') {
           showToast('🌱 บันทึกงานเรียบร้อยแล้ว!');
           if (sellerEl) sellerEl.value = '';
           if (notesEl) notesEl.value = '';
-          if (data.other_tasks) renderOtherTasks(data.other_tasks);
-          else syncLiveBackendState();
+          if (data.other_tasks) {
+            try { localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(data.other_tasks)); } catch(e) {}
+            renderOtherTasks(data.other_tasks);
+          } else if (data.task) {
+            try {
+              const cur = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS')) || [];
+              cur.unshift(data.task);
+              localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(cur));
+              renderOtherTasks(cur);
+            } catch(e) {}
+            syncLiveBackendState();
+          } else {
+            syncLiveBackendState();
+          }
         } else if (data && data.error) {
           alert('ไม่สามารถบันทึกได้: ' + data.error);
         }
@@ -963,7 +1016,7 @@ if (cat === 'all') {
 
       fetch('/api/delete-other-task', {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: reqHeaders,
         body: JSON.stringify({ id: id })
       })
@@ -977,8 +1030,18 @@ if (cat === 'all') {
       .then(data => {
         if (data && data.success) {
           showToast('ลบรายการเรียบร้อย');
-          if (data.other_tasks) renderOtherTasks(data.other_tasks);
-          else syncLiveBackendState();
+          if (data.other_tasks) {
+            try { localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(data.other_tasks)); } catch(e) {}
+            renderOtherTasks(data.other_tasks);
+          } else {
+            try {
+              let cur = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS')) || [];
+              cur = cur.filter(t => t.id !== id);
+              localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(cur));
+              renderOtherTasks(cur);
+            } catch(e) {}
+            syncLiveBackendState();
+          }
         }
       })
       .catch(e => {});
@@ -1018,6 +1081,14 @@ if (cat === 'all') {
         if (savedPrices.cabbage_ning && document.getElementById('dsp_cabbage_ning')) document.getElementById('dsp_cabbage_ning').textContent = savedPrices.cabbage_ning + ' บ./กก.';
         if (savedPrices.cabbage_aree && document.getElementById('dsp_cabbage_aree')) document.getElementById('dsp_cabbage_aree').textContent = savedPrices.cabbage_aree + ' บ./กก.';
         if (savedPrices.cabbage_boonchu && document.getElementById('dsp_cabbage_boonchu')) document.getElementById('dsp_cabbage_boonchu').textContent = savedPrices.cabbage_boonchu + ' บ./กก.';
+
+        // Load cached other_tasks immediately to prevent blank UI on slow network
+        try {
+          const cachedOther = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS'));
+          if (Array.isArray(cachedOther) && cachedOther.length > 0) {
+            renderOtherTasks(cachedOther);
+          }
+        } catch(e) {}
       } catch (e) {}
 
       syncLiveBackendState();
