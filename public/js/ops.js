@@ -745,9 +745,6 @@ if (cat === 'all') {
           if (items.Onion_AFT && document.getElementById('stk_val_onion_aft')) document.getElementById('stk_val_onion_aft').textContent = items.Onion_AFT.StockKg.toLocaleString() + ' กก.';
           if (items.Onion_Chinese && document.getElementById('stk_val_onion_chinese')) document.getElementById('stk_val_onion_chinese').textContent = items.Onion_Chinese.StockKg.toLocaleString() + ' กก.';
           if (items.Carrot && document.getElementById('stk_val_carrot')) document.getElementById('stk_val_carrot').textContent = items.Carrot.StockKg.toLocaleString() + ' กก.';
-          if (items.Purple_Sweet_Potato && document.getElementById('stk_val_purple_potato')) document.getElementById('stk_val_purple_potato').textContent = items.Purple_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
-          if (items.Yellow_Sweet_Potato && document.getElementById('stk_val_yellow_potato')) document.getElementById('stk_val_yellow_potato').textContent = items.Yellow_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
-          if (items.Orange_Sweet_Potato && document.getElementById('stk_val_orange_potato')) document.getElementById('stk_val_orange_potato').textContent = items.Orange_Sweet_Potato.StockKg.toLocaleString() + ' กก.';
           if (document.getElementById('stock_as_of_badge')) {
             const timeStr = data.LastUpdated ? new Date(data.LastUpdated).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '19:01';
             const asOf = data.AsOfDate || '05/09/69';
@@ -770,8 +767,7 @@ if (cat === 'all') {
                 { key: 'Cabbage', name: '🥬 กะหล่ำปลี' },
                 { key: 'Onion_AFT', name: '🧅 หอม AFT' },
                 { key: 'Onion_Chinese', name: '🧅 หอมจีน' },
-                { key: 'Carrot', name: '🥕 แครอทสวย' },
-                { key: 'Purple_Sweet_Potato', name: '🍠 มันม่วงหัวเล็ก' }
+                { key: 'Carrot', name: '🥕 แครอทสวย' }
               ];
               let rowsHtml = '';
               const activeSkus = skuMeta.filter(s => cur.Items && cur.Items[s.key] !== undefined);

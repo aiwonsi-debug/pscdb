@@ -681,10 +681,7 @@ const server = http.createServer(async (req, res) => {
                     Cabbage: { Name: "กะหล่ำปลี", StockKg: 2575 },
                     Onion_AFT: { Name: "หอม AFT", StockKg: 26120 },
                     Onion_Chinese: { Name: "หอมจีน", StockKg: 3560 },
-                    Carrot: { Name: "แครอทสวย", StockKg: 5840 },
-                    Purple_Sweet_Potato: { Name: "มันม่วงหัวเล็ก", StockKg: 1690 },
-                    Yellow_Sweet_Potato: { Name: "มันเหลืองไข่", StockKg: 342 },
-                    Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
+                    Carrot: { Name: "แครอทสวย", StockKg: 5840 }
                 }
             };
             const targetStockFile = [
