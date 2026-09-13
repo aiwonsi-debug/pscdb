@@ -957,6 +957,138 @@ const GROQ_CONFIG = {
     Url: 'https://api.groq.com/openai/v1/chat/completions'
 };
 
+
+function extractLoadingReportFromText(text) {
+    if (!text || typeof text !== 'string') return null;
+    const hasLoading = /(?:ขึ้นของ|ขึ้นกะหล่ำ|รับเข้า|น้ำหนักสุทธิ)/i.test(text);
+    if (!hasLoading) return null;
+
+    const dMatch = text.match(/(?:(?:วันที่)\s*)?(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/);
+    let date = dMatch ? dMatch[1] : formatDMY();
+
+    const wMatch = text.match(/(?:น้ำหนักสุทธิ|น้ำหนัก|จำนวน|นน\.)\s*[:=\-]?\s*([\d,]+(?:\.\d+)?)\s*(?:kg|กก\.?|กิโล)/i);
+    const weight = wMatch ? parseFloat(wMatch[1].replace(/,/g, '')) : null;
+
+    const fMatch = text.match(/ค่ารถ\s*[:=\-]?\s*([\d,]+(?:\.\d+)?)\s*(?:บ\.?|บาท)/i);
+    const freight = fMatch ? parseFloat(fMatch[1].replace(/,/g, '')) : null;
+
+    let supplier = 'เฮียหนิง';
+    if (text.includes('เจ๊นก') || text.includes('เจ้นก')) supplier = 'เจ๊นก';
+    else if (text.includes('เจ๊อารีย์') || text.includes('เจ็อารีย์')) supplier = 'เจ๊อารีย์';
+    else if (text.includes('เฮียบุญชู')) supplier = 'เฮียบุญชู';
+    else if (text.includes('ป้าผา')) supplier = 'ป้าผา';
+    else if (text.includes('ป้าอรทัย')) supplier = 'ป้าอรทัย';
+
+    let location = '';
+    if (text.includes('อมพาย')) location = 'โกดัง อมพาย แม่สะเรียง';
+    else if (text.includes('ฮอด')) location = 'โกดังฮอด';
+    else if (text.includes('แม่แจ่ม')) location = 'แม่แจ่ม';
+
+    let item = 'กะหล่ำปลี';
+    if (text.includes('หอมแดง')) item = 'หอมแดง';
+    else if (text.includes('พริก')) item = 'พริกหวาน';
+
+    return {
+        date,
+        supplier,
+        item: `${item} (${supplier})`,
+        weight_kg: weight,
+        freight_baht: freight,
+        payment: text.includes('เก็บปลายทาง') ? 'เก็บปลายทาง' : '',
+        location,
+        sample_kg: null,
+        peeled_kg: null,
+        yield_pct: null,
+        stock_inventory: null
+    };
+}
+
+function handleCabbagePriceSurvey(chatId, text) {
+    writeLog(`[Cabbage Price Survey Detected]: ${text.substring(0, 80).replace(/\n/g, ' ')}...`);
+    
+    // Extract date
+    const dMatch = text.match(/(?:(?:ราคากะหล่ำ(?:วันนี้)?|วันที่)\s*)?(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/);
+    const dateStr = dMatch ? dMatch[1] : formatDMY();
+
+    const suppliers = [];
+    
+    // 1. เฮียหนิง
+    if (text.includes('เฮียหนิง')) {
+        const pMatch = text.match(/เฮียหนิง[^\n\d]*([\d\.]+)\s*บาท/);
+        const price = pMatch ? pMatch[1] : '4.5';
+        suppliers.push({
+            name: 'เฮียหนิง (พันธุ์ข้าง)',
+            price: `${price} บาท/กก.`,
+            rates: '4 ล้อ: ฮอด 7,000 | บ่อสลี 7,500 | อมพาย 8,000\n  • 6 ล้อ: ฮอด 12,000 | อมพาย+บ่อสลี 13,000'
+        });
+    }
+
+    // 2. เจ๊อารีย์
+    if (text.includes('เจ๊อารีย์') || text.includes('เจ็อารีย์')) {
+        const pMatch = text.match(/เจ็?อารีย์[^\n\d]*([\d\.]+)\s*บาท/);
+        const price = pMatch ? pMatch[1] : '4.0';
+        const note = text.includes('ของไม่มี') ? ' (พรุ่งนี้ของไม่มี)' : '';
+        suppliers.push({
+            name: `เจ๊อารีย์${note}`,
+            price: `${price} บาท/กก.`,
+            rates: '4 ล้อ: แม่แจ่ม+บ่อสลี 8,500 | 6 ล้อ: แม่แจ่ม 14,000'
+        });
+    }
+
+    // 3. เฮียบุญชู
+    if (text.includes('เฮียบุญชู')) {
+        const pMatch = text.match(/เฮียบุญชู[^\n\d]*([\d\.]+)\s*บาท/);
+        const price = pMatch ? pMatch[1] : '4.5';
+        const note = text.includes('ของไม่พอ') ? ' (พรุ่งนี้ของไม่พอ รถ 6 ล้อ)' : '';
+        suppliers.push({
+            name: `เฮียบุญชู${note}`,
+            price: `${price} บาท/กก.`,
+            rates: '4 ล้อ: 8,500 | 6 ล้อ: 13,000'
+        });
+    }
+
+    // 4. พี่อั๋น
+    if (text.includes('พี่อั๋น') || text.includes('อั๋น')) {
+        suppliers.push({
+            name: 'พี่อั๋น (ขนส่ง)',
+            price: '-',
+            rates: '6 ล้อ: เชียงดาว+แม่เหาะ 13,000 | ฮอด 12,000'
+        });
+    }
+
+    // Save to cabbage_prices_transport.json
+    try {
+        const cpPath = path.join(agyBaseDir, 'cabbage_prices_transport.json');
+        let cp = fs.existsSync(cpPath) ? JSON.parse(fs.readFileSync(cpPath, 'utf8')) : { Locations: {}, ShipmentHistory: [] };
+        if (!cp.PriceHistory) cp.PriceHistory = [];
+        cp.PriceHistory.push({
+            Date: dateStr,
+            RawText: text,
+            ParsedAt: new Date().toISOString(),
+            Suppliers: suppliers
+        });
+        fs.writeFileSync(cpPath, JSON.stringify(cp, null, 2), 'utf8');
+        try {
+            fs.writeFileSync(path.join(agyBaseDir, 'render-dashboard', 'cabbage_prices_transport.json'), JSON.stringify(cp, null, 2), 'utf8');
+        } catch(e){}
+    } catch(err) {
+        writeLog('[Price Survey Save Error]: ' + err.message);
+    }
+
+    // Build Clean Line Response
+    let reply = `🥬 <b>[บันทึกราคากะหล่ำ & ค่ารถประจำวัน]</b>\n`;
+    reply += `──────────────────\n`;
+    reply += `📅 <b>วันที่:</b> ${dateStr}\n\n`;
+    for (const s of suppliers) {
+        reply += `• <b>${s.name}:</b> ${s.price !== '-' ? s.price : ''}\n`;
+        if (s.rates) reply += `  - ค่ารถ: ${s.rates}\n`;
+    }
+    reply += `──────────────────\n`;
+    reply += `✅ <i>บันทึกเข้าฐานข้อมูล cabbage_prices_transport เรียบร้อย</i>`;
+
+    sendMessage(chatId, reply);
+}
+
 function extractStockFromText(rawText) {
     if (!rawText || typeof rawText !== 'string') return null;
     
@@ -1011,7 +1143,7 @@ async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota R
         return;
     }
 
-    sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\nกำลังส่งต่อคำสั่งไปยัง Groq Fast Engine (${GROQ_CONFIG.Model}) อัตโนมัติ...`);
+    if (!String(chatId).startsWith('LINE:')) { sendMessage(chatId, `⚡ [Auto-Failover]: ${failReason}\nกำลังส่งต่อคำสั่งไปยัง Groq Fast Engine (${GROQ_CONFIG.Model}) อัตโนมัติ...`); }
     sendChatAction(chatId, 'typing');
 
     const systemPrompt = 'คุณเป็นระบบปฏิบัติการ AI (Bot Mode). ตอบเป็นภาษาไทยแบบหุ่นยนต์ ตรงไปตรงมา กระชับที่สุด ไม่ต้องมีคำนำหน้า ไม่ต้องมีคำลงท้าย (ห้ามมี ครับ/ค่ะ) และมุ่งเน้นข้อมูลที่จำเป็นเท่านั้น';
@@ -1664,6 +1796,17 @@ function handleCommand(chatId, text, msg = null) {
     // 2.9 Field Ops Loading Report Auto-Parser & Dashboard Sync
     const hasNegation = text.includes('undo') || text.includes('ไม่ใช่') || text.includes('แก้ไข') || text.includes('ตัวอย่าง') || text.includes('แจ้งเตือน') || text.includes('ยกเลิก') || text.includes('ยังไม่ได้') || text.includes('ลบ');
 
+    // 2.8 Daily Cabbage Price & Transport Survey Parser
+    const isPriceSurvey = !hasNegation && (
+        text.includes('ราคากะหล่ำ') || 
+        (text.includes('พันธุ์ข้าง') && (text.includes('ค่ารถ') || text.includes('บาท'))) ||
+        (text.includes('เจ๊อารีย์') && text.includes('เฮียหนิง') && text.includes('ค่ารถ'))
+    );
+    if (isPriceSurvey) {
+        handleCabbagePriceSurvey(chatId, text);
+        return;
+    }
+
     // =========================================================================
     // 🌟 UNIFIED AI PARSER (STOCK, INTAKE, LOADING & YIELD IN A SINGLE ENGINE)
     // =========================================================================
@@ -1672,12 +1815,13 @@ function handleCommand(chatId, text, msg = null) {
         text.includes('ขึ้นของ') || text.includes('รับเข้า') || text.includes('ขึ้นกะหล่ำ') ||
         text.includes('ขึ้นหอม') || text.includes('กะหล่ำเข้า') || text.includes('หอมเข้า') ||
         text.includes('สุ่มปอก') || text.includes('ปอกได้') || text.includes('จำนวนที่ได้รับ') ||
-        text.includes('น้ำหนักสุทธิ') || text.includes('เก็บปลายทาง') || text.includes('ค่ารถ') ||
-        text.includes('ราคา') || (text.includes('กก.') && (text.includes('บ.') || text.includes('บาท')))
+        text.includes('น้ำหนักสุทธิ') || text.includes('เก็บปลายทาง') ||
+        (text.includes('ขึ้น') && text.includes('ค่ารถ')) ||
+        (text.includes('กก.') && (text.includes('บ.') || text.includes('บาท')))
     );
 
     if (isOpsOrStockPattern) {
-        sendMessage(chatId, '🔄 [AI Unified Engine]: กำลังวิเคราะห์และอัปเดตระบบแบบครบวงจร...');
+        if (!String(chatId).startsWith('LINE:')) { sendMessage(chatId, '🔄 [AI Unified Engine]: กำลังวิเคราะห์และอัปเดตระบบแบบครบวงจร...'); }
         sendChatAction(chatId, 'typing');
 
         const systemPrompt = `คุณคือระบบสกัดข้อมูลอัตโนมัติ PSC Operations สกัดข้อมูลจากข้อความภาษาไทยลงฟอร์แมต JSON เท่านั้น
@@ -1742,11 +1886,14 @@ function handleCommand(chatId, text, msg = null) {
                     }
 
                     if (!result) {
-                        result = extractStockFromText(text);
+                        result = extractLoadingReportFromText(text) || extractStockFromText(text);
                     }
 
-                    if (!result) {
-                        sendMessage(chatId, '❌ [AI Error]: ไม่สามารถสกัดข้อมูลได้');
+                    if (!result || (!result.weight_kg && !result.stock_inventory && !result.yield_pct && !result.price_per_kg && !result.freight_baht)) {
+                        writeLog('[AI Parser Warning]: No valid actionable data extracted: ' + text.substring(0, 60));
+                        if (!String(chatId).startsWith('LINE:')) {
+                            sendMessage(chatId, '❌ [AI Error]: ไม่สามารถสกัดข้อมูลได้');
+                        }
                         return;
                     }
                     const { recordLoadingReport, syncToRender } = require('./webhook_server.js');
