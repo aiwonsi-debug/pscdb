@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-11T03:30:00.000Z",
+  "last_updated": "2026-09-13T06:02:53.329Z",
   "active_operations": [
     {
       "id": "OPS-20260910-8450",
@@ -91,6 +91,45 @@
       "status": "รอดำเนินการ",
       "recorder": "ทีมงานมือถือภาคสนาม",
       "notes": ""
+    },
+    {
+      "id": "OPS-20260913-1509",
+      "timestamp": "2026-09-13T03:59:25.696Z",
+      "customer": "โรงงานศาลายา",
+      "delivery_date": "2026-09-15",
+      "farm": "เฮียหนิง (โกดังฮอด)",
+      "product": "กะหล่ำปลี",
+      "qty_kg": 8000,
+      "truck": "6 ล้อ 1 คัน",
+      "status": "รอดำเนินการ",
+      "recorder": "ทีมงานมือถือภาคสนาม",
+      "notes": "เพิ่มกะหล่ำเข้าอังคาร 15/9 8 ตัน (8,000 กก.)"
+    },
+    {
+      "id": "OPS-20260913-1709",
+      "timestamp": "2026-09-13T03:59:25.697Z",
+      "customer": "โรงงานศาลายา",
+      "delivery_date": "2026-09-17",
+      "farm": "เจ๊นก",
+      "product": "กะหล่ำปลี",
+      "qty_kg": 8000,
+      "truck": "6 ล้อ 1 คัน",
+      "status": "รอดำเนินการ (Salaya สั่งของเจ๊นกเอง)",
+      "recorder": "ทีมงานมือถือภาคสนาม",
+      "notes": "ทางSalaya สั่งของเจ๊นกเองแล้ว 8 ตัน (8,000 กก.)"
+    },
+    {
+      "id": "OPS-20260905-8875",
+      "timestamp": "2026-09-05T10:00:00.000Z",
+      "customer": "โรงงานศาลายา",
+      "delivery_date": "2026-09-05",
+      "farm": "เจ๊นก (ศาลายาสั่งเอง)",
+      "product": "กะหล่ำปลี",
+      "qty_kg": 8875,
+      "truck": "6 ล้อ",
+      "status": "ขึ้นของและส่งมอบเรียบร้อย (Yield 64%)",
+      "recorder": "ทีมงานมือถือภาคสนาม",
+      "notes": "รับเข้า 05/09/69 น้ำหนัก 8,875 kg ขนาดกลาง สภาพพอใช้ แมง+ราค่อนข้างเยอะ สุ่ม 100 kg ปอกได้ 64 kg (Yield 64%)"
     }
   ],
   "history_logs": [
@@ -255,6 +294,41 @@
       "id": "0209",
       "supplier": "สวนเชียงใหม่ (ทดสอบ Cookie Auth)",
       "truck": "รถ 6 ล้อ"
+    },
+    "salaya_1509": {
+      "id": "salaya_1509",
+      "supplier": "เฮียหนิง (โกดังฮอด)",
+      "truck": "6 ล้อ 1 คัน",
+      "orderChecked": false,
+      "truckChecked": false,
+      "loadedReported": false
+    },
+    "salaya_1709": {
+      "id": "salaya_1709",
+      "supplier": "เจ๊นก",
+      "truck": "6 ล้อ 1 คัน",
+      "orderChecked": false,
+      "truckChecked": false,
+      "loadedReported": false
+    },
+    "salaya_0509": {
+      "id": "salaya_0509",
+      "supplier": "เจ๊นก (ศาลายาสั่งเอง)",
+      "truck": "6 ล้อ",
+      "orderChecked": true,
+      "truckChecked": true,
+      "loadedReported": true,
+      "reportedAt": "2026-09-05T19:01:58.348Z",
+      "loadedDate": "04/09/69",
+      "loadedItem": "กะหล่ำปลี<br>เจ๊นก (ศาลายาสั่งเอง)",
+      "loadedWeight": "8,875 kg",
+      "deliveryDate": "05/09/69",
+      "intakeDate": "05/09/69",
+      "intakeWeight": "8,875 kg",
+      "receivedYield": 64,
+      "receivedSize": "กลาง",
+      "receivedCondition": "สภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ",
+      "rawReport": "05/09/69\nกะหล่ำเของเจ๊นก เข้าจำนวนที่ได้รับทั้งหมด = 8,875\nขนาด กลาง\nสภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ\nสุ่มปอก = 100\nปอกได้ = 64 (Yield 64%)"
     }
   },
   "custom_suppliers": [
@@ -325,6 +399,19 @@
       "receivedYield": 64,
       "receivedSize": "กลาง",
       "receivedCondition": "สภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ"
+    }
+  ],
+  "other_tasks": [
+    {
+      "id": "TASK-1789279011617",
+      "task_type": "งานปลูก",
+      "seller": "-",
+      "crop": "ต้นหอม",
+      "target_customer": "TNS",
+      "target_delivery": "ปลายเดือน 9",
+      "status": "กำลังเพาะปลูก / ดูแลแปลง",
+      "notes": "",
+      "updated_at": "2026-09-13T05:56:51.617Z"
     }
   ]
 }

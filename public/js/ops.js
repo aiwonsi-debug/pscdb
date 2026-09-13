@@ -864,6 +864,16 @@ if (cat === 'all') {
       const tbody = document.getElementById('other_task_tbody');
       const badge = document.getElementById('other_task_count_badge');
       if (!tbody) return;
+
+      if (Array.isArray(tasks)) {
+        try { localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(tasks)); } catch(e) {}
+      } else {
+        try {
+          const cached = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS'));
+          if (Array.isArray(cached)) tasks = cached;
+        } catch(e) {}
+      }
+
       if (badge) badge.textContent = (tasks ? tasks.length : 0) + ' รายการ';
 
       if (!tasks || tasks.length === 0) {
@@ -952,7 +962,7 @@ if (cat === 'all') {
 
       fetch('/api/add-other-task', {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: reqHeaders,
         body: JSON.stringify(payload)
       })
@@ -970,8 +980,20 @@ if (cat === 'all') {
           showToast('🌱 บันทึกงานเรียบร้อยแล้ว!');
           if (sellerEl) sellerEl.value = '';
           if (notesEl) notesEl.value = '';
-          if (data.other_tasks) renderOtherTasks(data.other_tasks);
-          else syncLiveBackendState();
+          if (data.other_tasks) {
+            try { localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(data.other_tasks)); } catch(e) {}
+            renderOtherTasks(data.other_tasks);
+          } else if (data.task) {
+            try {
+              const cur = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS')) || [];
+              cur.unshift(data.task);
+              localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(cur));
+              renderOtherTasks(cur);
+            } catch(e) {}
+            syncLiveBackendState();
+          } else {
+            syncLiveBackendState();
+          }
         } else if (data && data.error) {
           alert('ไม่สามารถบันทึกได้: ' + data.error);
         }
@@ -994,7 +1016,7 @@ if (cat === 'all') {
 
       fetch('/api/delete-other-task', {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: reqHeaders,
         body: JSON.stringify({ id: id })
       })
@@ -1008,8 +1030,18 @@ if (cat === 'all') {
       .then(data => {
         if (data && data.success) {
           showToast('ลบรายการเรียบร้อย');
-          if (data.other_tasks) renderOtherTasks(data.other_tasks);
-          else syncLiveBackendState();
+          if (data.other_tasks) {
+            try { localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(data.other_tasks)); } catch(e) {}
+            renderOtherTasks(data.other_tasks);
+          } else {
+            try {
+              let cur = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS')) || [];
+              cur = cur.filter(t => t.id !== id);
+              localStorage.setItem('PSC_OTHER_TASKS', JSON.stringify(cur));
+              renderOtherTasks(cur);
+            } catch(e) {}
+            syncLiveBackendState();
+          }
         }
       })
       .catch(e => {});
@@ -1049,6 +1081,14 @@ if (cat === 'all') {
         if (savedPrices.cabbage_ning && document.getElementById('dsp_cabbage_ning')) document.getElementById('dsp_cabbage_ning').textContent = savedPrices.cabbage_ning + ' บ./กก.';
         if (savedPrices.cabbage_aree && document.getElementById('dsp_cabbage_aree')) document.getElementById('dsp_cabbage_aree').textContent = savedPrices.cabbage_aree + ' บ./กก.';
         if (savedPrices.cabbage_boonchu && document.getElementById('dsp_cabbage_boonchu')) document.getElementById('dsp_cabbage_boonchu').textContent = savedPrices.cabbage_boonchu + ' บ./กก.';
+
+        // Load cached other_tasks immediately to prevent blank UI on slow network
+        try {
+          const cachedOther = JSON.parse(localStorage.getItem('PSC_OTHER_TASKS'));
+          if (Array.isArray(cachedOther) && cachedOther.length > 0) {
+            renderOtherTasks(cachedOther);
+          }
+        } catch(e) {}
       } catch (e) {}
 
       syncLiveBackendState();
