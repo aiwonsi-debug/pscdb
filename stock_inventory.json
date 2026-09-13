@@ -21,10 +21,6 @@
     "Carrot": {
       "Name": "แครอทสวย",
       "StockKg": 6560
-    },
-    "Purple_Sweet_Potato": {
-      "Name": "มันม่วงหัวเล็ก",
-      "StockKg": 1690
     }
   },
   "AuditTrail": [
