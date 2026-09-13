@@ -8,6 +8,7 @@ const { exec, spawn } = require('child_process');
 const memoryEngine = require('./memory_engine.js');
 const quotaTracker = { recordOkmdUsage: () => {}, recordGroqUsage: () => {}, recordAgyUsage: () => {}, recordGlmUsage: () => {}, updateAgyQuota: () => {}, formatUsageForTelegram: () => '⚡ ระบบ AI Quota ถูกปิดใช้งานแล้ว', formatPct: () => '-' };
 const { formatPoDetailsForNotification } = require('./po_detail_formatter.js');
+const lineNotifier = require('./line_notifier.js');
 
 // Helper to execute commands in 100% hidden background mode (no popup cmd/powershell windows)
 function execSilent(command, options, callback) {
@@ -181,6 +182,14 @@ function sendMessage(chatId, text) {
     if (!text) return Promise.resolve();
     // Clean raw HTML tags so they never show up literally as <b> or <i>
     text = text.replace(/<\/?(b|i|strong|em|u|code|pre)[^>]*>/gi, '');
+
+    // LINE routing: chatId format "LINE:<userId or groupId>"
+    if (String(chatId).startsWith('LINE:')) {
+        const lineTarget = String(chatId).slice(5);
+        writeLog(`[Sending LINE to ${lineTarget}]: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
+        return lineNotifier.sendLineMessage(text, lineTarget);
+    }
+
     writeLog(`[Sending TG to ${chatId}]: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
     if (text.length > 3900) {
         const chunks = text.match(/[\s\S]{1,3800}/g) || [text];
@@ -422,14 +431,18 @@ function autoCheckTNSPreparation() {
     child.on('error', (err) => writeLog('Auto-TNS preparation check error: ' + err.message));
 }
 
-setInterval(autoCheckGmail, 60 * 1000);
-setTimeout(autoCheckGmail, 3000);
+// These watchers must only start when bot.js is the process entry point —
+// see the require.main guard around pollUpdates() further below for why.
+if (require.main === module) {
+    setInterval(autoCheckGmail, 60 * 1000);
+    setTimeout(autoCheckGmail, 3000);
 
-setInterval(autoCheckAdvanceGT, 60 * 60 * 1000);
-setTimeout(autoCheckAdvanceGT, 5000);
+    setInterval(autoCheckAdvanceGT, 60 * 60 * 1000);
+    setTimeout(autoCheckAdvanceGT, 5000);
 
-setInterval(autoCheckTNSPreparation, 60 * 60 * 1000);
-setTimeout(autoCheckTNSPreparation, 8000);
+    setInterval(autoCheckTNSPreparation, 60 * 60 * 1000);
+    setTimeout(autoCheckTNSPreparation, 8000);
+}
 
 // ==========================================
 // 📊 TELEGRAM INTERACTIVE DASHBOARD SYSTEM
@@ -1384,7 +1397,20 @@ function runGlm(chatId, promptText) {
 
 function handleCommand(chatId, text, msg = null) {
     const ALLOWED_ADMINS = ['1532466397', config.ChatId];
-    if (!ALLOWED_ADMINS.includes(chatId.toString())) {
+    const chatIdStr = chatId.toString();
+
+    if (chatIdStr.startsWith('LINE:')) {
+        // Trust messages from the team's configured LINE group/user only —
+        // same idea as ALLOWED_ADMINS above, just for the LINE side.
+        const lineSourceId = chatIdStr.slice(5);
+        let lineCfg = {};
+        try { lineCfg = JSON.parse(fs.readFileSync(path.join(agyBaseDir, 'line_config.json'), 'utf8')); } catch (e) {}
+        const allowedLineIds = [lineCfg.line_target_group_id, lineCfg.line_target_user_id].filter(Boolean);
+        if (!allowedLineIds.includes(lineSourceId)) {
+            sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized LINE User)');
+            return;
+        }
+    } else if (!ALLOWED_ADMINS.includes(chatIdStr)) {
         sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized Telegram User)');
         return;
     }
@@ -2327,6 +2353,17 @@ function initTelegramMiniAppButton() {
         writeLog('[Telegram Menu Button Reset to Default]: ' + (res && res.ok ? 'OK' : JSON.stringify(res)));
     }).catch(e => {});
 }
-initTelegramMiniAppButton();
+// Only start the Telegram poller / menu-button reset when this file is the
+// actual entry point (e.g. `node bot.js`), never when it's require()'d as a
+// module — otherwise a webhook_server.js process that lazily requires this
+// file (see the LINE webhook route) would spin up a second, competing
+// Telegram poller and Telegram's API would reject both with a 409 conflict.
+if (require.main === module) {
+    initTelegramMiniAppButton();
+    pollUpdates();
+}
 
-pollUpdates();
+// Exported so webhook_server.js can route LINE messages through the same
+// command/report-parsing pipeline that Telegram messages already use.
+module.exports = { handleCommand };
+

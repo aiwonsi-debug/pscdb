@@ -564,9 +564,10 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        // Exception: /api/line-webhook authenticates via its own LINE signature
         let isMasterAuth = false;
         let isSessionAuth = false;
-        if (req.method === 'POST') {
+        if (req.method === 'POST' && pathname !== '/api/line-webhook') {
             const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
@@ -774,6 +775,70 @@ const server = http.createServer(async (req, res) => {
 
             res.writeHead(200);
             return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
+        }
+
+        // 3b. LINE Messaging API Webhook
+        if (req.method === 'POST' && pathname === '/api/line-webhook') {
+            const rawBodyBuffer = await new Promise((resolve, reject) => {
+                const chunks = [];
+                let len = 0;
+                req.on('data', chunk => {
+                    len += chunk.length;
+                    if (len > 1 * 1024 * 1024) { req.destroy(); return reject(new Error('Payload too large')); }
+                    chunks.push(chunk);
+                });
+                req.on('end', () => resolve(Buffer.concat(chunks)));
+                req.on('error', reject);
+            });
+            const rawBody = rawBodyBuffer.toString('utf8');
+
+            let lineCfg = {};
+            try { lineCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'line_config.json'), 'utf8')); } catch (e) {}
+            const channelSecret = (process.env.LINE_CHANNEL_SECRET || lineCfg.channel_secret || '').trim();
+
+            const signature = req.headers['x-line-signature'] || '';
+            const expectedSignature = channelSecret ? crypto.createHmac('sha256', channelSecret).update(rawBodyBuffer).digest('base64') : '';
+
+            if (channelSecret && signature !== expectedSignature) {
+                console.warn(`[LINE Webhook] Signature mismatch: received="${signature}" expected="${expectedSignature}"`);
+                res.writeHead(401);
+                return res.end(JSON.stringify({ success: false, error: 'Invalid signature' }));
+            }
+
+            // Acknowledge LINE platform immediately
+            res.writeHead(200);
+            res.end(JSON.stringify({ success: true }));
+
+            // Forward to local agent machine if Tailscale Funnel / tunnel is configured, or forward to local port
+            const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook').trim();
+            if (localTunnelUrl) {
+                try {
+                    const parsedUrl = new URL(localTunnelUrl);
+                    const isHttps = parsedUrl.protocol === 'https:';
+                    const httpLib = isHttps ? https : http;
+                    const fwdReq = httpLib.request({
+                        hostname: parsedUrl.hostname,
+                        port: parsedUrl.port || (isHttps ? 443 : 80),
+                        path: parsedUrl.pathname + (parsedUrl.search || ''),
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Line-Signature': signature,
+                            'Content-Length': Buffer.byteLength(rawBody)
+                        }
+                    }, (fwdRes) => {
+                        console.log(`[LINE Proxy] Forwarded to ${localTunnelUrl} -> Status ${fwdRes.statusCode}`);
+                    });
+                    fwdReq.on('error', (err) => {
+                        console.error('[LINE Proxy] Forwarding error:', err.message);
+                    });
+                    fwdReq.write(rawBody);
+                    fwdReq.end();
+                } catch (proxyErr) {
+                    console.error('[LINE Proxy] Setup error:', proxyErr.message);
+                }
+            }
+            return;
         }
 
         // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)

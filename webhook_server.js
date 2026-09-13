@@ -8,6 +8,17 @@ const fs = require('fs');
 const path = require('path');
 const quotaTracker = { loadQuotaData: () => ({}), saveQuotaData: () => {} };
 
+// Local logger for this module — writes to the same secretary_activity.log
+// that bot.js's writeLog() uses, so both processes' logs interleave in one
+// place. (bot.js's own writeLog() is not in scope here — separate module.)
+function writeLog(msg) {
+    const now = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', hour12: false })
+        .replace(',', '');
+    const line = `[${now}] ${msg}`;
+    try { fs.appendFileSync(path.join(__dirname, 'secretary_activity.log'), line + '\n', 'utf8'); } catch (e) {}
+    try { console.log(line); } catch (e) {}
+}
+
 function escapeHtml(str) {
     if (!str || typeof str !== 'string') return '';
     return str
@@ -564,9 +575,12 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
+        // Exception: /api/line-webhook authenticates via its own LINE signature
+        // verification (X-Line-Signature + channel_secret HMAC) further below —
+        // LINE's platform has no way to send our internal X-PSC-API-KEY header.
         let isMasterAuth = false;
         let isSessionAuth = false;
-        if (req.method === 'POST') {
+        if (req.method === 'POST' && pathname !== '/api/line-webhook') {
             const reqKey = (req.headers['x-psc-api-key'] || req.headers['x-api-key'] || '').trim();
             const authHeader = (req.headers['authorization'] || '').trim();
             const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : '';
@@ -774,6 +788,70 @@ const server = http.createServer(async (req, res) => {
 
             res.writeHead(200);
             return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
+        }
+
+        // 3b. LINE Messaging API Webhook — receives free-text reports from the team
+        // (prices, stock counts, delivery orders) and routes them through the same
+        // handleCommand()/OKMD-Groq parsing pipeline that Telegram messages use.
+        if (req.method === 'POST' && pathname === '/api/line-webhook') {
+            // Must read the RAW body for signature verification — do not use getBody()'s
+            // auto-JSON-parse here, since the LINE signature is computed over raw bytes.
+            const rawBodyBuffer = await new Promise((resolve, reject) => {
+                const chunks = [];
+                let len = 0;
+                req.on('data', chunk => {
+                    len += chunk.length;
+                    if (len > 1 * 1024 * 1024) { req.destroy(); return reject(new Error('Payload too large')); }
+                    chunks.push(chunk);
+                });
+                req.on('end', () => resolve(Buffer.concat(chunks)));
+                req.on('error', reject);
+            });
+            const rawBody = rawBodyBuffer.toString('utf8');
+
+            let lineCfg = {};
+            try { lineCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'line_config.json'), 'utf8')); } catch (e) {}
+            const channelSecret = (lineCfg.channel_secret || '').trim();
+
+            const signature = req.headers['x-line-signature'] || '';
+            const expectedSignature = crypto.createHmac('sha256', channelSecret).update(rawBodyBuffer).digest('base64');
+
+            if (!channelSecret || signature !== expectedSignature) {
+                writeLog(`[LINE Webhook] Signature mismatch — received="${signature}" expected="${expectedSignature}" secretLen=${channelSecret.length}`);
+                res.writeHead(401);
+                return res.end(JSON.stringify({ success: false, error: 'Invalid signature' }));
+            }
+
+            // Respond 200 immediately — LINE requires a fast ack and will retry/disable
+            // the webhook if it doesn't get one, regardless of how long processing takes.
+            res.writeHead(200);
+            res.end(JSON.stringify({ success: true }));
+
+            let payload = {};
+            try { payload = JSON.parse(rawBody); } catch (e) { return; }
+
+            const events = payload.events || [];
+            for (const event of events) {
+                if (event.type !== 'message' || !event.message || event.message.type !== 'text') continue;
+
+                const text = event.message.text.trim();
+                // Route replies to whichever group/user actually sent the message.
+                const sourceId = event.source.groupId || event.source.roomId || event.source.userId;
+                if (!sourceId || !text) continue;
+
+                writeLog(`[LINE Message] From ${sourceId}: ${text}`);
+
+                try {
+                    // Lazy require to avoid a circular-require issue at module load time
+                    // (bot.js requires this file to start the server; requiring bot.js
+                    // back at the top of this file would see an incomplete module).
+                    const bot = require('./bot.js');
+                    bot.handleCommand(`LINE:${sourceId}`, text, null);
+                } catch (err) {
+                    writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
+                }
+            }
+            return;
         }
 
         // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)

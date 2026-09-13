@@ -32,12 +32,14 @@ function saveLineConfig(cfg) {
 
 /**
  * Send message to LINE via LINE Messaging API (Push to Group or User)
+ * @param {string} messageText
+ * @param {string} [targetOverride] optional userId/groupId to send to instead of the configured default
  */
-function sendLineMessage(messageText) {
+function sendLineMessage(messageText, targetOverride) {
   return new Promise((resolve, reject) => {
     const config = loadLineConfig();
     const token = (config.line_channel_access_token || '').trim();
-    const targetId = (config.line_target_group_id || config.line_target_user_id || '').trim();
+    const targetId = (targetOverride || config.line_target_group_id || config.line_target_user_id || '').trim();
 
     if (!token || !targetId) {
       console.log('[LINE] Missing token or target ID. Message:', messageText);
