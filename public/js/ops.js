@@ -1302,7 +1302,7 @@ if (cat === 'all') {
     }
 
       function switchAppTab(tabId) {
-      const tabs = ['ops', 'stock', 'sec', 'other', 'report'];
+      const tabs = ['ops', 'price', 'stock'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab_btn_' + t);
         const sec = document.getElementById('sec_' + t);
@@ -1319,6 +1319,10 @@ if (cat === 'all') {
       
       if (subFilter) {
         subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
+      }
+
+      if (tabId === 'stock' && typeof fetchLiveStock === 'function') {
+        fetchLiveStock();
       }
     }
     window.switchAppTab = switchAppTab;
