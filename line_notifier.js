@@ -98,7 +98,7 @@ function generateD1LineMessage(dateStr) {
   }
 
   const activeOps = opsStatus.active_operations || [];
-  const pendingOps = activeOps.filter(o => !String(o.status || '').includes('ขึ้นของและส่งมอบเรียบร้อย'));
+  const pendingOps = activeOps.filter(o => !String(o.status || '').includes('ขึ้นของและส่งมอบเรียบร้อย') && !o.skip_line_alert);
 
   // Sort by delivery date ascending
   pendingOps.sort((a, b) => {
