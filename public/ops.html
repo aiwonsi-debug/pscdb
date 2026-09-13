@@ -10,17 +10,25 @@
     // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
       const tabs = ['ops', 'price', 'stock'];
-      tabs.forEach(t => {
-        const btn = document.getElementById('tab_btn_' + t);
-        const sec = document.getElementById('sec_' + t);
-        if (btn) btn.classList.remove('active');
-        if (sec) sec.classList.remove('active');
-      });
+      // Remove active from all nav buttons
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
       const activeBtn = document.getElementById('tab_btn_' + tabId);
-      const activeSec = document.getElementById('sec_' + tabId);
-      const subFilter = document.getElementById('ops_sub_filters');
       if (activeBtn) activeBtn.classList.add('active');
-      if (activeSec) activeSec.classList.add('active');
+
+      // Hide all app-section divs strictly
+      document.querySelectorAll('.app-section').forEach(sec => {
+        sec.classList.remove('active');
+        sec.style.display = 'none';
+      });
+
+      // Show targeted active section
+      const activeSec = document.getElementById('sec_' + tabId);
+      if (activeSec) {
+        activeSec.classList.add('active');
+        activeSec.style.display = 'block';
+      }
+
+      const subFilter = document.getElementById('ops_sub_filters');
       if (subFilter) {
         subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
       }
@@ -700,7 +708,7 @@
 
   </div>
 
-  <script src="/js/ops.js?v=20260914_tabfix"></script>
+  <script src="/js/ops.js?v=20260914_tabfix2"></script>
 
   
   <!-- Auth Unlock Modal -->

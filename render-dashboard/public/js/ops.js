@@ -1301,22 +1301,26 @@ if (cat === 'all') {
       });
     }
 
-      function switchAppTab(tabId) {
-      const tabs = ['ops', 'price', 'stock'];
-      tabs.forEach(t => {
-        const btn = document.getElementById('tab_btn_' + t);
-        const sec = document.getElementById('sec_' + t);
-        if (btn) btn.classList.remove('active');
-        if (sec) sec.classList.remove('active');
+    function switchAppTab(tabId) {
+      // Remove active from all nav buttons
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('tab_btn_' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Hide all app-section divs strictly
+      document.querySelectorAll('.app-section').forEach(sec => {
+        sec.classList.remove('active');
+        sec.style.display = 'none';
       });
 
-      const activeBtn = document.getElementById('tab_btn_' + tabId);
+      // Show targeted active section
       const activeSec = document.getElementById('sec_' + tabId);
+      if (activeSec) {
+        activeSec.classList.add('active');
+        activeSec.style.display = 'block';
+      }
+
       const subFilter = document.getElementById('ops_sub_filters');
-      
-      if (activeBtn) activeBtn.classList.add('active');
-      if (activeSec) activeSec.classList.add('active');
-      
       if (subFilter) {
         subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
       }
