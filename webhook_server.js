@@ -811,12 +811,12 @@ const server = http.createServer(async (req, res) => {
 
             let lineCfg = {};
             try { lineCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'line_config.json'), 'utf8')); } catch (e) {}
-            const channelSecret = (lineCfg.channel_secret || '').trim();
+            const channelSecret = (process.env.LINE_CHANNEL_SECRET || lineCfg.channel_secret || '').trim();
 
             const signature = req.headers['x-line-signature'] || '';
-            const expectedSignature = crypto.createHmac('sha256', channelSecret).update(rawBodyBuffer).digest('base64');
+            const expectedSignature = channelSecret ? crypto.createHmac('sha256', channelSecret).update(rawBodyBuffer).digest('base64') : '';
 
-            if (!channelSecret || signature !== expectedSignature) {
+            if (channelSecret && signature !== expectedSignature) {
                 writeLog(`[LINE Webhook] Signature mismatch — received="${signature}" expected="${expectedSignature}" secretLen=${channelSecret.length}`);
                 res.writeHead(401);
                 return res.end(JSON.stringify({ success: false, error: 'Invalid signature' }));
@@ -826,6 +826,39 @@ const server = http.createServer(async (req, res) => {
             // the webhook if it doesn't get one, regardless of how long processing takes.
             res.writeHead(200);
             res.end(JSON.stringify({ success: true }));
+
+            // If running on Render or proxy URL configured, forward payload to local bot machine
+            const isCloud = !!process.env.RENDER || !!process.env.IS_RENDER;
+            const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || (isCloud ? 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook' : '')).trim();
+
+            if (localTunnelUrl) {
+                try {
+                    const parsedUrl = new URL(localTunnelUrl);
+                    const isHttps = parsedUrl.protocol === 'https:';
+                    const httpLib = isHttps ? https : http;
+                    const fwdReq = httpLib.request({
+                        hostname: parsedUrl.hostname,
+                        port: parsedUrl.port || (isHttps ? 443 : 80),
+                        path: parsedUrl.pathname + (parsedUrl.search || ''),
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Line-Signature': signature,
+                            'Content-Length': Buffer.byteLength(rawBody)
+                        }
+                    }, (fwdRes) => {
+                        writeLog(`[LINE Proxy] Forwarded to ${localTunnelUrl} -> Status ${fwdRes.statusCode}`);
+                    });
+                    fwdReq.on('error', (err) => {
+                        writeLog(`[LINE Proxy] Forwarding error: ${err.message}`);
+                    });
+                    fwdReq.write(rawBody);
+                    fwdReq.end();
+                } catch (proxyErr) {
+                    writeLog(`[LINE Proxy] Setup error: ${proxyErr.message}`);
+                }
+                return;
+            }
 
             let payload = {};
             try { payload = JSON.parse(rawBody); } catch (e) { return; }
