@@ -169,6 +169,10 @@
 
 
     function getFieldValue(type, id) {
+      const dispEl = document.getElementById('disp_' + type + '_' + id);
+      if (dispEl && dispEl.textContent && dispEl.textContent !== '-') {
+        return dispEl.textContent.trim();
+      }
       const sel = document.getElementById('sel_' + type + '_' + id) || document.getElementById(type + '_' + id);
       const custom = document.getElementById('custom_' + type + '_' + id);
       if (sel) {
@@ -187,11 +191,18 @@
 
     function setFieldValue(type, id, val) {
       if (val === undefined || val === null) return;
+      const cleanVal = typeof val === 'string' ? val.trim() : String(val);
+
+      // Support clean read-only monitoring display
+      const dispEl = document.getElementById('disp_' + type + '_' + id);
+      if (dispEl) {
+        dispEl.textContent = cleanVal || '-';
+      }
+
       const sel = document.getElementById('sel_' + type + '_' + id) || document.getElementById(type + '_' + id);
       const custom = document.getElementById('custom_' + type + '_' + id);
       if (!sel) return;
 
-      const cleanVal = typeof val === 'string' ? val.trim() : String(val);
       if (cleanVal === '' || cleanVal === '__custom__') {
         if (custom) custom.style.display = 'none';
         return;
@@ -1245,6 +1256,28 @@ if (cat === 'all') {
           } else {
             card.style.display = 'none';
           }
+        }
+      }
+
+      // Update read-only monitoring status badge
+      const statusBadge = document.getElementById('disp_status_' + id);
+      if (statusBadge) {
+        const itemState = serverCardsState[id] || saved[id] || {};
+        if (isLoaded) {
+          statusBadge.className = 'badge badge-success';
+          statusBadge.textContent = 'ขึ้นของเรียบร้อย ✓';
+        } else if (itemState.orderChecked && itemState.truckChecked) {
+          statusBadge.className = 'badge badge-primary';
+          statusBadge.textContent = 'สั่งของ & สั่งรถแล้ว (รอขึ้นของ)';
+        } else if (itemState.orderChecked) {
+          statusBadge.className = 'badge badge-info';
+          statusBadge.textContent = 'สั่งของแล้ว (รอยืนยันรถ)';
+        } else if (itemState.truckChecked) {
+          statusBadge.className = 'badge badge-info';
+          statusBadge.textContent = 'จองรถแล้ว (รอยืนยันของ)';
+        } else {
+          statusBadge.className = 'badge badge-warning';
+          statusBadge.textContent = 'รอดำเนินการ';
         }
       }
 
