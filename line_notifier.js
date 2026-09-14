@@ -39,11 +39,26 @@ function sendLineMessage(messageText, targetOverride) {
   return new Promise((resolve, reject) => {
     const config = loadLineConfig();
     const token = (config.line_channel_access_token || '').trim();
-    const targetId = (targetOverride || config.line_target_group_id || config.line_target_user_id || '').trim();
+    let targetId = (targetOverride || config.line_target_group_id || config.line_target_user_id || '').trim();
 
     if (!token || !targetId) {
       console.log('[LINE] Missing token or target ID. Message:', messageText);
       return resolve({ success: false, reason: 'NO_TOKEN_OR_TARGET', message: messageText });
+    }
+
+    // STRICT POLICY: Group notifications must ONLY be "📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]" at 08:00 AM.
+    // All other notifications are blocked from group and sent privately to target_user if available.
+    const isGroupTarget = targetId.startsWith('C') || targetId === config.line_target_group_id;
+    const isDailySummary = typeof messageText === 'string' && messageText.includes('[สรุปงานค้าง & กำหนดส่งมอบประจำวัน]');
+
+    if (isGroupTarget && !isDailySummary) {
+      console.log(`[LINE Group Policy] Blocked non-summary notification to group (${targetId}). Message: ${messageText.slice(0, 50).replace(/\n/g, ' ')}...`);
+      if (config.line_target_user_id && targetId !== config.line_target_user_id) {
+        console.log(`[LINE Group Policy] Redirected notification to private user (${config.line_target_user_id}).`);
+        targetId = config.line_target_user_id;
+      } else {
+        return resolve({ success: true, skipped: true, reason: 'GROUP_ONLY_ACCEPTS_DAILY_SUMMARY' });
+      }
     }
 
     const payload = JSON.stringify({

@@ -80,6 +80,11 @@ function sendLinePushMessage(token, targetId, text) {
       return resolve({ success: false, reason: 'NO_CONFIG' });
     }
 
+    if (targetId.startsWith('C') && !text.includes('[สรุปงานค้าง & กำหนดส่งมอบประจำวัน]')) {
+      console.log(`[LINE Group Policy] Blocked non-summary Salaya alert to group (${targetId}).`);
+      return resolve({ success: true, skipped: true });
+    }
+
     const payload = JSON.stringify({
       to: targetId,
       messages: [{ type: 'text', text: text }]
