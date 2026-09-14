@@ -46,12 +46,15 @@ function sendLineMessage(messageText, targetOverride) {
       return resolve({ success: false, reason: 'NO_TOKEN_OR_TARGET', message: messageText });
     }
 
-    // STRICT POLICY: Group notifications must ONLY be "📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]" at 08:00 AM.
-    // All other notifications are blocked from group and sent privately to target_user if available.
+    // STRICT POLICY: Group notifications must ONLY be:
+    // 1. "📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]" at 08:00 AM daily
+    // 2. Short acknowledgements to user reports ("รับทราบรายการ...")
+    // All other spontaneous alerts/details are blocked from group and sent privately to admin user.
     const isGroupTarget = targetId.startsWith('C') || targetId === config.line_target_group_id;
     const isDailySummary = typeof messageText === 'string' && messageText.includes('[สรุปงานค้าง & กำหนดส่งมอบประจำวัน]');
+    const isShortAck = typeof messageText === 'string' && messageText.startsWith('รับทราบรายการวันที่');
 
-    if (isGroupTarget && !isDailySummary) {
+    if (isGroupTarget && !isDailySummary && !isShortAck) {
       console.log(`[LINE Group Policy] Blocked non-summary notification to group (${targetId}). Message: ${messageText.slice(0, 50).replace(/\n/g, ' ')}...`);
       if (config.line_target_user_id && targetId !== config.line_target_user_id) {
         console.log(`[LINE Group Policy] Redirected notification to private user (${config.line_target_user_id}).`);

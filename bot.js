@@ -1093,7 +1093,12 @@ function handleCabbagePriceSurvey(chatId, text) {
     reply += `──────────────────\n`;
     reply += `✅ <i>บันทึกเข้าฐานข้อมูล cabbage_prices_transport เรียบร้อย</i>`;
 
-    sendMessage(chatId, reply);
+    const isLineGroup = String(chatId).startsWith('LINE:') && String(chatId).slice(5).startsWith('C');
+    if (isLineGroup) {
+        sendMessage(chatId, `รับทราบรายการวันที่ ${dateStr} ค่ะ`);
+    } else {
+        sendMessage(chatId, reply);
+    }
 }
 
 function extractStockFromText(rawText) {
@@ -1732,9 +1737,8 @@ function handleCommand(chatId, text, msg = null) {
                     reply += `\n`;
                 });
             } else {
-                reply += `• 14/09/69: เฮียหนิง (อมพาย) 9,100 กก. (6 ล้อ เข้าโรงงานแล้ว)\n` +
-                         `• 15/09/69: เฮียหนิง (อมพาย แม่สะเรียง) 8,000 กก. (6 ล้อ ขึ้นของ 15/09)\n` +
-                         `• 17/09/69: กะหล่ำปลี เจ๊นก (รอบสั่งล่วงหน้า)\n\n`;
+                reply += `⚠️ ยังไม่มีข้อมูลตารางเข้ากะหล่ำในระบบตอนนี้\n` +
+                         `กรุณาส่งรายงานเข้ากะ/ส่งมอบเข้ามาก่อน ระบบจะบันทึกและแสดงผลที่นี่โดยอัตโนมัติ\n\n`;
             }
             reply += `──────────────────\n` +
                      `📱 ดูตารางสดและผลสุ่มปอกจริง: https://pscdb.onrender.com/ops`;
@@ -2191,9 +2195,17 @@ function handleCommand(chatId, text, msg = null) {
                     reply += `──────────────────\n`;
                     reply += `🌐 <i>ข้อมูลถูกซิงก์ขึ้นเว็บและแจ้งเตือนเข้ากลุ่ม LINE เรียบร้อย</i>\nhttps://pscdb.onrender.com`;
 
-                    sendMessage(chatId, reply);
+                    // In LINE group: reply briefly "รับทราบรายการวันที่ ... ค่ะ"
+                    // Full details are sent to private admin chat and Telegram
+                    const isLineGroup = String(chatId).startsWith('LINE:') && String(chatId).slice(5).startsWith('C');
+                    if (isLineGroup) {
+                        const shortAck = `รับทราบรายการวันที่ ${result.date || formatDMY()} ค่ะ`;
+                        sendMessage(chatId, shortAck);
+                    } else {
+                        sendMessage(chatId, reply);
+                    }
 
-                    // Send LINE Alert
+                    // Send Full Alert to Admin (Private LINE)
                     const lineText = `📢 [อัปเดตงาน PSC ${result.date || formatDMY()}]\n` +
                                      `• ${result.item || 'วัตถุดิบ'} ${result.supplier ? '(' + result.supplier + ')' : ''}\n` +
                                      (result.weight_kg ? `• น้ำหนัก: ${result.weight_kg.toLocaleString()} kg\n` : '') +

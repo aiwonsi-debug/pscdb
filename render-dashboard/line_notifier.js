@@ -4,6 +4,11 @@ const https = require('https');
 
 const CONFIG_FILE = path.join(__dirname, 'line_config.json');
 const OPS_STATUS_FILE = path.join(__dirname, 'team_ops_status.json');
+const TUNNEL_URL_FILE = path.join(__dirname, 'public_tunnel_url.txt');
+
+function getOpsWebUrl() {
+  return 'https://pscdb.onrender.com/ops';
+}
 
 function loadLineConfig() {
   const defaultConfig = {
@@ -27,6 +32,8 @@ function saveLineConfig(cfg) {
 
 /**
  * Send message to LINE via LINE Messaging API (Push to Group or User)
+ * @param {string} messageText
+ * @param {string} [targetOverride] optional userId/groupId to send to instead of the configured default
  */
 function sendLineMessage(messageText, targetOverride) {
   return new Promise((resolve, reject) => {
@@ -39,12 +46,15 @@ function sendLineMessage(messageText, targetOverride) {
       return resolve({ success: false, reason: 'NO_TOKEN_OR_TARGET', message: messageText });
     }
 
-    // STRICT POLICY: Group notifications must ONLY be "📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]" at 08:00 AM.
-    // All other notifications are blocked from group and sent privately to target_user if available.
+    // STRICT POLICY: Group notifications must ONLY be:
+    // 1. "📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]" at 08:00 AM daily
+    // 2. Short acknowledgements to user reports ("รับทราบรายการ...")
+    // All other spontaneous alerts/details are blocked from group and sent privately to admin user.
     const isGroupTarget = targetId.startsWith('C') || targetId === config.line_target_group_id;
     const isDailySummary = typeof messageText === 'string' && messageText.includes('[สรุปงานค้าง & กำหนดส่งมอบประจำวัน]');
+    const isShortAck = typeof messageText === 'string' && messageText.startsWith('รับทราบรายการวันที่');
 
-    if (isGroupTarget && !isDailySummary) {
+    if (isGroupTarget && !isDailySummary && !isShortAck) {
       console.log(`[LINE Group Policy] Blocked non-summary notification to group (${targetId}). Message: ${messageText.slice(0, 50).replace(/\n/g, ' ')}...`);
       if (config.line_target_user_id && targetId !== config.line_target_user_id) {
         console.log(`[LINE Group Policy] Redirected notification to private user (${config.line_target_user_id}).`);
@@ -75,6 +85,11 @@ function sendLineMessage(messageText, targetOverride) {
       res.on('data', d => body += d);
       res.on('end', () => {
         console.log(`[LINE PUSH] Status: ${res.statusCode}`, body);
+        if (res.statusCode !== 200 && !targetOverride && config.line_target_user_id && targetId !== config.line_target_user_id) {
+          console.log('[LINE PUSH] Retrying push to target user fallback...');
+          sendLineMessage(messageText, config.line_target_user_id).then(resolve).catch(reject);
+          return;
+        }
         resolve({ success: res.statusCode === 200, statusCode: res.statusCode, response: body });
       });
     });
@@ -90,10 +105,9 @@ function sendLineMessage(messageText, targetOverride) {
 }
 
 /**
- * Generate D-1 Alert message for LINE with Dynamic Dashboard Sync
+ * Generate Pending Tasks Summary message for LINE (Daily 08:00 AM)
  */
 function generateD1LineMessage(dateStr) {
-  // Read Real-time Dashboard Status
   let opsStatus = {};
   if (fs.existsSync(OPS_STATUS_FILE)) {
     try {
@@ -101,44 +115,58 @@ function generateD1LineMessage(dateStr) {
     } catch(e) {}
   }
 
-  const cardsState = opsStatus.cards_state || {};
-  const card0209 = cardsState['salaya_0209'] || cardsState['0209'] || {};
-  const isOrderChecked = card0209.orderChecked === true;
-  const isTruckChecked = card0209.truckChecked === true;
-  const supplierName = card0209.supplier || 'เฮียหนิง (โกดังฮอด - 3.00 บ.)';
-  const truckName = card0209.truck || '6 ล้อ เฮียหนิง (ฮอด 12,000 บ.)';
+  const activeOps = opsStatus.active_operations || [];
+  const pendingOps = activeOps.filter(o => !String(o.status || '').includes('ขึ้นของและส่งมอบเรียบร้อย') && !o.skip_line_alert);
 
-  // Rule: If both are confirmed, omit the pending checklist section completely!
-  let opsSection = '';
-  if (isOrderChecked && isTruckChecked) {
-    opsSection = `\n✅ สถานะเตรียมงาน: สั่งของ & จองรถเรียบร้อยแล้ว\n • สวน: ${supplierName}\n • ขนส่ง: ${truckName}\n──────────────────`;
+  // Sort by delivery date ascending
+  pendingOps.sort((a, b) => {
+    const da = a.delivery_date || '9999-99-99';
+    const db = b.delivery_date || '9999-99-99';
+    return da.localeCompare(db);
+  });
+
+  const otherTasks = opsStatus.other_tasks || [];
+  const pendingOther = otherTasks.filter(t => !String(t.status || '').includes('เสร็จ') && !String(t.status || '').includes('เรียบร้อย'));
+
+  const opsUrl = getOpsWebUrl();
+
+  let msg = `📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]\n`;
+  msg += `⏰ อัปเดต: 08:00 น. (${dateStr || new Date().toISOString().slice(0, 10)})\n`;
+  msg += `──────────────────\n`;
+
+  if (pendingOps.length === 0) {
+    msg += `✅ ไม่มีรายการส่งมอบค้างในระบบ\n`;
   } else {
-    let pendingItems = [];
-    if (!isOrderChecked) pendingItems.push(' • [ ] คอนเฟิร์มการตัดผักกับสวนล่วงหน้า');
-    if (!isTruckChecked) pendingItems.push(' • [ ] โทรจองคิวรถ 6 ล้อล่วงหน้า 1 วัน');
-    opsSection = `\n📌 สิ่งที่ทีมงานต้องประสานงานวันนี้ (01/09/69):\n${pendingItems.join('\n')}\n──────────────────`;
+    msg += `🚚 [รายการส่งมอบที่รอดำเนินการ (${pendingOps.length} รายการ)]:\n`;
+    pendingOps.forEach((op, idx) => {
+      let dStr = '-';
+      if (op.delivery_date) {
+        const parts = op.delivery_date.split('-');
+        dStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0].slice(2)}` : op.delivery_date;
+      }
+      const qtyStr = Number(op.qty_kg || 0).toLocaleString();
+      msg += `\n${idx + 1}. 📅 ส่ง: ${dStr} | ${op.customer || '-'}\n`;
+      msg += `   🥬 สินค้า: ${op.product || '-'} ${qtyStr} กก.\n`;
+      msg += `   🏡 สวน: ${op.farm || '-'}\n`;
+      msg += `   🚛 ขนส่ง: ${op.truck || '-'}\n`;
+      msg += `   📌 สถานะ: ${op.status || 'รอดำเนินการ'}\n`;
+    });
   }
 
-  return `🚨 [เลขา PSC] แจ้งเตือนเตรียมขึ้นของล่วงหน้า 1 วัน
-──────────────────
-📅 รอบขึ้นของที่สวน: 02/09/2569 (พรุ่งนี้)
-🏢 โรงงานปลายทาง: โรงงานศาลายา (ส่งมอบ 03/09/69)
-🥬 สินค้า: กะหล่ำปลี 8,000 กก. (8 ตัน)${opsSection}
-⚠️ [แจ้งเตือนสต็อกวิกฤต - Action Required วันนี้]
-🥕 แครอทสวย (ศาลายา): คงเหลือ 1,620 กก.
- • กำหนดส่งมอบ TNS พรุ่งนี้ (02/09): 1,000 กก.
- • สต็อกจะเหลือเพียง 620 กก. (Runway หมด 02/09/69)
- • 🚨 คำแนะนำเลขา: ประสานงานเปิด PO สั่งแครอทสวยเข้าสต็อกด่วนวันนี้ค่ะ
-──────────────────
-📦 [สรุปออเดอร์จัดส่งลูกค้าวันพรุ่งนี้ (02/09/69)]
-*(อ้างอิง: SEP Order PSC.xlsx)*
- • ลูกค้า TNS:
-    - แครอท 1,000 กก.
-    - กะหล่ำปลี 700 กก.
-    - ขิง 150 กก.
-──────────────────
-🌐 รายละเอียด:
-https://pscdb.onrender.com/ops`;
+  if (pendingOther.length > 0) {
+    msg += `──────────────────\n`;
+    msg += `🌱 [งานแปลงปลูก/งานติดตาม (${pendingOther.length} รายการ)]:\n`;
+    pendingOther.forEach((ot, idx) => {
+      msg += ` • ${ot.crop || ot.task_type || 'งาน'}: ลูกค้า ${ot.target_customer || '-'} (ส่ง ${ot.target_delivery || '-'}) [${ot.status || '-'}]\n`;
+    });
+  }
+
+  msg += `──────────────────\n`;
+  msg += `🌐 ตรวจสอบสถานะ & บันทึกงาน:\n`;
+  msg += `${opsUrl}\n`;
+  msg += `🔑 Team Code: 9624`;
+
+  return msg;
 }
 
 /**
@@ -174,5 +202,6 @@ module.exports = {
   saveLineConfig,
   sendLineMessage,
   generateD1LineMessage,
-  initDailyLineScheduler
+  initDailyLineScheduler,
+  getOpsWebUrl
 };
