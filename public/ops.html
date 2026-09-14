@@ -3,714 +3,662 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PSC Mobile</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/ops.css?v=20260914_uxui">
+  <title>PSC Field Operations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/ops.css?v=20260914_flatdesign">
   <script>
-    // Early initialization so tabs and filters are clickable immediately even before full ops.js loads
     function switchAppTab(tabId) {
-      const tabs = ['ops', 'price', 'stock'];
-      // Remove active from all nav buttons
+      const tabs = ['delivery', 'price', 'stock'];
       document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
       const activeBtn = document.getElementById('tab_btn_' + tabId);
       if (activeBtn) activeBtn.classList.add('active');
 
-      // Hide all app-section divs strictly
       document.querySelectorAll('.app-section').forEach(sec => {
         sec.classList.remove('active');
         sec.style.display = 'none';
       });
 
-      // Show targeted active section
       const activeSec = document.getElementById('sec_' + tabId);
       if (activeSec) {
         activeSec.classList.add('active');
         activeSec.style.display = 'block';
       }
 
-      const subFilter = document.getElementById('ops_sub_filters');
-      if (subFilter) {
-        subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
+      const subtitleEl = document.getElementById('header_subtitle');
+      const timeEl = document.getElementById('header_timestamp_val');
+      if (subtitleEl) {
+        if (tabId === 'stock') {
+          subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
+          if (timeEl) timeEl.textContent = '08:39 น.';
+        } else if (tabId === 'price') {
+          subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
+          if (timeEl) timeEl.textContent = '13:40 น.';
+        } else {
+          subtitleEl.textContent = 'รายการรอส่งมอบ';
+          if (timeEl) timeEl.textContent = '08:39 น.';
+        }
       }
     }
     window.switchAppTab = switchAppTab;
-
-    function filterCalCustomer(cust, element) {
-      const btns = ['btn_cal_all', 'btn_cal_aft', 'btn_cal_tns', 'btn_cal_yamamori'];
-      btns.forEach(b => {
-        const el = document.getElementById(b);
-        if (el) el.classList.remove('active');
-      });
-
-      let targetEl = element;
-      if (!targetEl && typeof window !== 'undefined' && window.event) {
-        targetEl = window.event.currentTarget || window.event.target;
-      }
-      if (!targetEl) {
-        targetEl = document.getElementById('btn_cal_' + cust);
-      }
-      if (targetEl && targetEl.classList) {
-        targetEl.classList.add('active');
-      }
-
-      const items = document.querySelectorAll('.cal-event-item');
-      items.forEach(it => {
-        if (cust === 'all') {
-          it.style.display = 'block';
-        } else {
-          const isAft = (cust === 'aft' && (it.classList.contains('cal-aft') || it.classList.contains('cal-salaya')));
-          const isMatch = isAft || it.classList.contains('cal-' + cust);
-          it.style.display = isMatch ? 'block' : 'none';
-        }
-      });
-
-      const innerItems = document.querySelectorAll('.inner-factory');
-      innerItems.forEach(it => {
-        if (cust === 'all') {
-          it.style.display = 'block';
-        } else {
-          it.style.display = it.classList.contains('inner-' + cust) ? 'block' : 'none';
-        }
-      });
-
-      const weekBoxes = document.querySelectorAll('.cal-week-box');
-      weekBoxes.forEach(box => {
-        if (cust === 'all') {
-          box.style.display = 'block';
-        } else {
-          const visibleItems = box.querySelectorAll('.cal-event-item');
-          let hasVisible = false;
-          visibleItems.forEach(vi => {
-            if (vi.style.display !== 'none') hasVisible = true;
-          });
-          box.style.display = hasVisible ? 'block' : 'none';
-        }
-      });
-    }
-    window.filterCalCustomer = filterCalCustomer;
   </script>
 </head>
 <body>
   <div class="container">
     
-    <div id="toast" class="toast">
-      <span>✓</span> บันทึกข้อมูลเรียบร้อย!
-    </div>
-
-    <!-- Top Mobile Header (Modern Clean Green Card) -->
-    <header style="background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:14px 16px; margin-bottom:12px; box-shadow:0 4px 18px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="font-size:11px; font-weight:700; color:#5cb85c; text-transform:uppercase; letter-spacing:0.5px;">PSC Field Operations</div>
-          <h1 style="font-size:18px; font-weight:800; color:#0f172a; margin:2px 0 0 0; letter-spacing:0.2px;">
-            รายการจัดส่ง & สต็อก
-          </h1>
-        </div>
-        <div style="background:#e8f5e9; border:1px solid rgba(92,184,92,0.3); border-radius:20px; padding:4px 12px; font-size:11.5px; font-weight:700; color:#2e7d32; display:flex; align-items:center; gap:5px;">
-          <span style="width:7px; height:7px; border-radius:50%; background:#5cb85c; display:inline-block;"></span> เชื่อมต่อระบบ
-        </div>
+    <!-- Header -->
+    <header class="app-header">
+      <div>
+        <div class="brand-title">PSC field operations</div>
+        <div class="brand-subtitle" id="header_subtitle">รายการรอส่งมอบ</div>
       </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b; border-top:1px solid #f1f5f9; padding-top:8px;">
-        <span>🌐 pscdb.onrender.com</span>
-        <span>🕒 ซิงก์ล่าสุด: <span id="sys_sync_time" style="color:#0f172a; font-weight:600;">05/09/69 17:00 น.</span></span>
+      <div class="header-timestamp">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="header_timestamp_val">08:39 น.</span>
       </div>
     </header>
 
-    <!-- Unified App Navigation Bar (3 Tabs) -->
-    <div class="main-nav-bar" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px;">
-      <button type="button" class="nav-tab-btn active" id="tab_btn_ops" onclick="switchAppTab('ops')">🚚 รายการรอส่งมอบ</button>
-      <button type="button" class="nav-tab-btn" id="tab_btn_price" onclick="switchAppTab('price')">💰 ราคา</button>
-      <button type="button" class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">📦 สต็อก</button>
-    </div>
+    <!-- Navigation Tabs (3 Tabs, Flat) -->
+    <nav class="main-nav-bar" role="tablist">
+      <button type="button" class="nav-tab-btn active" id="tab_btn_delivery" onclick="switchAppTab('delivery')">รอส่งมอบ</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_price" onclick="switchAppTab('price')">ราคา</button>
+      <button type="button" class="nav-tab-btn" id="tab_btn_stock" onclick="switchAppTab('stock')">สต็อก</button>
+    </nav>
 
-    <!-- Sub Filter Tabs for Ops Tab -->
-    <div class="filter-tabs" id="ops_sub_filters">
-      <div class="tab-btn active" onclick="filterCategory('all', this)">🌟 ทุกรายการ</div>
-      <div class="tab-btn" onclick="filterCategory('salaya', this)">🟣 กะหล่ำศาลายา</div>
-      <div class="tab-btn" onclick="filterCategory('tns', this)">🔵 TNS ผัก</div>
-    </div>
+    <!-- ========================================== -->
+    <!-- 1. TAB: DELIVERY (รายการรอส่งมอบ)          -->
+    <!-- ========================================== -->
+    <main id="sec_delivery" class="app-section active">
+      
+      <!-- Section 1: ตารางติดตามขึ้นของสวน -->
+      <div class="section-headline">ตารางติดตามขึ้นของสวน</div>
 
-<div id="sec_ops" class="app-section active">
-<!-- SECTION: ORDER CARDS (STRICT CHRONOLOGICAL ORDER WITH CUSTOM TYPING SUPPORT) -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🚚 ตารางติดตามขึ้นของสวน & สั่งรถ (Monitor)</div>
-        <span class="badge badge-warning" id="ops_sync_badge">อัปเดตล่าสุด: 14/09/69 08:39 น.</span>
-      </div>
-
-      <!-- 1. ขึ้นของ 01/09: กะหล่ำเข้าศาลายา 02/09 (8 ตัน) -->
-      <div class="order-card salaya cat-salaya" id="card_salaya_0209">
-        <div class="order-header">
-          <span class="order-title">🥬 1. กะหล่ำปลี 8 ตัน (เข้าโรงงานศาลายา 02/09)</span>
-          <span class="badge badge-salaya">เข้าศาลายา 02/09 (วันนี้)</span>
+      <!-- Item 1: กะหล่ำปลี 8 ตัน (ขึ้น 14/09 เข้า 15/09) -->
+      <div class="flat-card warning-card">
+        <div class="card-header-row">
+          <div class="card-title-text">กะหล่ำปลี 8 ตัน</div>
+          <span class="status-badge badge-warning">ใกล้ถึงกำหนด</span>
         </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#94a3b8; font-weight:600;">01/09/69 (เมื่อวาน)</span> ➔ <b>เข้าศาลายา:</b> 02/09/69 (วันนี้ - 8,000 กก.)
+        <div class="route-row">
+          <span>ขึ้นของ 14/09</span>
+          <span class="route-arrow">→</span>
+          <span>เข้าศาลายา 15/09</span>
         </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_salaya_0209">-</b>
+        <div class="columns-2">
+          <div>
+            <span class="col-label">แหล่งสวน</span>
+            <div class="col-val" id="disp_supplier_salaya_1509">เฮียหนิง (อมพาย)</div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_salaya_0209">-</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_salaya_0209" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
+          <div>
+            <span class="col-label">รถขนส่ง</span>
+            <div class="col-val" id="disp_truck_salaya_1509">6 ล้อ 1 คัน</div>
           </div>
         </div>
       </div>
 
-      <!-- 2. ขึ้นของ 02/09: กะหล่ำเข้าศาลายา 03/09 (9.2 ตัน) -->
-      <div class="order-card urgent salaya cat-salaya" id="card_salaya_0309">
-        <div class="order-header">
-          <span class="order-title">🥬 2. กะหล่ำปลี 9.2 ตัน (เข้าโรงงานศาลายา 03/09)</span>
-          <span class="badge badge-danger">ขึ้นของ 02/09 (วันนี้) 🚨</span>
+      <!-- Item 2: TNS พริกหวานเขียว 2,000 kg -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div class="card-title-text">TNS พริกหวานเขียว 2,000 kg</div>
+          <span class="status-badge badge-info">ยังมีเวลา</span>
         </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">02/09/69 (วันนี้)</span> ➔ <b>เข้าศาลายา:</b> 03/09/69 (พรุ่งนี้ - 9,200 กก.)
+        <div class="route-row">
+          <span>ขึ้นของ 20/09</span>
+          <span class="route-arrow">→</span>
+          <span>ส่งมอบ TNS 21/09 (สวนป้าอรทัย ตาม Rev.1)</span>
         </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_salaya_0309">-</b>
+        <div class="columns-2">
+          <div>
+            <span class="col-label">แหล่งสวน</span>
+            <div class="col-val empty" id="disp_supplier_tns_pepper_2109">ยังไม่ระบุ</div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_salaya_0309">-</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_salaya_0309" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
+          <div>
+            <span class="col-label">รถขนส่ง</span>
+            <div class="col-val empty" id="disp_truck_tns_pepper_2109">ยังไม่ระบุ</div>
           </div>
         </div>
       </div>
 
-      <!-- 3. ขึ้นของ 06/09: TNS หอมแดง 07/09 (500 kg ป้าผา) -->
-      <div class="order-card tns cat-tns" id="card_tns_shallot_0709">
-        <div class="order-header">
-          <span class="order-title">🧅 3. TNS: หอมแดง 500 kg (ส่ง 07/09)</span>
-          <span class="badge badge-tns">ขึ้นของ 06/09</span>
+      <!-- Item 3: TNS หอมแดง 500 kg -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div class="card-title-text">TNS หอมแดง 500 kg</div>
+          <span class="status-badge badge-info">ยังมีเวลา</span>
         </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">06/09/69</span> ➔ <b>ส่งมอบ TNS:</b> 07/09/69 (500 กก.)
+        <div class="route-row">
+          <span>ขึ้นของ 20/09</span>
+          <span class="route-arrow">→</span>
+          <span>ส่งมอบ TNS 21/09</span>
         </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_tns_shallot_0709">-</b>
+        <div class="columns-2">
+          <div>
+            <span class="col-label">แหล่งสวน</span>
+            <div class="col-val" id="disp_supplier_tns_shallot_2109">ป้าผา (หอมแดง)</div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_tns_shallot_0709">-</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_tns_shallot_0709" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
+          <div>
+            <span class="col-label">รถขนส่ง</span>
+            <div class="col-val" id="disp_truck_tns_shallot_2109">นิ่มซี่เส็ง สายท่าลี่</div>
           </div>
         </div>
       </div>
 
-      <!-- 4. ขึ้นของ 09/09: กะหล่ำเข้าศาลายา 10/09 (8 ตัน - เลื่อนจาก 08/09) -->
-      <div class="order-card salaya cat-salaya" id="card_salaya_0809">
-        <div class="order-header">
-          <span class="order-title">🥬 4. กะหล่ำปลี 8 ตัน (เข้าโรงงานศาลายา 10/09)</span>
-          <span class="badge badge-salaya">ขึ้นของ 09/09</span>
-        </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">09/09/69</span> ➔ <b>เข้าศาลายา:</b> 10/09/69 (8,000 กก. - เลื่อนจาก 08/09)
-        </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_salaya_0809">-</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_salaya_0809">-</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_salaya_0809" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
-          </div>
-        </div>
-      </div>
+      <!-- Section 2: ประวัติรับเข้าวัตถุดิบ (Stacked Cards) -->
+      <div class="section-headline" style="margin-top: 20px;">ประวัติรับเข้าวัตถุดิบ</div>
 
-      <!-- 4.1 ขึ้นของ 13/09: กะหล่ำเข้าศาลายา 14/09 (6 ล้อ 1 คัน ~8.5 ตัน) -->
-      <div class="order-card salaya cat-salaya" id="card_salaya_1409">
-        <div class="order-header">
-          <span class="order-title">🥬 4.1 กะหล่ำปลี 6 ล้อ 1 คัน (~8.5 ตัน - เข้าศาลายา 14/09)</span>
-          <span class="badge badge-salaya">ขึ้นของ 13/09</span>
-        </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">13/09/69</span> ➔ <b>เข้าศาลายา:</b> 14/09/69 (6 ล้อ 1 คัน ~8,500 กก.)
-        </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_salaya_1409">-</b>
+      <!-- Intake 1: 03/09/69 กะหล่ำปลี เฮียหนิง -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div>
+            <div class="card-title-text">กะหล่ำปลี</div>
+            <div class="card-subtitle-text">เฮียหนิง (อมพาย แม่สะเรียง)</div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_salaya_1409">-</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_salaya_1409" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
-          </div>
+          <span class="status-badge badge-warning">Yield 64.80%</span>
         </div>
-      </div>
 
-      <!-- 4.2 ขึ้นของ 14/09: กะหล่ำเข้าศาลายา 15/09 (6 ล้อ 8 ตัน เฮียหนิง) -->
-      <div class="order-card salaya cat-salaya" id="card_salaya_1509">
-        <div class="order-header">
-          <span class="order-title">🥬 4.2 กะหล่ำปลี 8 ตัน (เข้าศาลายา 15/09)</span>
-          <span class="badge badge-salaya">ขึ้นของ 14/09</span>
-        </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">14/09/69</span> ➔ <b>เข้าศาลายา:</b> 15/09/69 (6 ล้อ 1 คัน 8,000 กก.)
-        </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_salaya_1509">เฮียหนิง (โกดัง อมพาย แม่สะเรียง)</b>
+        <div class="date-flow-box">
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่ขึ้นของ</span>
+              <span>02/09/69</span>
+            </div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_salaya_1509">6 ล้อ 1 คัน</b>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_salaya_1509" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
+          <span class="route-arrow">→</span>
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่รับเข้า</span>
+              <span>03/09/69</span>
+            </div>
           </div>
         </div>
-      </div>
 
-
-
-      <!-- 5. ขึ้นของ 20/09: TNS พริกหวานเขียว 21/09 (2,000 kg ป้าอรทัย - ตาม TNS Rev.1) -->
-      <div class="order-card tns cat-tns" id="card_tns_pepper_2109">
-        <div class="order-header">
-          <span class="order-title">🫑 5. TNS: พริกหวานเขียว 2,000 kg (ส่ง 21/09)</span>
-          <span class="badge badge-tns">ขึ้นของ 20/09</span>
-        </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">20/09/69</span> ➔ <b>ส่งมอบ TNS:</b> 21/09/69 (2,000 กก. - สวนป้าอรทัย ตาม Rev.1)
-        </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_tns_pepper_2109">-</b>
+        <div class="grid-2x2">
+          <div class="grid-cell">
+            <span class="lbl">น้ำหนักขึ้น</span>
+            <span class="val">9,200 กก.</span>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_tns_pepper_2109">-</b>
+          <div class="grid-cell">
+            <span class="lbl">รับจริง</span>
+            <span class="val">8,725 กก.</span>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_tns_pepper_2109" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
+          <div class="grid-cell">
+            <span class="lbl">Transit loss</span>
+            <span class="val" style="color: var(--status-critical-text);">-475 กก. (-5.16%)</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">ราคาต้นทาง</span>
+            <span class="val">3.00 บ./กก.</span>
+          </div>
+        </div>
+
+        <div class="freight-row">
+          <div class="freight-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <span>ค่ารถ</span>
+          </div>
+          <div class="freight-val">13,000 บ. (เก็บปลายทาง)</div>
+        </div>
+
+        <div class="quality-note-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <div>
+            <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">หมายเหตุคุณภาพ</span>
+            <span>แมงกัดราเล็กน้อย ขนาดกลาง</span>
           </div>
         </div>
       </div>
 
-      <!-- 6. ขึ้นของ 20/09: TNS หอมแดง 21/09 (500 kg ป้าผา) -->
-      <div class="order-card tns cat-tns" id="card_tns_shallot_2109">
-        <div class="order-header">
-          <span class="order-title">🧅 6. TNS: หอมแดง 500 kg (ส่ง 21/09)</span>
-          <span class="badge badge-tns">ขึ้นของ 20/09</span>
-        </div>
-        <div class="order-details">
-          • <b>ขึ้นของที่สวน:</b> <span style="color:#f59e0b; font-weight:700;">20/09/69</span> ➔ <b>ส่งมอบ TNS:</b> 21/09/69 (500 กก.)
-        </div>
-        <div class="read-only-ops-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🌱 แหล่งสวน / ผู้ขาย:</span>
-            <b style="color:#0f172a;" id="disp_supplier_tns_shallot_2109">-</b>
+      <!-- Intake 2: 02/09/69 กะหล่ำปลี เฮียหนิง -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div>
+            <div class="card-title-text">กะหล่ำปลี</div>
+            <div class="card-subtitle-text">เฮียหนิง (อมพาย แม่สะเรียง)</div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b;">🚛 รถขนส่ง / สายส่ง:</span>
-            <b style="color:#0f172a;" id="disp_truck_tns_shallot_2109">-</b>
+          <span class="status-badge badge-normal">Yield 74.80%</span>
+        </div>
+
+        <div class="date-flow-box">
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่ขึ้นของ</span>
+              <span>01/09/69</span>
+            </div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:6px; margin-top:2px;">
-            <span style="color:#64748b;">📌 สถานะการดำเนินงาน:</span>
-            <span id="disp_status_tns_shallot_2109" class="badge badge-warning" style="font-size:11px;">รอดำเนินการ</span>
+          <span class="route-arrow">→</span>
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่รับเข้า</span>
+              <span>02/09/69</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2x2">
+          <div class="grid-cell">
+            <span class="lbl">น้ำหนักขึ้น</span>
+            <span class="val">8,715 กก.</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">รับจริง</span>
+            <span class="val">8,500 กก.</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">Transit loss</span>
+            <span class="val" style="color: var(--status-critical-text);">-215 กก. (-2.47%)</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">ราคาต้นทาง</span>
+            <span class="val">3.00 บ./กก.</span>
+          </div>
+        </div>
+
+        <div class="freight-row">
+          <div class="freight-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <span>ค่ารถ</span>
+          </div>
+          <div class="freight-val">13,000 บ. (เก็บปลายทาง)</div>
+        </div>
+
+        <div class="quality-note-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <div>
+            <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">หมายเหตุคุณภาพ</span>
+            <span>แมง+ราเล็กน้อย ขนาดกลาง</span>
           </div>
         </div>
       </div>
 
-    </div>
-
-    <!-- SECTION: ACTUAL INTAKE & YIELD HISTORY CARD -->
-    <div class="card" id="intake_history_card" style="border-left: 5px solid #0284c7; margin-top: 14px;">
-      <div class="card-header" style="margin-bottom:12px;">
-        <div>
-          <div class="card-title" style="font-size:15px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px;">
-            <span>📦 ประวัติรับเข้าวัตถุดิบ & ผลสุ่มปอกจริง (Actual Intake & Yield)</span>
+      <!-- Intake 3: 10/09/69 กะหล่ำปลี เฮียหนิง -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div>
+            <div class="card-title-text">กะหล่ำปลี</div>
+            <div class="card-subtitle-text">เฮียหนิง (อมพาย แม่สะเรียง)</div>
           </div>
-          <span style="font-size:11.5px; color:#64748b;">ข้อมูลจริงจากบันทึกรับเข้าโรงงาน & ใบชั่ง นน. สวน</span>
+          <span class="status-badge badge-normal">Yield 75.34%</span>
+        </div>
+
+        <div class="date-flow-box">
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่ขึ้นของ</span>
+              <span>09/09/69</span>
+            </div>
+          </div>
+          <span class="route-arrow">→</span>
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่รับเข้า</span>
+              <span>10/09/69</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2x2">
+          <div class="grid-cell">
+            <span class="lbl">น้ำหนักขึ้น</span>
+            <span class="val">9,280 กก.</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">รับจริง</span>
+            <span class="val">8,450 กก.</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">Transit loss</span>
+            <span class="val" style="color: var(--status-critical-text);">-830 กก. (-8.94%)</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">ราคาต้นทาง</span>
+            <span class="val">4.00 บ./กก.</span>
+          </div>
+        </div>
+
+        <div class="freight-row">
+          <div class="freight-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <span>ค่ารถ</span>
+          </div>
+          <div class="freight-val">13,000 บ. (เก็บปลายทาง)</div>
+        </div>
+
+        <div class="quality-note-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <div>
+            <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">หมายเหตุคุณภาพ</span>
+            <span>แมลงและราเล็กน้อย ขนาดกลาง</span>
+          </div>
         </div>
       </div>
 
-      <!-- Responsive Intake Table Wrapper -->
-      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; min-width: 620px;">
-          <thead>
-            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 11.5px;">
-              <th style="padding: 10px 10px; font-weight: 700;">วันที่รับเข้า</th>
-              <th style="padding: 10px 10px; font-weight: 700;">รายการ / สวน</th>
-              <th style="padding: 10px 10px; font-weight: 700; text-align:right;">นน.ขึ้น ➔ รับจริง</th>
-              <th style="padding: 10px 10px; font-weight: 700; text-align:center;">Transit Loss</th>
-              <th style="padding: 10px 10px; font-weight: 700; text-align:center;">Yield ปอก</th>
-              <th style="padding: 10px 10px; font-weight: 700;">ราคา & ค่าขนส่ง</th>
-              <th style="padding: 10px 10px; font-weight: 700;">หมายเหตุคุณภาพ</th>
-            </tr>
-          </thead>
-          <tbody style="color: #1e293b;">
-            <!-- 1. 02/09/2569 -->
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 9px 10px; font-weight: 600; white-space:nowrap;">02/09/69</td>
-              <td style="padding: 9px 10px;">
-                <b>🥬 กะหล่ำปลี</b><br>
-                <span style="color:#64748b; font-size:11px;">เฮียหนิง (อมพาย แม่สะเรียง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:right; white-space:nowrap;">
-                <span style="color:#64748b;">8,715</span> ➔ <b style="color:#0f172a;">8,500 กก.</b>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#d97706; font-weight:700; background:#fef3c7; padding:2px 6px; border-radius:4px; font-size:11px;">-215 กก. (-2.47%)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <b style="color:#2e7d32; font-size:12.5px; background:#e8f5e9; padding:2px 8px; border-radius:4px;">74.80%</b>
-              </td>
-              <td style="padding: 9px 10px; font-size:11.5px; white-space:nowrap;">
-                3.00 บ./กก.<br>
-                <span style="color:#64748b;">ค่ารถ 13,000 บ. (เก็บปลายทาง)</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11px; color:#475569;">
-                แมง+ราเล็กน้อย ขนาดกลาง
-              </td>
-            </tr>
-
-            <!-- 2. 03/09/2569 -->
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 9px 10px; font-weight: 600; white-space:nowrap;">03/09/69</td>
-              <td style="padding: 9px 10px;">
-                <b>🥬 กะหล่ำปลี</b><br>
-                <span style="color:#64748b; font-size:11px;">เฮียหนิง (อมพาย แม่สะเรียง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:right; white-space:nowrap;">
-                <span style="color:#64748b;">9,200</span> ➔ <b style="color:#0f172a;">8,725 กก.</b>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#d97706; font-weight:700; background:#fef3c7; padding:2px 6px; border-radius:4px; font-size:11px;">-475 กก. (-5.16%)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <b style="color:#2e7d32; font-size:12.5px; background:#e8f5e9; padding:2px 8px; border-radius:4px;">64.80%</b>
-              </td>
-              <td style="padding: 9px 10px; font-size:11.5px; white-space:nowrap;">
-                3.00 บ./กก.<br>
-                <span style="color:#64748b;">ค่ารถ 13,000 บ. (เก็บปลายทาง)</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11px; color:#475569;">
-                แมง+ราเล็กน้อย ขนาดกลาง
-              </td>
-            </tr>
-
-            <!-- 3. 05/09/2569 -->
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 9px 10px; font-weight: 600; white-space:nowrap;">05/09/69</td>
-              <td style="padding: 9px 10px;">
-                <b>🥬 กะหล่ำปลี</b><br>
-                <span style="color:#64748b; font-size:11px;">เจ๊นก (ศาลายาสั่งเอง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:right; white-space:nowrap;">
-                <span style="color:#64748b;">8,875</span> ➔ <b style="color:#0f172a;">8,875 กก.</b>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#64748b; font-size:11px;">0 กก. (ชั่งรับตรง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <b style="color:#2e7d32; font-size:12.5px; background:#e8f5e9; padding:2px 8px; border-radius:4px;">64.00%</b>
-              </td>
-              <td style="padding: 9px 10px; font-size:11.5px; white-space:nowrap;">
-                3.50 บ./กก.<br>
-                <span style="color:#64748b;">ค่ารถ 13,000 บ. (โอนจ่าย)</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11px; color:#dc2626;">
-                สภาพพอใช้ แมง+ราค่อนข้างเยอะ
-              </td>
-            </tr>
-
-            <!-- 4. 07/09/2569 -->
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 9px 10px; font-weight: 600; white-space:nowrap;">07/09/69</td>
-              <td style="padding: 9px 10px;">
-                <b>🧅 หอมแดง (50 ถุง)</b><br>
-                <span style="color:#64748b; font-size:11px;">ป้าผา (สาขาท่าลี่)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:right; white-space:nowrap;">
-                <span style="color:#64748b;">500</span> ➔ <b style="color:#0f172a;">500 กก.</b>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#64748b; font-size:11px;">0 กก. (นิ่มซี่เส็ง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <b style="color:#0284c7; font-size:12.5px; background:#e0f2fe; padding:2px 8px; border-radius:4px;">100.0%</b>
-              </td>
-              <td style="padding: 9px 10px; font-size:11.5px; white-space:nowrap;">
-                45.00 บ./กก.<br>
-                <span style="color:#64748b;">ค่าส่ง 800 บ. (นิ่มซี่เส็ง)</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11px; color:#2e7d32;">
-                คัดเกรด ส่งมอบ TNS ครบถ้วน
-              </td>
-            </tr>
-
-            <!-- 5. 10/09/2569 -->
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 9px 10px; font-weight: 600; white-space:nowrap;">10/09/69</td>
-              <td style="padding: 9px 10px;">
-                <b>🥬 กะหล่ำปลี</b><br>
-                <span style="color:#64748b; font-size:11px;">เฮียหนิง (อมพาย แม่สะเรียง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:right; white-space:nowrap;">
-                <span style="color:#64748b;">9,280</span> ➔ <b style="color:#0f172a;">8,450 กก.</b>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#d97706; font-weight:700; background:#fef3c7; padding:2px 6px; border-radius:4px; font-size:11px;">-830 กก. (-8.94%)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <b style="color:#2e7d32; font-size:12.5px; background:#e8f5e9; padding:2px 8px; border-radius:4px;">75.34%</b>
-              </td>
-              <td style="padding: 9px 10px; font-size:11.5px; white-space:nowrap;">
-                4.00 บ./กก.<br>
-                <span style="color:#64748b;">ค่ารถ 13,000 บ. (เก็บปลายทาง)</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11px; color:#475569;">
-                แมลง+ราเล็กน้อย ขนาดกลาง
-              </td>
-            </tr>
-
-            <!-- 6. 14/09/2569 -->
-            <tr>
-              <td style="padding: 9px 10px; font-weight: 600; white-space:nowrap;">14/09/69</td>
-              <td style="padding: 9px 10px;">
-                <b>🥬 กะหล่ำปลี (6 ล้อ)</b><br>
-                <span style="color:#64748b; font-size:11px;">เฮียหนิง (อมพาย แม่สะเรียง)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:right; white-space:nowrap;">
-                <span style="color:#64748b;">9,100</span> ➔ <b style="color:#0f172a;">9,100 กก.</b>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#64748b; font-size:11px;">(กำลังชั่งรับเข้า)</span>
-              </td>
-              <td style="padding: 9px 10px; text-align:center;">
-                <span style="color:#d97706; font-weight:600; font-size:11px;">รอผลปอก</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11.5px; white-space:nowrap;">
-                4.50 บ./กก.<br>
-                <span style="color:#64748b;">ค่ารถ 13,000 บ. (เก็บปลายทาง)</span>
-              </td>
-              <td style="padding: 9px 10px; font-size:11px; color:#2e7d32;">
-                รถเข้าถึงโรงงานแล้ว กำลังคัดเกรด
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top:8px; font-size:11px; color:#94a3b8; text-align:right;">
-        * อ้างอิงบันทึกจากไฟล์บันทึกการรับเข้าและใบชั่ง นน. สวน ไพศาลเจริญ (1988)
-      </div>
-    </div>
-</div>
-
-<!-- SECTION: PRICES -->
-<div id="sec_price" class="app-section">
-<!-- SECTION: LIVE PRICE UPDATE & FREIGHT (READ-ONLY DISPLAY) -->
-    <div class="card" id="price_board_card" style="border-left: 5px solid #5cb85c;">
-      <div class="card-header">
-        <div class="card-title">💰 ราคาวัตถุดิบ & ค่าขนส่งล่าสุด</div>
-        <span class="badge badge-success" id="price_sync_badge">อัปเดตราคา: 13/09/69 13:40 น.</span>
-      </div>
-
-      <!-- Vegetable Prices Grid -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
-        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (ฮอด/เฮียหนิง):</span>
-          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_ning">4.50 บ./กก.</span>
+      <!-- Intake 4: 07/09/69 หอมแดง ป้าผา -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div>
+            <div class="card-title-text">หอมแดง</div>
+            <div class="card-subtitle-text">ป้าผา (สาขาท่าลี่)</div>
+          </div>
+          <span class="status-badge badge-normal">Yield 100%</span>
         </div>
 
-        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (อมพาย/เฮียหนิง):</span>
-          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_ompai">4.50 บ./กก.</span>
+        <div class="date-flow-box">
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่ขึ้นของ</span>
+              <span>06/09/69</span>
+            </div>
+          </div>
+          <span class="route-arrow">→</span>
+          <div class="date-flow-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <div>
+              <span class="date-lbl">วันที่รับเข้า</span>
+              <span>07/09/69</span>
+            </div>
+          </div>
         </div>
 
-        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (แม่แจ่ม/เจ๊อารีย์):</span>
-          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_aree">4.00 บ./กก.</span>
+        <div class="grid-2x2">
+          <div class="grid-cell">
+            <span class="lbl">น้ำหนักขึ้น</span>
+            <span class="val">500 กก.</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">รับจริง</span>
+            <span class="val">500 กก.</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">Transit loss</span>
+            <span class="val">0 กก. (0%)</span>
+          </div>
+          <div class="grid-cell">
+            <span class="lbl">ราคาต้นทาง</span>
+            <span class="val">45.00 บ./กก.</span>
+          </div>
         </div>
 
-        <div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-          <span style="font-size:11.5px; color:#64748b; display:block; font-weight:500;">🥬 กะหล่ำ (เฮียบุญชู):</span>
-          <span style="font-size:15px; font-weight:800; color:#2e7d32;" id="dsp_cabbage_boonchu">4.50 บ./กก.</span>
+        <div class="freight-row">
+          <div class="freight-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <span>ค่าส่ง</span>
+          </div>
+          <div class="freight-val">800 บ. (นิ่มซี่เส็ง)</div>
+        </div>
+
+        <div class="quality-note-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <div>
+            <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">หมายเหตุคุณภาพ</span>
+            <span>หอมแดงคัดเกรด 50 ถุง ส่งมอบครบถ้วน</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- 2. TAB: PRICE (ราคาวัตถุดิบ & ค่าขนส่ง)      -->
+    <!-- ========================================== -->
+    <main id="sec_price" class="app-section">
+      
+      <!-- List: ราคากะหล่ำปลีตามแหล่ง -->
+      <div class="section-headline">ราคากะหล่ำปลี ตามแหล่ง</div>
+      <div class="flat-card" style="padding: 6px 14px;">
+        <div class="price-list-item">
+          <span class="price-source-name">ฮอด / เฮียหนิง</span>
+          <span class="price-amount">4.50 <span class="sub-unit">บ./กก.</span></span>
+        </div>
+        <div class="price-list-item">
+          <span class="price-source-name">อมพาย / เฮียหนิง</span>
+          <span class="price-amount">4.50 <span class="sub-unit">บ./กก.</span></span>
+        </div>
+        <div class="price-list-item">
+          <span class="price-source-name">แม่แจ่ม / เจ๊อารีย์</span>
+          <span class="price-amount lowest">4.00 <span class="sub-unit">บ./กก.</span></span>
+        </div>
+        <div class="price-list-item">
+          <span class="price-source-name">เฮียบุญชู</span>
+          <span class="price-amount">4.50 <span class="sub-unit">บ./กก.</span></span>
         </div>
       </div>
 
-      <!-- Freight Summary Grid -->
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px;">
-        <div style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-          <span>🚛</span> อัตราค่าขนส่งมาตรฐาน (13/09/69):
+      <!-- Freight Rate Standard Tiers -->
+      <div class="section-headline" style="margin-top: 20px;">อัตราค่าขนส่งมาตรฐาน</div>
+
+      <!-- Tier 1: 6 ล้อ -->
+      <div class="section-headline" style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">6 ล้อ</div>
+      <div class="flat-card" style="padding: 6px 14px;">
+        <div class="tier-item-row">
+          <span class="tier-dest">ฮอด (พื้นล่าง 8 ตัน)</span>
+          <div class="tier-prices">
+            <span class="tier-total">12,000 บ.</span>
+            <span class="tier-per-kg">1.50 บ./กก.</span>
+          </div>
         </div>
-        <div class="stock-row">
-          <span>• 6 ล้อ ฮอด (เฮียหนิง / พี่อั๋น 8 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">12,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.50 บ./กก.)</span></span>
+        <div class="tier-item-row">
+          <span class="tier-dest">อมพาย แม่สะเรียง + บ่อสลี</span>
+          <div class="tier-prices">
+            <span class="tier-total">13,000 บ.</span>
+            <span class="tier-per-kg">1.63 บ./กก.</span>
+          </div>
         </div>
-        <div class="stock-row">
-          <span>• 6 ล้อ อมพาย แม่สะเรียง + บ่อสลี (เฮียหนิง 8 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">13,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.63 บ./กก.)</span></span>
+        <div class="tier-item-row">
+          <span class="tier-dest">แม่แจ่ม (เจ๊อารีย์)</span>
+          <div class="tier-prices">
+            <span class="tier-total">14,000 บ.</span>
+            <span class="tier-per-kg">1.75 บ./กก.</span>
+          </div>
         </div>
-        <div class="stock-row">
-          <span>• 6 ล้อ เชียงดาว/แม่เหาะ (พี่อั๋น 8 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">13,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.63 บ./กก.)</span></span>
-        </div>
-        <div class="stock-row">
-          <span>• 6 ล้อ แม่แจ่ม (เจ๊อารีย์ 8 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">14,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.75 บ./กก.)</span></span>
-        </div>
-        <div class="stock-row">
-          <span>• 6 ล้อ เฮียบุญชู (8 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">13,000 บ. <span style="font-size:11px; color:#64748b; font-weight:normal;">(1.63 บ./กก.)</span></span>
-        </div>
-        <div class="stock-row">
-          <span>• 4 ล้อ ฮอด (เฮียหนิง 4 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">7,000 บ.</span>
-        </div>
-        <div class="stock-row">
-          <span>• 4 ล้อ บ่อสลี (เฮียหนิง 4 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">7,500 บ.</span>
-        </div>
-        <div class="stock-row">
-          <span>• 4 ล้อ อมพาย (เฮียหนิง 4 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">8,000 บ.</span>
-        </div>
-        <div class="stock-row">
-          <span>• 4 ล้อ แม่แจ่ม+บ่อสลี (เจ๊อารีย์ 4 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">8,500 บ.</span>
-        </div>
-        <div class="stock-row">
-          <span>• 4 ล้อ เฮียบุญชู (4 ตัน):</span>
-          <span style="color:#0f172a; font-weight:700;">8,500 บ.</span>
+        <div class="tier-item-row">
+          <span class="tier-dest">เฮียบุญชู</span>
+          <div class="tier-prices">
+            <span class="tier-total">13,000 บ.</span>
+            <span class="tier-per-kg">1.63 บ./กก.</span>
+          </div>
         </div>
       </div>
-    </div>
-</div>
 
-<!-- SECTION: STOCK -->
-<div id="sec_stock" class="app-section">
-<!-- SECTION: EXACT STOCK 02/09/69 & RUNWAY FORECAST -->
-    <div class="card" id="stock_card_0209" style="border-left: 5px solid #5cb85c; margin-bottom: 14px;">
-      <div class="card-header" style="margin-bottom: 10px;">
-        <div class="card-title" id="stock_card_title" style="font-size: 14.5px; font-weight: 700; color: #0f172a;">📦 สต็อกตรวจนับจริงล่าสุด (14/09/69) & คาดการณ์</div>
-        <span class="badge badge-success" id="stock_as_of_badge">อัปเดตสต็อก: 14/09/69 08:39 น.</span>
+      <!-- Tier 2: 4 ล้อ -->
+      <div class="section-headline" style="margin-top: 14px; font-size: 12px; color: var(--text-muted);">4 ล้อ</div>
+      <div class="flat-card" style="padding: 6px 14px;">
+        <div class="tier-item-row">
+          <span class="tier-dest">ฮอด</span>
+          <div class="tier-prices">
+            <span class="tier-total">7,000 บ.</span>
+          </div>
+        </div>
+        <div class="tier-item-row">
+          <span class="tier-dest">บ่อสลี</span>
+          <div class="tier-prices">
+            <span class="tier-total">7,500 บ.</span>
+          </div>
+        </div>
+        <div class="tier-item-row">
+          <span class="tier-dest">อมพาย</span>
+          <div class="tier-prices">
+            <span class="tier-total">8,000 บ.</span>
+          </div>
+        </div>
+        <div class="tier-item-row">
+          <span class="tier-dest">แม่แจ่ม+บ่อสลี / เฮียบุญชู</span>
+          <div class="tier-prices">
+            <span class="tier-total">8,500 บ.</span>
+          </div>
+        </div>
       </div>
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px;">
-        
-        <!-- 1. กะหล่ำ -->
-        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px; color:#0f172a;">🥬 <b>กะหล่ำปลี</b></span>
-            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_cabbage">4,350 กก.</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
-            <span style="color: #64748b;">📅 คาดการณ์ (เฉลี่ย Yield รับเข้า 69.7% + รถเข้า):</span>
-            <span style="color: #2e7d32; font-weight: 600;">+รถเข้า 16.5 ตัน พอส่งถึง 19/09 (เหลือสต็อก ~487 กก.)</span>
-          </div>
-        </div>
+    </main>
 
-        <!-- 2. หอม AFT -->
-        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px; color:#0f172a;">🧅 <b>หอม AFT</b></span>
-            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_onion_aft">42,980 กก.</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
-            <span style="color: #64748b;">📅 คาดการณ์ตาม PO (AFT):</span>
-            <span style="color: #2e7d32; font-weight: 600;">พอถึง 30/09/69 (PO ใช้ 12,000 กก. เหลือสต็อกปลายเดือน ~30,980 กก.)</span>
-          </div>
-        </div>
+    <!-- ========================================== -->
+    <!-- 3. TAB: STOCK (สต็อกตรวจนับจริงล่าสุด)       -->
+    <!-- Severity-based ordering: Largest drop first-->
+    <!-- ========================================== -->
+    <main id="sec_stock" class="app-section">
 
-        <!-- 3. หอมจีน -->
-        <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px; color:#0f172a;">🧅 <b>หอมจีน</b></span>
-            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_onion_chinese">4,437 กก.</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
-            <span style="color: #64748b;">📅 คาดการณ์สต็อก:</span>
-            <span style="color: #2e7d32; font-weight: 600;">เพียงพอตลอดเดือน (ไม่มีแผนเบิกใช้ปริมาณสูงใน PO กันยายน)</span>
-          </div>
+      <!-- 1. กะหล่ำปลี (Severity: Critical, -55%) -->
+      <div class="flat-card critical-card">
+        <div class="card-header-row">
+          <div class="card-title-text">กะหล่ำปลี</div>
+          <span class="status-badge badge-critical">ใกล้หมด</span>
         </div>
-
-        <!-- 4. แครอทสวย -->
-        <div style="padding: 10px 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13.5px; color:#0f172a;">🥕 <b>แครอทสวย</b></span>
-            <span style="font-weight: 800; color: #2e7d32; font-size: 14.5px;" id="stk_val_carrot">6,250 กก.</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
-            <span style="color: #64748b;">📅 คาดการณ์ตาม PO (AFT+TNS):</span>
-            <span style="color: #2e7d32; font-weight: 600;">พอถึง 30/09/69 (PO ทั้งสองเจ้ารวม 5,670 กก. เหลือสต็อก ~580 กก.)</span>
-          </div>
+        <div class="metric-row">
+          <span class="big-metric" id="stk_val_cabbage">4,350</span>
+          <span class="metric-unit">กก.</span>
         </div>
-
-        <!-- Stock Audit Table -->
-        <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
-          <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; margin-bottom: 8px;" id="audit_compare_label">📊 รายละเอียดตรวจนับจริง (14/09/69):</div>
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; font-size: 12px; border-collapse: collapse; text-align: left;">
-              <thead>
-                <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
-                  <th style="padding: 6px 8px;">สินค้า</th>
-                  <th style="padding: 6px 8px; text-align:right;" id="th_prev_audit">12/09 (เดิม)</th>
-                  <th style="padding: 6px 8px; text-align:right;" id="th_cur_audit">นับจริง (14/09)</th>
-                  <th style="padding: 6px 8px; text-align:right;">ผลต่าง</th>
-                </tr>
-              </thead>
-              <tbody id="stock_compare_tbody">
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding:8px 8px; font-weight:600;">🥬 กะหล่ำ</td>
-                  <td style="padding:8px 8px; text-align:right; color:#64748b;">9,650 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">4,350 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; color:#d97706; font-weight:700;">-5,300 กก.</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding:8px 8px; font-weight:600;">🧅 หอม AFT</td>
-                  <td style="padding:8px 8px; text-align:right; color:#64748b;">44,660 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">42,980 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; color:#d97706; font-weight:700;">-1,680 กก.</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding:8px 8px; font-weight:600;">🧅 หอมจีน</td>
-                  <td style="padding:8px 8px; text-align:right; color:#64748b;">5,440 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">4,437 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; color:#d97706; font-weight:700;">-1,003 กก.</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 8px; font-weight:600;">🥕 แครอทสวย</td>
-                  <td style="padding:8px 8px; text-align:right; color:#64748b;">6,560 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; font-weight:800; color:#2e7d32;">6,250 กก.</td>
-                  <td style="padding:8px 8px; text-align:right; color:#d97706; font-weight:700;">-310 กก.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="card-forecast">
+          รถเข้า 16.5 ตัน พอถึง 19/09 · เหลือปลายทาง ~487 กก.
         </div>
-
+        <div class="comparison-bar">
+          <span>เทียบ 12/09: 9,650 กก.</span>
+          <span class="comparison-diff diff-negative">-5,300 (-55%)</span>
+        </div>
       </div>
-    </div>
-</div>
+
+      <!-- 2. หอมจีน (Severity: Tracking, -18%) -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div class="card-title-text">หอมจีน</div>
+          <span class="status-badge badge-normal">ปกติ</span>
+        </div>
+        <div class="metric-row">
+          <span class="big-metric" id="stk_val_onion_chinese">4,437</span>
+          <span class="metric-unit">กก.</span>
+        </div>
+        <div class="card-forecast">
+          พอตลอดเดือน · ไม่มีแผนเบิกใช้ปริมาณสูงในเดือนนี้
+        </div>
+        <div class="comparison-bar">
+          <span>เทียบ 12/09: 5,440 กก.</span>
+          <span class="comparison-diff diff-negative">-1,003 (-18%)</span>
+        </div>
+      </div>
+
+      <!-- 3. แครอทสวย (Severity: Normal, -4.7%) -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div class="card-title-text">แครอทสวย</div>
+          <span class="status-badge badge-normal">ปกติ</span>
+        </div>
+        <div class="metric-row">
+          <span class="big-metric" id="stk_val_carrot">6,250</span>
+          <span class="metric-unit">กก.</span>
+        </div>
+        <div class="card-forecast">
+          พอถึง 30/09 ตาม PO · เข้ารวม 5,670 กก. เหลือสต็อก ~580 กก.
+        </div>
+        <div class="comparison-bar">
+          <span>เทียบ 12/09: 6,560 กก.</span>
+          <span class="comparison-diff diff-negative">-310 (-4.7%)</span>
+        </div>
+      </div>
+
+      <!-- 4. หอม AFT (Severity: Tracking / Normal, -3.8%) -->
+      <div class="flat-card">
+        <div class="card-header-row">
+          <div class="card-title-text">หอม AFT</div>
+          <span class="status-badge badge-warning">ติดตาม</span>
+        </div>
+        <div class="metric-row">
+          <span class="big-metric" id="stk_val_onion_aft">42,980</span>
+          <span class="metric-unit">กก.</span>
+        </div>
+        <div class="card-forecast">
+          พอถึง 30/09 ตาม PO · ใช้ไป 12,000 กก. เหลือปลายเดือน ~30,980 กก.
+        </div>
+        <div class="comparison-bar">
+          <span>เทียบ 12/09: 44,660 กก.</span>
+          <span class="comparison-diff diff-negative">-1,680 (-3.8%)</span>
+        </div>
+      </div>
+
+    </main>
 
     <footer>
       บจก.ไพศาลเจริญ (1988)
@@ -718,22 +666,8 @@
 
   </div>
 
-  <script src="/js/ops.js?v=20260914_syncdatefix"></script>
+  <div id="toast" class="toast"></div>
 
-  
-  <!-- Auth Unlock Modal -->
-  <div id="auth_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#ffffff; border:1px solid #e2e8f0; padding:26px 22px; border-radius:20px; width:90%; max-width:340px; text-align:center; box-shadow:0 20px 35px rgba(0,0,0,0.15);">
-      <div style="display:inline-block; background:#e8f5e9; color:#2e7d32; font-weight:700; font-size:11px; padding:4px 10px; border-radius:14px; margin-bottom:10px;">🌱 PSC Field Ops</div>
-      <h3 style="color:#0f172a; margin:0 0 6px 0; font-size:18px; font-weight:800;">Team Access</h3>
-      <p style="color:#64748b; font-size:12px; margin:0 0 16px 0;">กรอก Team Access Code เพื่อเข้าใช้งานระบบ (จำเซสชัน 30 วัน)</p>
-      <input type="password" id="auth_input" placeholder="Team Access Code" style="width:100%; padding:11px 14px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; color:#0f172a; font-size:14px; box-sizing:border-box; margin-bottom:14px; outline:none;" />
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <button onclick="document.getElementById('auth_modal').style.display='none'" style="padding:10px; border-radius:10px; border:1px solid #e2e8f0; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">ยกเลิก</button>
-        <button onclick="submitAuthKey(document.getElementById('auth_input').value)" style="padding:10px; border-radius:10px; border:none; background:#5cb85c; color:#fff; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(92,184,92,0.3);">ปลดล็อค</button>
-      </div>
-    </div>
-  </div>
-
+  <script src="/js/ops.js?v=20260914_flat"></script>
 </body>
 </html>
