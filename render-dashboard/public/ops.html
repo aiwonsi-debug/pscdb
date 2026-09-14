@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PSC Field Operations</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/ops.css?v=20260914_flatdesign">
+  <link rel="stylesheet" href="/css/ops.css?v=20260914_tab_stamps">
   <script>
     function switchAppTab(tabId) {
       const tabs = ['delivery', 'price', 'stock'];
@@ -26,16 +26,35 @@
 
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
+      const badgeEl = document.getElementById('header_timestamp_badge');
+      const iconClock = document.getElementById('header_icon_clock');
+      const iconAlert = document.getElementById('header_icon_alert');
+
       if (subtitleEl) {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
-          if (timeEl) timeEl.textContent = '08:39 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
+          if (badgeEl) {
+            badgeEl.className = 'header-timestamp status-fresh';
+          }
+          if (iconClock) iconClock.style.display = 'block';
+          if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
-          if (timeEl) timeEl.textContent = '13:40 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 11/09 13:40 น.';
+          if (badgeEl) {
+            badgeEl.className = 'header-timestamp status-aged';
+          }
+          if (iconClock) iconClock.style.display = 'none';
+          if (iconAlert) iconAlert.style.display = 'block';
         } else {
           subtitleEl.textContent = 'รายการรอส่งมอบ';
-          if (timeEl) timeEl.textContent = '08:39 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
+          if (badgeEl) {
+            badgeEl.className = 'header-timestamp status-fresh';
+          }
+          if (iconClock) iconClock.style.display = 'block';
+          if (iconAlert) iconAlert.style.display = 'none';
         }
       }
     }
@@ -51,12 +70,17 @@
         <div class="brand-title">PSC field operations</div>
         <div class="brand-subtitle" id="header_subtitle">รายการรอส่งมอบ</div>
       </div>
-      <div class="header-timestamp">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div class="header-timestamp status-fresh" id="header_timestamp_badge">
+        <svg id="header_icon_clock" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
-        <span id="header_timestamp_val">08:39 น.</span>
+        <svg id="header_icon_alert" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span id="header_timestamp_val">อัปเดต 08:39 น.</span>
       </div>
     </header>
 
@@ -668,6 +692,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="/js/ops.js?v=20260914_header_sync"></script>
+  <script src="/js/ops.js?v=20260914_tab_stamps"></script>
 </body>
 </html>

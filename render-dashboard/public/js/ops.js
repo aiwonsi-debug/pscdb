@@ -1382,16 +1382,35 @@ if (cat === 'all') {
 
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
+      const badgeEl = document.getElementById('header_timestamp_badge');
+      const iconClock = document.getElementById('header_icon_clock');
+      const iconAlert = document.getElementById('header_icon_alert');
+
       if (subtitleEl) {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
-          if (timeEl) timeEl.textContent = '08:39 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
+          if (badgeEl) {
+            badgeEl.className = 'header-timestamp status-fresh';
+          }
+          if (iconClock) iconClock.style.display = 'block';
+          if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
-          if (timeEl) timeEl.textContent = '13:40 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 11/09 13:40 น.';
+          if (badgeEl) {
+            badgeEl.className = 'header-timestamp status-aged';
+          }
+          if (iconClock) iconClock.style.display = 'none';
+          if (iconAlert) iconAlert.style.display = 'block';
         } else {
           subtitleEl.textContent = 'รายการรอส่งมอบ';
-          if (timeEl) timeEl.textContent = '08:39 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
+          if (badgeEl) {
+            badgeEl.className = 'header-timestamp status-fresh';
+          }
+          if (iconClock) iconClock.style.display = 'block';
+          if (iconAlert) iconAlert.style.display = 'none';
         }
       }
 
