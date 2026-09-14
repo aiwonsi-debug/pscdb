@@ -26,7 +26,7 @@ const fs = require("fs");
 const path = require("path");
 const { applyStockUpdate } = require("./business_logic.js");
 
-const STOCK_PATH = path.join(__dirname, "stock_inventory.json");
+const STOCK_PATH = path.join(__dirname, "..", "stock_inventory.json");
 
 function loadStock() {
   return JSON.parse(fs.readFileSync(STOCK_PATH, "utf8"));
@@ -36,10 +36,10 @@ function saveStock(stock) {
   const content = JSON.stringify(stock, null, 2);
   fs.writeFileSync(STOCK_PATH, content, "utf8");
 
-  // Sync copies to root and agymemory
-  const rootPath = path.join(__dirname, "..", "stock_inventory.json");
+  // Sync copy to render-dashboard
+  const renderPath = path.join(__dirname, "..", "render-dashboard", "stock_inventory.json");
   const agyMemoryPath = path.join(__dirname, "..", "agymemory", "stock_inventory.json");
-  try { fs.writeFileSync(rootPath, content, "utf8"); } catch (e) {}
+  try { fs.writeFileSync(renderPath, content, "utf8"); } catch (e) {}
   try { fs.writeFileSync(agyMemoryPath, content, "utf8"); } catch (e) {}
 
   // Auto-sync to Render web server
