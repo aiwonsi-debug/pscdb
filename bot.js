@@ -197,9 +197,21 @@ function sendMessage(chatId, text) {
         return lineNotifier.sendLineMessage(text, lineTarget);
     }
 
-    // Telegram Bot disabled per user directive
-    writeLog(`[Telegram Disabled]: Skipped sending to ${chatId}: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
-    return Promise.resolve({ ok: true, skipped: true });
+    writeLog(`[Sending TG to ${chatId}]: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
+    if (text.length > 3900) {
+        const chunks = text.match(/[\s\S]{1,3800}/g) || [text];
+        let p = Promise.resolve();
+        for (const c of chunks) {
+            p = p.then(() => tgRequest('sendMessage', { chat_id: chatId, text: c }).then(res => {
+                writeLog(`[Send Chunk Result]: ok=${res ? res.ok : false}`);
+            }));
+        }
+        return p;
+    }
+    return tgRequest('sendMessage', { chat_id: chatId, text: text }).then(res => {
+        writeLog(`[Send Result]: ok=${res ? res.ok : false} ${res && !res.ok ? JSON.stringify(res) : ''}`);
+        return res;
+    });
 }
 
 function sendMessageWithKeyboard(chatId, text, replyMarkup) {
@@ -2570,9 +2582,9 @@ function initTelegramMiniAppButton() {
 // Telegram Bot polling is currently disabled per user directive.
 // To re-enable Telegram, uncomment the lines below:
 if (require.main === module) {
-    writeLog('[Telegram Bot]: Disabled per user directive. LINE & Webhook active.');
-    // initTelegramMiniAppButton();
-    // pollUpdates();
+    writeLog('[Telegram Bot]: Active. Polling updates & Webhook active.');
+    initTelegramMiniAppButton();
+    pollUpdates();
 }
 
 // Exported so webhook_server.js can route LINE messages through the same
