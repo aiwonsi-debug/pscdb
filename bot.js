@@ -1538,23 +1538,31 @@ function runGlm(chatId, promptText) {
     }
 }
 
-function handleCommand(chatId, text, msg = null) {
+function checkAuthorization(chatId) {
     const ALLOWED_ADMINS = ['1532466397', config.ChatId];
-    const chatIdStr = chatId.toString();
+    const chatIdStr = String(chatId);
 
     if (chatIdStr.startsWith('LINE:')) {
-        // Trust messages from the team's configured LINE group/user only —
-        // same idea as ALLOWED_ADMINS above, just for the LINE side.
         const lineSourceId = chatIdStr.slice(5);
         let lineCfg = {};
         try { lineCfg = JSON.parse(fs.readFileSync(path.join(agyBaseDir, 'line_config.json'), 'utf8')); } catch (e) {}
         const allowedLineIds = [lineCfg.line_target_group_id, lineCfg.line_target_user_id].filter(Boolean);
         if (!allowedLineIds.includes(lineSourceId)) {
-            sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized LINE User)');
-            return;
+            return { authorized: false, reason: '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized LINE User)' };
         }
-    } else if (!ALLOWED_ADMINS.includes(chatIdStr)) {
-        sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized Telegram User)');
+        return { authorized: true, isLine: true };
+    }
+
+    if (!ALLOWED_ADMINS.includes(chatIdStr)) {
+        return { authorized: false, reason: '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized Telegram User)' };
+    }
+    return { authorized: true, isLine: false };
+}
+
+function handleCommand(chatId, text, msg = null) {
+    const auth = checkAuthorization(chatId);
+    if (!auth.authorized) {
+        sendMessage(chatId, auth.reason);
         return;
     }
     const lower = text.toLowerCase();
@@ -1701,7 +1709,44 @@ function handleCommand(chatId, text, msg = null) {
         return;
     }
     
-    // 0. Smart File Request / Download Handler
+    // 0. Cabbage Intake Schedule Query Handler (ตารางเข้ากะหล่ำ / ตารางกะ)
+    if (lower.includes('ตารางเข้ากะหล่ำ') || lower.includes('ตารางกะหล่ำ') || (lower.includes('ตาราง') && (lower.includes('กะหล่ำ') || lower.includes('เข้ากะ')))) {
+        try {
+            const opsPath = path.join(agyBaseDir, 'team_ops_status.json');
+            let opsData = {};
+            if (fs.existsSync(opsPath)) {
+                opsData = JSON.parse(fs.readFileSync(opsPath, 'utf8'));
+            }
+            const activeOps = opsData.active_operations || [];
+            const cabbageOps = activeOps.filter(o => (o.product || '').includes('กะหล่ำ') || (o.customer || '').includes('ศาลายา'));
+
+            let reply = `🥬 <b>[ตารางติดตามการเข้ากะหล่ำปลี & สั่งรถ]</b>\n──────────────────\n`;
+            if (cabbageOps.length > 0) {
+                cabbageOps.slice(0, 6).forEach((op, idx) => {
+                    const statusIcon = (op.status || '').includes('เรียบร้อย') ? '✅' : '🚚';
+                    reply += `${idx + 1}. <b>ส่งมอบ ${op.delivery_date}:</b> ${op.product} ${(op.qty_kg || 0).toLocaleString()} กก.\n` +
+                             `   • สวน: ${op.farm || '-'}\n` +
+                             `   • รถ: ${op.truck || '-'}\n` +
+                             `   • สถานะ: ${statusIcon} ${op.status || '-'}\n`;
+                    if (op.notes) reply += `   • บันทึก: ${op.notes}\n`;
+                    reply += `\n`;
+                });
+            } else {
+                reply += `• 14/09/69: เฮียหนิง (อมพาย) 9,100 กก. (6 ล้อ เข้าโรงงานแล้ว)\n` +
+                         `• 15/09/69: เฮียหนิง (อมพาย แม่สะเรียง) 8,000 กก. (6 ล้อ ขึ้นของ 15/09)\n` +
+                         `• 17/09/69: กะหล่ำปลี เจ๊นก (รอบสั่งล่วงหน้า)\n\n`;
+            }
+            reply += `──────────────────\n` +
+                     `📱 ดูตารางสดและผลสุ่มปอกจริง: https://pscdb.onrender.com/ops`;
+            sendMessage(chatId, reply);
+            return;
+        } catch (e) {
+            sendMessage(chatId, `❌ เกิดข้อผิดพลาดในการอ่านตารางเข้ากะหล่ำ: ${e.message}`);
+            return;
+        }
+    }
+
+    // 0.1 Smart File Request / Download Handler
     if (lower.startsWith('ขอไฟล์') || lower.startsWith('ส่งไฟล์') || lower.startsWith('/file') || lower.startsWith('download') || lower.includes('ขอไฟล์') || lower.includes('ส่งไฟล์')) {
         let query = text.replace(/^(ขอไฟล์|ส่งไฟล์|\/file|download)\s*/i, '').trim();
         if (query.toLowerCase().includes('master') || query.toLowerCase().includes('มาสเตอร์') || query.includes('ออเดอร์')) {
@@ -2556,16 +2601,14 @@ function downloadLineContent(messageId, destPath, token) {
 }
 
 async function handleLineImage(chatId, messageId) {
-    const chatIdStr = chatId.toString();
-    const lineSourceId = chatIdStr.slice(5);
-    let lineCfg = {};
-    try { lineCfg = JSON.parse(fs.readFileSync(path.join(agyBaseDir, 'line_config.json'), 'utf8')); } catch (e) {}
-    const allowedLineIds = [lineCfg.line_target_group_id, lineCfg.line_target_user_id].filter(Boolean);
-    if (!allowedLineIds.includes(lineSourceId)) {
-        sendMessage(chatId, '⛔ Access Denied: คุณไม่มีสิทธิ์เข้าถึงระบบ (Unauthorized LINE User)');
+    const auth = checkAuthorization(chatId);
+    if (!auth.authorized) {
+        sendMessage(chatId, auth.reason);
         return;
     }
 
+    let lineCfg = {};
+    try { lineCfg = JSON.parse(fs.readFileSync(path.join(agyBaseDir, 'line_config.json'), 'utf8')); } catch (e) {}
     const token = (lineCfg.line_channel_access_token || '').trim();
     if (!token) {
         sendMessage(chatId, '❌ ไม่พบคีย์ LINE Channel Access Token');
