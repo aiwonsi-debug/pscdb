@@ -1380,9 +1380,24 @@ if (cat === 'all') {
         activeSec.style.display = 'block';
       }
 
+      const subtitleEl = document.getElementById('header_subtitle');
+      const timeEl = document.getElementById('header_timestamp_val');
+      if (subtitleEl) {
+        if (tabId === 'stock') {
+          subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
+          if (timeEl) timeEl.textContent = '08:39 น.';
+        } else if (tabId === 'price') {
+          subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
+          if (timeEl) timeEl.textContent = '13:40 น.';
+        } else {
+          subtitleEl.textContent = 'รายการรอส่งมอบ';
+          if (timeEl) timeEl.textContent = '08:39 น.';
+        }
+      }
+
       const subFilter = document.getElementById('ops_sub_filters');
       if (subFilter) {
-        subFilter.style.display = (tabId === 'ops') ? 'flex' : 'none';
+        subFilter.style.display = (tabId === 'ops' || tabId === 'delivery') ? 'flex' : 'none';
       }
 
       if (tabId === 'stock' && typeof fetchLiveStock === 'function') {
