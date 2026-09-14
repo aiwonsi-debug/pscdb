@@ -1397,7 +1397,7 @@ if (cat === 'all') {
           if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
-          if (timeEl) timeEl.textContent = 'อัปเดต 11/09 13:40 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 13/09 13:40 น.';
           if (badgeEl) {
             badgeEl.className = 'header-timestamp status-aged';
           }
