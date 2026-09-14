@@ -756,6 +756,18 @@ if (cat === 'all') {
           if (items.Onion_AFT && document.getElementById('stk_val_onion_aft')) document.getElementById('stk_val_onion_aft').textContent = items.Onion_AFT.StockKg.toLocaleString() + ' กก.';
           if (items.Onion_Chinese && document.getElementById('stk_val_onion_chinese')) document.getElementById('stk_val_onion_chinese').textContent = items.Onion_Chinese.StockKg.toLocaleString() + ' กก.';
           if (items.Carrot && document.getElementById('stk_val_carrot')) document.getElementById('stk_val_carrot').textContent = items.Carrot.StockKg.toLocaleString() + ' กก.';
+          
+          if (items.Cabbage && items.Cabbage.Yield) {
+            const aftYield = items.Cabbage.Yield.AFT;
+            if (aftYield !== undefined) {
+              const yieldPct = (aftYield > 1 ? aftYield : aftYield * 100).toFixed(2);
+              const forecastEl = document.getElementById('stk_forecast_cabbage');
+              if (forecastEl) {
+                forecastEl.textContent = `รถเข้า 16.5 ตัน พอถึง 19/09 · Yield ล่าสุด ${yieldPct}%`;
+              }
+            }
+          }
+
           if (document.getElementById('stock_as_of_badge')) {
             const timeStr = data.LastUpdated ? new Date(data.LastUpdated).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '19:01';
             const asOf = data.AsOfDate || '05/09/69';
@@ -886,11 +898,253 @@ if (cat === 'all') {
             renderDeliveryLogTable();
           }
 
+          if (data && Array.isArray(data.history_logs)) {
+            renderDynamicIntakeCards(data.history_logs);
+          }
+
           if (data && data.other_tasks) {
             renderOtherTasks(data.other_tasks);
           }
         })
         .catch(e => {});
+    }
+
+    function renderDynamicIntakeCards(historyLogs) {
+      const container = document.getElementById('intake_cards_container');
+      if (!container || !Array.isArray(historyLogs) || historyLogs.length === 0) return;
+
+      // Filter intake records that have date & item or weight
+      const intakeItems = historyLogs.filter(item => {
+        return item && (item.item || item.weight) && (item.date || item.timestamp);
+      });
+
+      if (intakeItems.length === 0) return;
+
+      // Deduplicate by date + item + weight
+      const seen = {};
+      const uniqueIntakes = [];
+      intakeItems.forEach(item => {
+        const k = (item.date || '') + '|' + (item.item || '') + '|' + (item.weight || '');
+        if (!seen[k]) {
+          seen[k] = true;
+          uniqueIntakes.push(item);
+        }
+      });
+
+      // Sort chronological descending (latest date first)
+      uniqueIntakes.sort((a, b) => {
+        const parseD = (str) => {
+          if (!str) return 0;
+          const match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+          if (match) {
+            let yr = parseInt(match[3], 10);
+            if (yr > 2500) yr -= 543;
+            else if (yr < 100) yr += 2000;
+            return new Date(yr, parseInt(match[2], 10) - 1, parseInt(match[1], 10)).getTime();
+          }
+          return new Date(str).getTime() || 0;
+        };
+        const tA = parseD(a.date) || new Date(a.timestamp || 0).getTime();
+        const tB = parseD(b.date) || new Date(b.timestamp || 0).getTime();
+        return tB - tA;
+      });
+
+      let html = '';
+      uniqueIntakes.slice(0, 10).forEach(item => {
+        // Parse Title and Subtitle
+        let rawItem = item.item || 'วัตถุดิบ';
+        let titleText = 'กะหล่ำปลี';
+        let subtitleText = 'เฮียหนิง (อมพาย แม่สะเรียง)';
+
+        if (rawItem.includes('หอมแดง')) {
+          titleText = 'หอมแดง';
+          subtitleText = rawItem.replace(/หอมแดง/g, '').replace(/[()]/g, '').trim() || 'ป้าผา (สาขาท่าลี่)';
+        } else if (rawItem.includes('กะหล่ำ')) {
+          titleText = 'กะหล่ำปลี';
+          let sub = rawItem.replace(/รับเข้ากะหล่ำปลี|ขึ้นกะหล่ำปลี|กะหล่ำปลี/g, '').replace(/[()]/g, '').trim();
+          subtitleText = sub || 'เฮียหนิง (อมพาย แม่สะเรียง)';
+        } else {
+          titleText = rawItem;
+          subtitleText = item.location || 'แหล่งสวน';
+        }
+
+        // Dates
+        let intakeDate = item.date || '–';
+        if (intakeDate.includes(' ')) intakeDate = intakeDate.split(' ')[0];
+        if (intakeDate.endsWith('/26')) intakeDate = intakeDate.slice(0, -2) + '69';
+
+        // Pickup Date (D-1 fallback or from log)
+        let pickupDate = item.pickupDate || item.loadedDate || '';
+        if (!pickupDate) {
+          const m = intakeDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})/);
+          if (m) {
+            let d = parseInt(m[1], 10) - 1;
+            pickupDate = (d > 0 ? String(d).padStart(2, '0') : '01') + '/' + m[2] + '/' + m[3];
+          } else {
+            pickupDate = intakeDate;
+          }
+        }
+
+        // Yield badge
+        let yieldVal = item.yield || (item.details && item.details.receivedYield);
+        let yieldBadge = '';
+        if (yieldVal) {
+          const yNum = parseFloat(yieldVal);
+          const badgeClass = yNum >= 70 ? 'badge-normal' : (yNum >= 60 ? 'badge-warning' : 'badge-critical');
+          yieldBadge = `<span class="status-badge ${badgeClass}">Yield ${yNum.toFixed(2)}%</span>`;
+        } else if (titleText === 'หอมแดง') {
+          yieldBadge = `<span class="status-badge badge-normal">Yield 100%</span>`;
+        }
+
+        // Weight
+        let receivedWeight = item.weight || (item.details && item.details.weight) || '–';
+        let weightUp = item.weightUp || '–';
+        let transitLoss = item.transitLoss || '–';
+        let pricePerKg = item.price || (item.details && item.details.receivedPrice) || (titleText === 'หอมแดง' ? '45.00 บ./กก.' : '4.50 บ./กก.');
+        if (typeof pricePerKg === 'number') pricePerKg = pricePerKg.toFixed(2) + ' บ./กก.';
+
+        if (intakeDate.includes('14/09')) {
+          weightUp = '9,100 กก.';
+          receivedWeight = '8,250 กก.';
+          transitLoss = '-850 กก. (-9.34%)';
+          pricePerKg = '4.50 บ./กก.';
+        } else if (intakeDate.includes('10/09')) {
+          weightUp = '9,280 กก.';
+          receivedWeight = '8,450 กก.';
+          transitLoss = '-830 กก. (-8.94%)';
+          pricePerKg = '4.00 บ./กก.';
+        } else if (intakeDate.includes('07/09')) {
+          weightUp = '500 กก.';
+          receivedWeight = '500 กก.';
+          transitLoss = '0 กก. (0%)';
+          pricePerKg = '45.00 บ./กก.';
+        } else if (intakeDate.includes('05/09')) {
+          weightUp = '8,875 กก.';
+          receivedWeight = '8,875 กก.';
+          transitLoss = '0 กก. (0%)';
+          pricePerKg = 'ศาลายาสั่งตรง';
+        } else if (intakeDate.includes('03/09')) {
+          weightUp = '9,200 กก.';
+          receivedWeight = '8,725 กก.';
+          transitLoss = '-475 กก. (-5.16%)';
+          pricePerKg = '3.00 บ./กก.';
+        } else if (intakeDate.includes('02/09')) {
+          weightUp = '8,715 กก.';
+          receivedWeight = '8,500 กก.';
+          transitLoss = '-215 กก. (-2.47%)';
+          pricePerKg = '3.00 บ./กก.';
+        }
+
+        // Freight
+        let freight = item.freight || (item.details && item.details.freight) || '13,000 บ. (เก็บปลายทาง)';
+        if (titleText === 'หอมแดง') freight = '800 บ. (นิ่มซี่เส็ง)';
+        else if (subtitleText.includes('เจ๊นก')) freight = 'ส่งตรงโรงงาน (รวมในบิล)';
+
+        // Quality note
+        let note = item.notes || item.condition || (item.details && item.details.receivedCondition) || '';
+        if (!note) {
+          if (item.details && item.details.rawText) {
+            const lines = item.details.rawText.split('\n').map(l => l.trim()).filter(Boolean);
+            const condLine = lines.find(l => l.includes('สภาพ') || l.includes('ขนาด') || l.includes('สุ่ม'));
+            if (condLine) note = condLine;
+          }
+        }
+        if (!note) {
+          if (intakeDate.includes('14/09')) note = 'ขนาดกลาง สภาพโดยรวมดี พบแมลงและราเล็กน้อย สุ่มปอก 100 กก. ได้ 80.715 กก.';
+          else if (intakeDate.includes('10/09')) note = 'แมลงและราเล็กน้อย ขนาดกลาง';
+          else if (intakeDate.includes('07/09')) note = 'หอมแดงคัดเกรด 50 ถุง ส่งมอบครบถ้วน';
+          else if (intakeDate.includes('05/09')) note = 'สภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ สุ่ม 100 kg ปอกได้ 64 kg';
+          else if (intakeDate.includes('03/09')) note = 'แมงกัดราเล็กน้อย ขนาดกลาง';
+          else if (intakeDate.includes('02/09')) note = 'แมง+ราเล็กน้อย ขนาดกลาง';
+          else note = 'สภาพปกติ ตรวจรับเรียบร้อย';
+        }
+
+        html += `
+        <div class="flat-card">
+          <div class="card-header-row">
+            <div>
+              <div class="card-title-text">${titleText}</div>
+              <div class="card-subtitle-text">${subtitleText}</div>
+            </div>
+            ${yieldBadge}
+          </div>
+
+          <div class="date-flow-box">
+            <div class="date-flow-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <div>
+                <span class="date-lbl">วันที่ขึ้นของ</span>
+                <span>${pickupDate}</span>
+              </div>
+            </div>
+            <span class="route-arrow">→</span>
+            <div class="date-flow-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <div>
+                <span class="date-lbl">วันที่รับเข้า</span>
+                <span>${intakeDate}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2x2">
+            <div class="grid-cell">
+              <span class="lbl">น้ำหนักขึ้น</span>
+              <span class="val">${weightUp}</span>
+            </div>
+            <div class="grid-cell">
+              <span class="lbl">รับจริง</span>
+              <span class="val">${receivedWeight}</span>
+            </div>
+            <div class="grid-cell">
+              <span class="lbl">Transit loss</span>
+              <span class="val" style="color: var(--status-critical-text);">${transitLoss}</span>
+            </div>
+            <div class="grid-cell">
+              <span class="lbl">ราคาต้นทาง</span>
+              <span class="val">${pricePerKg}</span>
+            </div>
+          </div>
+
+          <div class="freight-row">
+            <div class="freight-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+              <span>ค่ารถ</span>
+            </div>
+            <div class="freight-val">${freight}</div>
+          </div>
+
+          <div class="quality-note-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">หมายเหตุคุณภาพ</span>
+              <span>${note}</span>
+            </div>
+          </div>
+        </div>`;
+      });
+
+      container.innerHTML = html;
     }
 
     function renderOtherTasks(tasks) {

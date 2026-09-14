@@ -439,7 +439,9 @@ const server = http.createServer(async (req, res) => {
 
             if (staticPath && fs.existsSync(staticPath)) {
                 res.setHeader('Content-Type', mimeType);
-                res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
                 res.writeHead(200);
                 return res.end(fs.readFileSync(staticPath));
             }

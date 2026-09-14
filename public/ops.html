@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PSC Field Operations</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/ops.css?v=20260914_swipeable_tabs">
+  <link rel="stylesheet" href="/css/ops.css?v=20260914_dyn_v1">
   <script>
     function updateTabHeader(tabId) {
       const subtitleEl = document.getElementById('header_subtitle');
@@ -226,6 +226,7 @@
 
       <!-- Section 2: ประวัติรับเข้าวัตถุดิบ (Stacked Cards) -->
       <div class="section-headline" style="margin-top: 20px;">ประวัติรับเข้าวัตถุดิบ</div>
+      <div id="intake_cards_container">
 
       <!-- Intake 1: 14/09/69 กะหล่ำปลี เฮียหนิง -->
       <div class="flat-card">
@@ -730,6 +731,7 @@
           </div>
         </div>
       </div>
+      </div>
     </main>
 
     <!-- ========================================== -->
@@ -858,8 +860,8 @@
           <span class="big-metric" id="stk_val_cabbage">4,350</span>
           <span class="metric-unit">กก.</span>
         </div>
-        <div class="card-forecast">
-          รถเข้า 16.5 ตัน พอถึง 19/09 · เหลือปลายทาง ~487 กก.
+        <div class="card-forecast" id="stk_forecast_cabbage">
+          รถเข้า 16.5 ตัน พอถึง 19/09 · Yield ล่าสุด 80.72%
         </div>
         <div class="comparison-bar">
           <span>เทียบ 12/09: 9,650 กก.</span>
@@ -935,6 +937,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="/js/ops.js?v=20260914_swipeable_tabs"></script>
+  <script src="/js/ops.js?v=20260914_dyn_v1"></script>
 </body>
 </html>
