@@ -1,6 +1,19 @@
 {
-  "last_updated": "2026-09-14T01:39:36.120Z",
+  "last_updated": "2026-09-14T07:23:00.000Z",
   "active_operations": [
+    {
+      "id": "OPS-20260914-550",
+      "timestamp": "2026-09-14T07:18:12.000Z",
+      "customer": "ปากคลอง",
+      "delivery_date": "2026-09-16",
+      "farm": "ยังไม่ระบุ",
+      "product": "หอมแดง",
+      "qty_kg": 550,
+      "truck": "ยังไม่ระบุ",
+      "status": "รอตัดผักและจองรถ (ขึ้นของ 15/09)",
+      "recorder": "LINE AI Secretary (คุณ @Attapol @Konwika @Pornthiwa Chukiad)",
+      "notes": "เอาหอมแดงเข้าปากคลอง พุธ 16/9 : 550 กก."
+    },
     {
       "id": "OPS-20260910-8450",
       "timestamp": "2026-09-10T10:00:00.000Z",
