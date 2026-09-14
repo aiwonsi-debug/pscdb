@@ -197,21 +197,9 @@ function sendMessage(chatId, text) {
         return lineNotifier.sendLineMessage(text, lineTarget);
     }
 
-    writeLog(`[Sending TG to ${chatId}]: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
-    if (text.length > 3900) {
-        const chunks = text.match(/[\s\S]{1,3800}/g) || [text];
-        let p = Promise.resolve();
-        for (const c of chunks) {
-            p = p.then(() => tgRequest('sendMessage', { chat_id: chatId, text: c }).then(res => {
-                writeLog(`[Send Chunk Result]: ok=${res ? res.ok : false}`);
-            }));
-        }
-        return p;
-    }
-    return tgRequest('sendMessage', { chat_id: chatId, text: text }).then(res => {
-        writeLog(`[Send Result]: ok=${res ? res.ok : false} ${res && !res.ok ? JSON.stringify(res) : ''}`);
-        return res;
-    });
+    // Telegram Bot disabled per user directive
+    writeLog(`[Telegram Disabled]: Skipped sending to ${chatId}: ${text.substring(0, 60).replace(/\n/g, ' ')}...`);
+    return Promise.resolve({ ok: true, skipped: true });
 }
 
 function sendMessageWithKeyboard(chatId, text, replyMarkup) {
@@ -2578,14 +2566,13 @@ function initTelegramMiniAppButton() {
         writeLog('[Telegram Menu Button Reset to Default]: ' + (res && res.ok ? 'OK' : JSON.stringify(res)));
     }).catch(e => {});
 }
-// Only start the Telegram poller / menu-button reset when this file is the
-// actual entry point (e.g. `node bot.js`), never when it's require()'d as a
-// module — otherwise a webhook_server.js process that lazily requires this
-// file (see the LINE webhook route) would spin up a second, competing
-// Telegram poller and Telegram's API would reject both with a 409 conflict.
+
+// Telegram Bot polling is currently disabled per user directive.
+// To re-enable Telegram, uncomment the lines below:
 if (require.main === module) {
-    initTelegramMiniAppButton();
-    pollUpdates();
+    writeLog('[Telegram Bot]: Disabled per user directive. LINE & Webhook active.');
+    // initTelegramMiniAppButton();
+    // pollUpdates();
 }
 
 // Exported so webhook_server.js can route LINE messages through the same
