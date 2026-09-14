@@ -805,12 +805,39 @@ if (cat === 'all') {
         .then(data => {
           if (data && data.cards_state) {
             serverCardsState = data.cards_state;
-            if (document.getElementById('ops_sync_badge')) {
-              const now = new Date();
-              const dStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + (now.getFullYear() + 543).toString().slice(-2);
-              const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-              document.getElementById('ops_sync_badge').textContent = 'อัปเดตสด: ' + dStr + ' ' + timeStr + ' น.';
-              if (document.getElementById('sys_sync_time')) document.getElementById('sys_sync_time').textContent = dStr + ' ' + timeStr + ' น.';
+            if (document.getElementById('ops_sync_badge') || document.getElementById('sys_sync_time')) {
+              let lastRevisedTime = data.last_updated ? new Date(data.last_updated) : null;
+              if (data.cards_state) {
+                Object.values(data.cards_state).forEach(c => {
+                  const t = c.updatedAt || c.reportedAt || c.timestamp;
+                  if (t) {
+                    const d = new Date(t);
+                    if (!isNaN(d.getTime()) && (!lastRevisedTime || d > lastRevisedTime)) {
+                      lastRevisedTime = d;
+                    }
+                  }
+                });
+              }
+              if (Array.isArray(data.history_logs)) {
+                data.history_logs.forEach(l => {
+                  if (l.timestamp) {
+                    const d = new Date(l.timestamp);
+                    if (!isNaN(d.getTime()) && (!lastRevisedTime || d > lastRevisedTime)) {
+                      lastRevisedTime = d;
+                    }
+                  }
+                });
+              }
+              if (lastRevisedTime && !isNaN(lastRevisedTime.getTime())) {
+                const dStr = ('0' + lastRevisedTime.getDate()).slice(-2) + '/' + ('0' + (lastRevisedTime.getMonth() + 1)).slice(-2) + '/' + (lastRevisedTime.getFullYear() + 543).toString().slice(-2);
+                const timeStr = ('0' + lastRevisedTime.getHours()).slice(-2) + ':' + ('0' + lastRevisedTime.getMinutes()).slice(-2);
+                if (document.getElementById('ops_sync_badge')) {
+                  document.getElementById('ops_sync_badge').textContent = 'อัปเดตล่าสุด: ' + dStr + ' ' + timeStr + ' น.';
+                }
+                if (document.getElementById('sys_sync_time')) {
+                  document.getElementById('sys_sync_time').textContent = dStr + ' ' + timeStr + ' น.';
+                }
+              }
             }
             syncDynamicOptions(data.custom_suppliers || [], data.custom_trucks || []);
             const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};

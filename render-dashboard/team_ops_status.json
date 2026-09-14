@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-13T15:53:30.102Z",
+  "last_updated": "2026-09-14T01:39:36.120Z",
   "active_operations": [
     {
       "id": "OPS-20260910-8450",
@@ -106,19 +106,6 @@
       "notes": "เพิ่มกะหล่ำเข้าอังคาร 15/9 8 ตัน (8,000 กก.)"
     },
     {
-      "id": "OPS-20260913-1709",
-      "timestamp": "2026-09-13T03:59:25.697Z",
-      "customer": "โรงงานศาลายา",
-      "delivery_date": "2026-09-17",
-      "farm": "เจ๊นก",
-      "product": "กะหล่ำปลี",
-      "qty_kg": 8000,
-      "truck": "6 ล้อ 1 คัน",
-      "status": "รอดำเนินการ (Salaya สั่งของเจ๊นกเอง)",
-      "recorder": "ทีมงานมือถือภาคสนาม",
-      "notes": "ทางSalaya สั่งของเจ๊นกเองแล้ว 8 ตัน (8,000 กก.)"
-    },
-    {
       "id": "OPS-20260905-8875",
       "timestamp": "2026-09-05T10:00:00.000Z",
       "customer": "โรงงานศาลายา",
@@ -135,13 +122,13 @@
   "history_logs": [
     {
       "id": "LOG-1789313220000",
-      "timestamp": "2026-09-13T15:27:00.000Z",
-      "date": "13/09/69",
-      "item": "ขึ้นกะหล่ำปลีเฮียหนิง (อมพาย แม่สะเรียง)",
-      "weight": "9,100 kg",
-      "freight": "13,000 บาท",
-      "payment": "เก็บปลายทาง 13,000 บาท",
-      "location": "โกดัง อมพาย แม่สะเรียง",
+      "timestamp": "2026-09-14T01:39:36.120Z",
+      "date": "14/09/69",
+      "item": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
+      "weight": "",
+      "freight": "",
+      "payment": "",
+      "location": "",
       "cardId": "salaya_1409"
     },
     {
@@ -281,16 +268,30 @@
       "orderChecked": true,
       "truckChecked": true,
       "loadedReported": true,
-      "reportedAt": "2026-09-13T15:27:00.000Z",
-      "loadedDate": "13/09/69",
-      "loadedItem": "กะหล่ำปลี<br>เฮียหนิง",
-      "loadedWeight": "9,100 kg",
-      "loadedFreight": "13,000 บาท",
-      "loadedPayment": "เก็บปลายทาง 13,000 บาท",
-      "loadedLocation": "โกดัง อมพาย แม่สะเรียง",
-      "rawReport": "วันที่ 13/09/26\nขึ้นกะหล่ำปลีเฮียหนิง\nน้ำหนักสุทธิ =9,100kg\n\nค่ารถ 13,000บาท\nเก็บปลายทาง 13,000 บาท\n(ขึ้นที่โกดัง อมพาย แม่สะเรียง)",
+      "reportedAt": "2026-09-14T01:39:36.120Z",
+      "loadedDate": "14/09/69",
+      "loadedItem": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
+      "loadedWeight": "",
+      "loadedFreight": "",
+      "loadedPayment": "",
+      "loadedLocation": "",
+      "rawReport": "Stock  14/09/69\n*กะหล่ำ = 4,350 kg.\nหอม AFT = 42,980 kg.\nหอมจีน = 4,437 kg.\nแครอทสวย  =  6,250 kg.",
       "deliveryDate": "14/09/69",
-      "updatedAt": "2026-09-13T16:20:00.000Z"
+      "updatedAt": "2026-09-13T16:20:00.000Z",
+      "details": {
+        "cardId": "salaya_1409",
+        "date": "14/09/69",
+        "item": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
+        "weight": "",
+        "freight": "",
+        "payment": "",
+        "location": "",
+        "receivedYield": null,
+        "receivedPrice": null,
+        "receivedCondition": "สวย (เฉพาะแครอท)",
+        "receivedSize": "",
+        "rawText": "Stock  14/09/69\n*กะหล่ำ = 4,350 kg.\nหอม AFT = 42,980 kg.\nหอมจีน = 4,437 kg.\nแครอทสวย  =  6,250 kg."
+      }
     },
     "tns_shallot_0709": {
       "id": "tns_shallot_0709",
