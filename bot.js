@@ -898,6 +898,7 @@ async function runOkmdEngine(chatId, promptText, customModel = null) {
             },
             timeout: 35000
         }, (res) => {
+            res.setEncoding('utf8');
             let resData = '';
             res.on('data', chunk => resData += chunk);
             res.on('end', () => {
@@ -960,7 +961,7 @@ function getGroqApiKey() {
 
 const GROQ_CONFIG = {
     get ApiKey() { return getGroqApiKey(); },
-    Model: 'qwen/qwen3.8-27b',
+    Model: 'openai/gpt-oss-120b',
     Url: 'https://api.groq.com/openai/v1/chat/completions'
 };
 
@@ -1183,6 +1184,7 @@ async function runGroqFallback(chatId, promptText, failReason = 'AGY CLI Quota R
             },
             timeout: 30000
         }, (res) => {
+            res.setEncoding('utf8');
             let resData = '';
             res.on('data', chunk => resData += chunk);
             res.on('end', () => {

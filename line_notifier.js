@@ -99,7 +99,7 @@ function sendLineMessage(messageText, targetOverride) {
       reject(err);
     });
 
-    req.write(payload);
+    req.write(payload, 'utf8');
     req.end();
   });
 }

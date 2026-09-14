@@ -844,7 +844,7 @@ const server = http.createServer(async (req, res) => {
                         path: parsedUrl.pathname + (parsedUrl.search || ''),
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
+                            'Content-Type': 'application/json; charset=utf-8',
                             'X-Line-Signature': signature,
                             'Content-Length': Buffer.byteLength(rawBody)
                         }
