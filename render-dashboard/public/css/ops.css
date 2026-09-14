@@ -180,13 +180,33 @@ body {
   font-weight: 500;
 }
 
-/* Section Container */
-.app-section {
-  display: none;
+/* Swipeable Tab Carousel Container (CSS scroll-snap native compositor thread) */
+.tabs-carousel {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  width: 100%;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
-.app-section.active {
-  display: block;
+.tabs-carousel::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Section Container per tab (100% viewport/container width, scroll-snap-align start) */
+.app-section {
+  flex: 0 0 100%;
+  min-width: 100%;
+  max-width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: block; /* Native snap container holds all panels */
+  box-sizing: border-box;
 }
 
 /* Section Title Headers */

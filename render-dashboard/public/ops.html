@@ -5,25 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PSC Field Operations</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/ops.css?v=20260914_tab_stamps">
+  <link rel="stylesheet" href="/css/ops.css?v=20260914_swipeable_tabs">
   <script>
-    function switchAppTab(tabId) {
-      const tabs = ['delivery', 'price', 'stock'];
-      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById('tab_btn_' + tabId);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      document.querySelectorAll('.app-section').forEach(sec => {
-        sec.classList.remove('active');
-        sec.style.display = 'none';
-      });
-
-      const activeSec = document.getElementById('sec_' + tabId);
-      if (activeSec) {
-        activeSec.classList.add('active');
-        activeSec.style.display = 'block';
-      }
-
+    function updateTabHeader(tabId) {
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
       const badgeEl = document.getElementById('header_timestamp_badge');
@@ -34,31 +18,76 @@
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
           if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
-          if (badgeEl) {
-            badgeEl.className = 'header-timestamp status-fresh';
-          }
+          if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
           if (timeEl) timeEl.textContent = 'อัปเดต 13/09 13:40 น.';
-          if (badgeEl) {
-            badgeEl.className = 'header-timestamp status-aged';
-          }
+          if (badgeEl) badgeEl.className = 'header-timestamp status-aged';
           if (iconClock) iconClock.style.display = 'none';
           if (iconAlert) iconAlert.style.display = 'block';
         } else {
           subtitleEl.textContent = 'รายการรอส่งมอบ';
           if (timeEl) timeEl.textContent = 'อัปเดต 14:41 น.';
-          if (badgeEl) {
-            badgeEl.className = 'header-timestamp status-fresh';
-          }
+          if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
         }
       }
     }
+
+    let isProgrammaticScroll = false;
+    let scrollTimeout = null;
+
+    function switchAppTab(tabId) {
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('tab_btn_' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const carousel = document.getElementById('tabs_carousel');
+      const targetSec = document.getElementById('sec_' + tabId);
+      if (carousel && targetSec) {
+        isProgrammaticScroll = true;
+        clearTimeout(scrollTimeout);
+        carousel.scrollTo({
+          left: targetSec.offsetLeft,
+          behavior: 'smooth'
+        });
+        scrollTimeout = setTimeout(() => {
+          isProgrammaticScroll = false;
+        }, 500);
+      }
+
+      updateTabHeader(tabId);
+    }
     window.switchAppTab = switchAppTab;
+
+    // Real-time synchronization via IntersectionObserver on compositor thread (Zero layout thrashing)
+    document.addEventListener('DOMContentLoaded', () => {
+      const carousel = document.getElementById('tabs_carousel');
+      const sections = document.querySelectorAll('.app-section');
+      if (!carousel || !sections.length) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        if (isProgrammaticScroll) return;
+        entries.forEach(entry => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
+            const secId = entry.target.id;
+            const tabId = secId.replace('sec_', '');
+            document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('tab_btn_' + tabId);
+            if (btn) btn.classList.add('active');
+            updateTabHeader(tabId);
+          }
+        });
+      }, {
+        root: carousel,
+        threshold: [0.55]
+      });
+
+      sections.forEach(sec => observer.observe(sec));
+    });
   </script>
 </head>
 <body>
@@ -92,9 +121,13 @@
     </nav>
 
     <!-- ========================================== -->
-    <!-- 1. TAB: DELIVERY (รายการรอส่งมอบ)          -->
+    <!-- Swipeable Tabs Carousel (CSS Scroll-Snap)   -->
     <!-- ========================================== -->
-    <main id="sec_delivery" class="app-section active">
+    <div class="tabs-carousel" id="tabs_carousel">
+
+      <!-- 1. TAB: DELIVERY (รายการรอส่งมอบ)          -->
+      <!-- ========================================== -->
+      <main id="sec_delivery" class="app-section active">
       
       <!-- Section 1: ตารางติดตามขึ้นของสวน -->
       <div class="section-headline">ตารางติดตามขึ้นของสวน</div>
@@ -808,6 +841,7 @@
       </div>
 
     </main>
+    </div>
 
     <footer>
       บจก.ไพศาลเจริญ (1988)
@@ -817,6 +851,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="/js/ops.js?v=20260914_pakkhlong_shallot"></script>
+  <script src="/js/ops.js?v=20260914_swipeable_tabs"></script>
 </body>
 </html>

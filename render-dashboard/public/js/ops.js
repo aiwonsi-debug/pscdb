@@ -1361,25 +1361,10 @@ if (cat === 'all') {
       });
     }
 
-    function switchAppTab(tabId) {
-      // Remove active from all nav buttons
-      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById('tab_btn_' + tabId);
-      if (activeBtn) activeBtn.classList.add('active');
+    let isProgrammaticScroll = false;
+    let scrollTimeout = null;
 
-      // Hide all app-section divs strictly
-      document.querySelectorAll('.app-section').forEach(sec => {
-        sec.classList.remove('active');
-        sec.style.display = 'none';
-      });
-
-      // Show targeted active section
-      const activeSec = document.getElementById('sec_' + tabId);
-      if (activeSec) {
-        activeSec.classList.add('active');
-        activeSec.style.display = 'block';
-      }
-
+    function updateTabHeader(tabId) {
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
       const badgeEl = document.getElementById('header_timestamp_badge');
@@ -1390,25 +1375,19 @@ if (cat === 'all') {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
           if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
-          if (badgeEl) {
-            badgeEl.className = 'header-timestamp status-fresh';
-          }
+          if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
           if (timeEl) timeEl.textContent = 'อัปเดต 13/09 13:40 น.';
-          if (badgeEl) {
-            badgeEl.className = 'header-timestamp status-aged';
-          }
+          if (badgeEl) badgeEl.className = 'header-timestamp status-aged';
           if (iconClock) iconClock.style.display = 'none';
           if (iconAlert) iconAlert.style.display = 'block';
         } else {
           subtitleEl.textContent = 'รายการรอส่งมอบ';
-          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
-          if (badgeEl) {
-            badgeEl.className = 'header-timestamp status-fresh';
-          }
+          if (timeEl) timeEl.textContent = 'อัปเดต 14:41 น.';
+          if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
         }
@@ -1422,6 +1401,28 @@ if (cat === 'all') {
       if (tabId === 'stock' && typeof fetchLiveStock === 'function') {
         fetchLiveStock();
       }
+    }
+
+    function switchAppTab(tabId) {
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('tab_btn_' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const carousel = document.getElementById('tabs_carousel');
+      const targetSec = document.getElementById('sec_' + tabId);
+      if (carousel && targetSec) {
+        isProgrammaticScroll = true;
+        clearTimeout(scrollTimeout);
+        carousel.scrollTo({
+          left: targetSec.offsetLeft,
+          behavior: 'smooth'
+        });
+        scrollTimeout = setTimeout(() => {
+          isProgrammaticScroll = false;
+        }, 500);
+      }
+
+      updateTabHeader(tabId);
     }
     window.switchAppTab = switchAppTab;
     window.filterCategory = filterCategory;
