@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-14T07:41:48.549Z",
+  "last_updated": "2026-09-14T08:05:34.399Z",
   "active_operations": [
     {
       "id": "OPS-20260914-550",
@@ -146,10 +146,10 @@
     },
     {
       "id": "LOG-1789313220000",
-      "timestamp": "2026-09-14T01:39:36.120Z",
-      "date": "14/09/69",
-      "item": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
-      "weight": "",
+      "timestamp": "2026-09-14T08:05:34.399Z",
+      "date": "14/09/26",
+      "item": "กะหล่ำปลี (เฮียหนิง)",
+      "weight": "8,250 kg",
       "freight": "",
       "payment": "",
       "location": "",
@@ -292,29 +292,29 @@
       "orderChecked": true,
       "truckChecked": true,
       "loadedReported": true,
-      "reportedAt": "2026-09-14T01:39:36.120Z",
-      "loadedDate": "14/09/69",
-      "loadedItem": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
-      "loadedWeight": "",
+      "reportedAt": "2026-09-14T08:05:34.399Z",
+      "loadedDate": "14/09/26",
+      "loadedItem": "กะหล่ำปลี (เฮียหนิง)",
+      "loadedWeight": "8,250 kg",
       "loadedFreight": "",
       "loadedPayment": "",
       "loadedLocation": "",
-      "rawReport": "Stock  14/09/69\n*กะหล่ำ = 4,350 kg.\nหอม AFT = 42,980 kg.\nหอมจีน = 4,437 kg.\nแครอทสวย  =  6,250 kg.",
+      "rawReport": "14/9/26   รับกะหล่ำปีเฮียหนิง \nจำนวน 8,250 กก.\n\nขนาดกลาง\n\nสภาพโดยรวมดี พบแมลงและราเล็กน้อย\n\nสุ่มปอก 100  กก. \nปอดได้  80.715  กก.",
       "deliveryDate": "14/09/69",
       "updatedAt": "2026-09-13T16:20:00.000Z",
       "details": {
         "cardId": "salaya_1409",
-        "date": "14/09/69",
-        "item": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
-        "weight": "",
+        "date": "14/09/26",
+        "item": "กะหล่ำปลี (เฮียหนิง)",
+        "weight": "8,250 kg",
         "freight": "",
         "payment": "",
         "location": "",
-        "receivedYield": null,
+        "receivedYield": 80.715,
         "receivedPrice": null,
-        "receivedCondition": "สวย (เฉพาะแครอท)",
-        "receivedSize": "",
-        "rawText": "Stock  14/09/69\n*กะหล่ำ = 4,350 kg.\nหอม AFT = 42,980 kg.\nหอมจีน = 4,437 kg.\nแครอทสวย  =  6,250 kg."
+        "receivedCondition": "สภาพโดยรวมดี พบแมลงและราเล็กน้อย",
+        "receivedSize": "กลาง",
+        "rawText": "14/9/26   รับกะหล่ำปีเฮียหนิง \nจำนวน 8,250 กก.\n\nขนาดกลาง\n\nสภาพโดยรวมดี พบแมลงและราเล็กน้อย\n\nสุ่มปอก 100  กก. \nปอดได้  80.715  กก."
       }
     },
     "tns_shallot_0709": {

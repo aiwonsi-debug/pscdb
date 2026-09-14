@@ -1,12 +1,12 @@
 {
-  "AsOfDate": "14/09/69",
-  "LastUpdated": "2026-09-14T01:39:36.113Z",
+  "AsOfDate": "14/09/26",
+  "LastUpdated": "2026-09-14T08:05:34.388Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
       "StockKg": 4350,
       "Yield": {
-        "AFT": 0.64,
+        "AFT": 0.80715,
         "TNS": 0.99
       }
     },
@@ -175,6 +175,16 @@
       "Unit": "kg",
       "Source": "Telegram Unified Ingestion",
       "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot"
+    },
+    {
+      "Timestamp": "2026-09-14T08:05:34.387Z",
+      "ItemKey": "Cabbage_Yield_AFT",
+      "Field": "Yield.AFT",
+      "PreviousValue": 0.64,
+      "NewValue": 0.80715,
+      "Unit": "factor",
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
     }
   ],
   "ProcessedEvents": [
@@ -186,7 +196,8 @@
     "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage",
     "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT",
     "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese",
-    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot"
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
   ],
   "RecentAudits": [
     {
