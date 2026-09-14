@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-14T07:23:00.000Z",
+  "last_updated": "2026-09-14T07:41:48.549Z",
   "active_operations": [
     {
       "id": "OPS-20260914-550",
@@ -133,6 +133,17 @@
     }
   ],
   "history_logs": [
+    {
+      "id": "LOG-1789371708549",
+      "timestamp": "2026-09-14T07:41:48.549Z",
+      "date": "14/09/2026 14:41:48",
+      "item": "หอมแดง (ป้าผา)",
+      "weight": "",
+      "freight": "",
+      "payment": "",
+      "location": "นิ่มซี่เส็ง ท่าลี่",
+      "cardId": "tns_shallot_0709"
+    },
     {
       "id": "LOG-1789313220000",
       "timestamp": "2026-09-14T01:39:36.120Z",
@@ -313,12 +324,29 @@
       "orderChecked": true,
       "truckChecked": true,
       "loadedReported": true,
-      "loadedDate": "06/09/69",
+      "loadedDate": "14/09/2026 14:41:48",
       "deliveryDate": "07/09/69",
       "loadedItem": "หอมแดง (ป้าผา)",
-      "loadedWeight": "50 ถุง (500 kg)",
-      "loadedFreight": "นิ่มซี่เส็ง สาขาท่าลี่",
-      "loadedLocation": "ท่าลี่"
+      "loadedWeight": "",
+      "loadedFreight": "",
+      "loadedLocation": "นิ่มซี่เส็ง ท่าลี่",
+      "reportedAt": "2026-09-14T07:41:48.549Z",
+      "details": {
+        "cardId": "tns_shallot_0709",
+        "date": "14/09/2026 14:41:48",
+        "item": "หอมแดง (ป้าผา)",
+        "weight": "",
+        "freight": "",
+        "payment": "",
+        "location": "นิ่มซี่เส็ง ท่าลี่",
+        "receivedYield": null,
+        "receivedPrice": null,
+        "receivedCondition": "",
+        "receivedSize": "",
+        "rawText": "หอมแดงขึ้นของป้าผา ส่งที่นิ่มซี่เส็ง ท่าลี่ สั่งของแล้ว"
+      },
+      "loadedPayment": "",
+      "rawReport": "หอมแดงขึ้นของป้าผา ส่งที่นิ่มซี่เส็ง ท่าลี่ สั่งของแล้ว"
     },
     "tns_pepper_1609": {
       "id": "tns_pepper_1609",
