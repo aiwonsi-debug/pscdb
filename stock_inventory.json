@@ -1,12 +1,12 @@
 {
   "AsOfDate": "15/09/69",
-  "LastUpdated": "2026-09-15T01:42:50.323Z",
+  "LastUpdated": "2026-09-15T09:40:00.000Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
       "StockKg": 5800,
       "Yield": {
-        "AFT": 0.80715,
+        "AFT": 0.67648,
         "TNS": 0.99
       }
     },
@@ -24,6 +24,12 @@
     }
   },
   "AuditTrail": [
+    {
+      "Timestamp": "2026-09-15T09:40:00.000Z",
+      "Item": "Cabbage Intake & Sample Peel (15/09/69)",
+      "Details": "รับเข้ากะหล่ำปลี เฮียหนิง 7,900 kg (กลาง 4,425 kg, เล็ก 3,475 kg), สุ่มปอก 100 kg ได้ 67.648 kg (Yield 67.65%), Transit Loss -1,100 kg (-12.22%)",
+      "Source": "LINE Field Report 15/09/69"
+    },
     {
       "Timestamp": "2026-09-11T03:05:00.000Z",
       "Item": "Stock Baseline Update",
