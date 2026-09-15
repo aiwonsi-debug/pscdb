@@ -1,10 +1,10 @@
 {
-  "AsOfDate": "14/09/26",
-  "LastUpdated": "2026-09-14T08:05:34.388Z",
+  "AsOfDate": "15/09/69",
+  "LastUpdated": "2026-09-15T01:42:50.323Z",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 4350,
+      "StockKg": 5800,
       "Yield": {
         "AFT": 0.80715,
         "TNS": 0.99
@@ -12,7 +12,7 @@
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 42980
+      "StockKg": 41740
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
@@ -185,6 +185,123 @@
       "Unit": "factor",
       "Source": "Telegram Sample Test Ingestion",
       "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
+    },
+    {
+      "Timestamp": "2026-09-14T14:13:57.131Z",
+      "Action": "RECEIVE",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 4350,
+      "NewKg": 4360,
+      "Field": "StockKg",
+      "PreviousValue": 4350,
+      "NewValue": 4360,
+      "Unit": "kg",
+      "Reason": "Test CLI integration",
+      "Note": null,
+      "Source": "record_cli",
+      "Reference": null,
+      "Actor": "cli"
+    },
+    {
+      "Timestamp": "2026-09-14T14:13:57.255Z",
+      "Action": "LOAD",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 4360,
+      "NewKg": 4350,
+      "Field": "StockKg",
+      "PreviousValue": 4360,
+      "NewValue": 4350,
+      "Unit": "kg",
+      "Reason": "Test CLI rollback",
+      "Note": null,
+      "Source": "record_cli",
+      "Reference": null,
+      "Actor": "cli"
+    },
+    {
+      "Timestamp": "2026-09-14T14:35:50.588Z",
+      "Source": "record_cli",
+      "Item": "กะหล่ำปลี",
+      "Details": "Action=RECEIVE | StockKg: 4350 -> 4351 | Reason=CLI integration test | Reference=CLI integration test",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 4350,
+      "NewKg": 4351,
+      "MessageDate": "2026-09-14T14:35:50.588Z",
+      "Field": "StockKg",
+      "PreviousValue": 4350,
+      "NewValue": 4351,
+      "Unit": "kg",
+      "EventId": null,
+      "Action": "RECEIVE",
+      "Reason": "CLI integration test",
+      "Note": "CLI receive: CLI integration test",
+      "Reference": "CLI integration test",
+      "Actor": "cli"
+    },
+    {
+      "Timestamp": "2026-09-14T14:36:15.338Z",
+      "Source": "record_cli",
+      "Item": "กะหล่ำปลี",
+      "Details": "Action=LOAD | StockKg: 4351 -> 4350 | Reason=CLI integration test | Reference=CLI integration test",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 4351,
+      "NewKg": 4350,
+      "MessageDate": "2026-09-14T14:36:15.338Z",
+      "Field": "StockKg",
+      "PreviousValue": 4351,
+      "NewValue": 4350,
+      "Unit": "kg",
+      "EventId": "cli:load:Cabbage:1789396575333:7504:CLI_integration_test",
+      "Action": "LOAD",
+      "Reason": "CLI integration test",
+      "Note": "CLI load: CLI integration test",
+      "Reference": "CLI integration test",
+      "Actor": "cli"
+    },
+    {
+      "Timestamp": "2026-09-14T14:36:17.877Z",
+      "Source": "record_cli",
+      "Item": "กะหล่ำปลี",
+      "Details": "Action=MANUAL_SET | StockKg: 4350 -> 4350 | Reason=restore test stock | Reference=restore test stock",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 4350,
+      "NewKg": 4350,
+      "MessageDate": "2026-09-14T14:36:17.877Z",
+      "Field": "StockKg",
+      "PreviousValue": 4350,
+      "NewValue": 4350,
+      "Unit": "kg",
+      "EventId": "cli:update:Cabbage:1789396577873:5060:restore_test_stock",
+      "Action": "MANUAL_SET",
+      "Reason": "restore test stock",
+      "Note": "CLI update: restore test stock",
+      "Reference": "restore test stock",
+      "Actor": "cli"
+    },
+    {
+      "Timestamp": "2026-09-15T01:42:50.320Z",
+      "ItemKey": "Cabbage",
+      "Field": "StockKg",
+      "PreviousValue": 4350,
+      "NewValue": 5800,
+      "Unit": "kg",
+      "Source": "LINE Unified Ingestion",
+      "EventId": "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Cabbage"
+    },
+    {
+      "Timestamp": "2026-09-15T01:42:50.321Z",
+      "ItemKey": "Onion_AFT",
+      "Field": "StockKg",
+      "PreviousValue": 42980,
+      "NewValue": 41740,
+      "Unit": "kg",
+      "Source": "LINE Unified Ingestion",
+      "EventId": "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Onion_AFT"
     }
   ],
   "ProcessedEvents": [
@@ -197,12 +314,29 @@
     "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT",
     "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese",
     "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot",
-    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT",
+    "cli:load:Cabbage:1789396575333:7504:CLI_integration_test",
+    "cli:update:Cabbage:1789396577873:5060:restore_test_stock",
+    "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Cabbage",
+    "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Onion_AFT",
+    "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Onion_Chinese",
+    "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Carrot"
   ],
   "RecentAudits": [
     {
+      "AsOfDate": "15/09/69",
+      "Label": "ตรวจนับจริง 15/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-15T01:42:50.320Z",
+      "Items": {
+        "Cabbage": 5800,
+        "Onion_AFT": 41740,
+        "Onion_Chinese": 4437,
+        "Carrot": 6250
+      }
+    },
+    {
       "AsOfDate": "14/09/69",
-      "Label": "ตรวจนับจริง 14/09/69 (ล่าสุด)",
+      "Label": "ตรวจนับจริง 14/09/69 (รอบก่อนหน้า)",
       "Timestamp": "2026-09-14T01:39:36.113Z",
       "Items": {
         "Cabbage": 4350,

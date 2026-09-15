@@ -17,7 +17,7 @@
       if (subtitleEl) {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
-          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 08:42 น.';
           if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
@@ -850,30 +850,30 @@
     <!-- ========================================== -->
     <main id="sec_stock" class="app-section">
 
-      <!-- 1. กะหล่ำปลี (Severity: Critical, -55%) -->
-      <div class="flat-card critical-card">
+      <!-- 1. กะหล่ำปลี (Severity: Tracking, +33.3%) -->
+      <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">กะหล่ำปลี</div>
-          <span class="status-badge badge-critical">ใกล้หมด</span>
+          <span class="status-badge badge-warning" id="stk_badge_cabbage">ติดตาม</span>
         </div>
         <div class="metric-row">
-          <span class="big-metric" id="stk_val_cabbage">4,350</span>
+          <span class="big-metric" id="stk_val_cabbage">5,800</span>
           <span class="metric-unit">กก.</span>
         </div>
         <div class="card-forecast" id="stk_forecast_cabbage">
           รถเข้า 16.5 ตัน พอถึง 19/09 · Yield ล่าสุด 80.72%
         </div>
-        <div class="comparison-bar">
-          <span>เทียบ 12/09: 9,650 กก.</span>
-          <span class="comparison-diff diff-negative">-5,300 (-55%)</span>
+        <div class="comparison-bar" id="stk_cmp_cabbage">
+          <span>เทียบ 14/09: 4,350 กก.</span>
+          <span class="comparison-diff diff-positive">+1,450 (+33.3%)</span>
         </div>
       </div>
 
-      <!-- 2. หอมจีน (Severity: Tracking, -18%) -->
+      <!-- 2. หอมจีน (Severity: Normal, 0%) -->
       <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">หอมจีน</div>
-          <span class="status-badge badge-normal">ปกติ</span>
+          <span class="status-badge badge-normal" id="stk_badge_onion_chinese">ปกติ</span>
         </div>
         <div class="metric-row">
           <span class="big-metric" id="stk_val_onion_chinese">4,437</span>
@@ -882,17 +882,17 @@
         <div class="card-forecast">
           พอตลอดเดือน · ไม่มีแผนเบิกใช้ปริมาณสูงในเดือนนี้
         </div>
-        <div class="comparison-bar">
-          <span>เทียบ 12/09: 5,440 กก.</span>
-          <span class="comparison-diff diff-negative">-1,003 (-18%)</span>
+        <div class="comparison-bar" id="stk_cmp_onion_chinese">
+          <span>เทียบ 14/09: 4,437 กก.</span>
+          <span class="comparison-diff">0 (0%)</span>
         </div>
       </div>
 
-      <!-- 3. แครอทสวย (Severity: Normal, -4.7%) -->
+      <!-- 3. แครอทสวย (Severity: Normal, 0%) -->
       <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">แครอทสวย</div>
-          <span class="status-badge badge-normal">ปกติ</span>
+          <span class="status-badge badge-normal" id="stk_badge_carrot">ปกติ</span>
         </div>
         <div class="metric-row">
           <span class="big-metric" id="stk_val_carrot">6,250</span>
@@ -901,28 +901,28 @@
         <div class="card-forecast">
           พอถึง 30/09 ตาม PO · เข้ารวม 5,670 กก. เหลือสต็อก ~580 กก.
         </div>
-        <div class="comparison-bar">
-          <span>เทียบ 12/09: 6,560 กก.</span>
-          <span class="comparison-diff diff-negative">-310 (-4.7%)</span>
+        <div class="comparison-bar" id="stk_cmp_carrot">
+          <span>เทียบ 14/09: 6,250 กก.</span>
+          <span class="comparison-diff">0 (0%)</span>
         </div>
       </div>
 
-      <!-- 4. หอม AFT (Severity: Tracking / Normal, -3.8%) -->
+      <!-- 4. หอม AFT (Severity: Tracking, -2.9%) -->
       <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">หอม AFT</div>
-          <span class="status-badge badge-warning">ติดตาม</span>
+          <span class="status-badge badge-warning" id="stk_badge_onion_aft">ติดตาม</span>
         </div>
         <div class="metric-row">
-          <span class="big-metric" id="stk_val_onion_aft">42,980</span>
+          <span class="big-metric" id="stk_val_onion_aft">41,740</span>
           <span class="metric-unit">กก.</span>
         </div>
         <div class="card-forecast">
-          พอถึง 30/09 ตาม PO · ใช้ไป 12,000 กก. เหลือปลายเดือน ~30,980 กก.
+          พอถึง 30/09 ตาม PO · ใช้ไป 12,000 กก. เหลือปลายเดือน ~29,740 กก.
         </div>
-        <div class="comparison-bar">
-          <span>เทียบ 12/09: 44,660 กก.</span>
-          <span class="comparison-diff diff-negative">-1,680 (-3.8%)</span>
+        <div class="comparison-bar" id="stk_cmp_onion_aft">
+          <span>เทียบ 14/09: 42,980 กก.</span>
+          <span class="comparison-diff diff-negative">-1,240 (-2.9%)</span>
         </div>
       </div>
 

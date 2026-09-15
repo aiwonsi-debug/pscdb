@@ -752,10 +752,10 @@ if (cat === 'all') {
         .then(data => {
           if (!data || !data.Items) return;
           const items = data.Items;
-          if (items.Cabbage && document.getElementById('stk_val_cabbage')) document.getElementById('stk_val_cabbage').textContent = items.Cabbage.StockKg.toLocaleString() + ' กก.';
-          if (items.Onion_AFT && document.getElementById('stk_val_onion_aft')) document.getElementById('stk_val_onion_aft').textContent = items.Onion_AFT.StockKg.toLocaleString() + ' กก.';
-          if (items.Onion_Chinese && document.getElementById('stk_val_onion_chinese')) document.getElementById('stk_val_onion_chinese').textContent = items.Onion_Chinese.StockKg.toLocaleString() + ' กก.';
-          if (items.Carrot && document.getElementById('stk_val_carrot')) document.getElementById('stk_val_carrot').textContent = items.Carrot.StockKg.toLocaleString() + ' กก.';
+          if (items.Cabbage && document.getElementById('stk_val_cabbage')) document.getElementById('stk_val_cabbage').textContent = items.Cabbage.StockKg.toLocaleString();
+          if (items.Onion_AFT && document.getElementById('stk_val_onion_aft')) document.getElementById('stk_val_onion_aft').textContent = items.Onion_AFT.StockKg.toLocaleString();
+          if (items.Onion_Chinese && document.getElementById('stk_val_onion_chinese')) document.getElementById('stk_val_onion_chinese').textContent = items.Onion_Chinese.StockKg.toLocaleString();
+          if (items.Carrot && document.getElementById('stk_val_carrot')) document.getElementById('stk_val_carrot').textContent = items.Carrot.StockKg.toLocaleString();
           
           if (items.Cabbage && items.Cabbage.Yield) {
             const aftYield = items.Cabbage.Yield.AFT;
@@ -1628,7 +1628,7 @@ if (cat === 'all') {
       if (subtitleEl) {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
-          if (timeEl) timeEl.textContent = 'อัปเดต 08:39 น.';
+          if (timeEl) timeEl.textContent = 'อัปเดต 08:42 น.';
           if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
