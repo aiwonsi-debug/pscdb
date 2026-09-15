@@ -17,19 +17,19 @@
       if (subtitleEl) {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
-          if (timeEl) timeEl.textContent = 'อัปเดต 08:42 น.';
+          if (timeEl) timeEl.textContent = 'กำลังโหลด...';
           if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
-          if (timeEl) timeEl.textContent = 'อัปเดต 13/09 13:40 น.';
+          if (timeEl) timeEl.textContent = 'กำลังโหลด...';
           if (badgeEl) badgeEl.className = 'header-timestamp status-aged';
           if (iconClock) iconClock.style.display = 'none';
           if (iconAlert) iconAlert.style.display = 'block';
         } else {
           subtitleEl.textContent = 'รายการรอส่งมอบ';
-          if (timeEl) timeEl.textContent = 'อัปเดต 15:05 น.';
+          if (timeEl) timeEl.textContent = 'กำลังโหลด...';
           if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
@@ -109,7 +109,7 @@
           <line x1="12" y1="9" x2="12" y2="13"></line>
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
-        <span id="header_timestamp_val">อัปเดต 15:05 น.</span>
+        <span id="header_timestamp_val">กำลังโหลด...</span>
       </div>
     </header>
 
