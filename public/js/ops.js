@@ -1,4 +1,5 @@
 // Client Session Auth via HttpOnly Cookie (No API Key in DOM)
+    window.lastPriceUpdate = 'อัปเดต 13/09 13:40 น.';
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -1021,37 +1022,7 @@ if (cat === 'all') {
         let pricePerKg = item.price || (item.details && item.details.receivedPrice) || (titleText === 'หอมแดง' ? '45.00 บ./กก.' : '4.50 บ./กก.');
         if (typeof pricePerKg === 'number') pricePerKg = pricePerKg.toFixed(2) + ' บ./กก.';
 
-        if (intakeDate.includes('14/09')) {
-          weightUp = '9,100 กก.';
-          receivedWeight = '8,250 กก.';
-          transitLoss = '-850 กก. (-9.34%)';
-          pricePerKg = '4.50 บ./กก.';
-        } else if (intakeDate.includes('10/09')) {
-          weightUp = '9,280 กก.';
-          receivedWeight = '8,450 กก.';
-          transitLoss = '-830 กก. (-8.94%)';
-          pricePerKg = '4.00 บ./กก.';
-        } else if (intakeDate.includes('07/09')) {
-          weightUp = '500 กก.';
-          receivedWeight = '500 กก.';
-          transitLoss = '0 กก. (0%)';
-          pricePerKg = '45.00 บ./กก.';
-        } else if (intakeDate.includes('05/09')) {
-          weightUp = '8,875 กก.';
-          receivedWeight = '8,875 กก.';
-          transitLoss = '0 กก. (0%)';
-          pricePerKg = 'ศาลายาสั่งตรง';
-        } else if (intakeDate.includes('03/09')) {
-          weightUp = '9,200 กก.';
-          receivedWeight = '8,725 กก.';
-          transitLoss = '-475 กก. (-5.16%)';
-          pricePerKg = '3.00 บ./กก.';
-        } else if (intakeDate.includes('02/09')) {
-          weightUp = '8,715 กก.';
-          receivedWeight = '8,500 กก.';
-          transitLoss = '-215 กก. (-2.47%)';
-          pricePerKg = '3.00 บ./กก.';
-        }
+
 
         // Freight
         let freight = item.freight || (item.details && item.details.freight) || '13,000 บ. (เก็บปลายทาง)';
