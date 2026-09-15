@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/ops.css?v=20260914_dyn_v1">
   <script>
-    function updateTabHeader(tabId) {
+    function (window.updateTabHeader || updateTabHeader)(tabId) {
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
       const badgeEl = document.getElementById('header_timestamp_badge');
@@ -59,7 +59,7 @@
         }, 500);
       }
 
-      updateTabHeader(tabId);
+      (window.updateTabHeader || updateTabHeader)(tabId);
     }
     window.switchAppTab = switchAppTab;
 
@@ -78,7 +78,7 @@
             document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
             const btn = document.getElementById('tab_btn_' + tabId);
             if (btn) btn.classList.add('active');
-            updateTabHeader(tabId);
+            (window.updateTabHeader || updateTabHeader)(tabId);
           }
         });
       }, {
@@ -937,6 +937,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="/js/ops.js?v=20260915_dyn_v3"></script>
+  <script src="/js/ops.js?v=20260915_dyn_v4"></script>
 </body>
 </html>

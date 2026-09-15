@@ -777,7 +777,7 @@ if (cat === 'all') {
             const dStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2);
             const tStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
             window.lastStockUpdate = 'อัปเดต ' + dStr + ' ' + tStr + ' น.';
-            if (document.getElementById('header_timestamp_val') && document.getElementById('sec_stock') && document.getElementById('sec_stock').classList.contains('active')) {
+            if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_stock') && document.getElementById('tab_btn_stock').classList.contains('active')) {
                 document.getElementById('header_timestamp_val').textContent = window.lastStockUpdate;
             }
 
@@ -871,7 +871,7 @@ if (cat === 'all') {
                 const nowDStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2);
                 const nowTStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
                 window.lastOpsUpdate = 'อัปเดต ' + nowDStr + ' ' + nowTStr + ' น.';
-                if (document.getElementById('header_timestamp_val') && document.getElementById('sec_delivery') && document.getElementById('sec_delivery').classList.contains('active')) {
+                if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_delivery') && document.getElementById('tab_btn_delivery').classList.contains('active')) {
                     document.getElementById('header_timestamp_val').textContent = window.lastOpsUpdate;
                 }
 
@@ -1636,7 +1636,7 @@ if (cat === 'all') {
     let isProgrammaticScroll = false;
     let scrollTimeout = null;
 
-    function updateTabHeader(tabId) {
+    window.updateTabHeader = function updateTabHeader(tabId) {
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
       const badgeEl = document.getElementById('header_timestamp_badge');
