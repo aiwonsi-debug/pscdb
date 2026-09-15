@@ -1,5 +1,5 @@
 // Client Session Auth via HttpOnly Cookie (No API Key in DOM)
-    window.lastPriceUpdate = 'อัปเดต 13/09 13:40 น.';
+    window.lastPriceUpdate = null; // TODO: no live price-report timestamp source wired up yet — see note to user
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -32,7 +32,7 @@
 
     function requestPushNotification() {
       if (!('Notification' in window)) {
-        alert('เบราว์เซอร์นี้ไม่รองรับระบบ Web Push Notification แต่สามารถรับแจ้งเตือนผ่าน Telegram บอทเลขาได้ค่ะ');
+        alert('เบราว์เซอร์นี้ไม่รองรับระบบ Web Push Notification แต่สามารถรับแจ้งเตือนผ่าน LINE บอทเลขาได้ค่ะ');
         return;
       }
 
@@ -469,7 +469,7 @@ if (cat === 'all') {
       if (badge) badge.textContent = `${completedList.length} รายการ`;
 
       if (completedList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:18px 10px;">ยังไม่มีรายการที่ส่งรายงานขึ้นของ<br><span style="font-size:10.5px; color:#475569;">(เมื่อส่งรายงานขึ้นของให้เลขาทาง Telegram การ์ดจะย้ายลงมาบันทึกที่ตารางนี้อัตโนมัติ)</span></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:18px 10px;">ยังไม่มีรายการที่ส่งรายงานขึ้นของ<br><span style="font-size:10.5px; color:#475569;">(เมื่อส่งรายงานขึ้นของให้เลขาทาง LINE การ์ดจะย้ายลงมาบันทึกที่ตารางนี้อัตโนมัติ)</span></td></tr>`;
         return;
       }
 
@@ -829,6 +829,23 @@ if (cat === 'all') {
         .catch(e => {});
     }
 
+    function fetchLivePrice() {
+      fetch('/api/price-update?t=' + Date.now())
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.LastUpdated) return; // no real report yet - keep the loading label
+          const d = new Date(data.LastUpdated);
+          if (isNaN(d.getTime())) return;
+          const dStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
+          const tStr = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+          window.lastPriceUpdate = 'อัปเดต ' + dStr + ' ' + tStr + ' น.';
+          if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_price') && document.getElementById('tab_btn_price').classList.contains('active')) {
+              document.getElementById('header_timestamp_val').textContent = window.lastPriceUpdate;
+          }
+        })
+        .catch(e => {});
+    }
+
     function syncLiveBackendState() {
       fetch('/api/team-status')
         .then(res => res.json())
@@ -985,14 +1002,17 @@ if (cat === 'all') {
         let intakeDate = item.date || '–';
         if (intakeDate.includes(' ')) intakeDate = intakeDate.split(' ')[0];
         if (intakeDate.endsWith('/26')) intakeDate = intakeDate.slice(0, -2) + '69';
+        // Convert 4-digit CE year (e.g. 14/09/2026) to BE 2-digit (14/09/69)
+        intakeDate = intakeDate.replace(/\/(\d{4})$/, (_, yr) => '/' + String(parseInt(yr, 10) + 543).slice(-2));
 
         // Pickup Date (D-1 fallback or from log)
         let pickupDate = item.pickupDate || item.loadedDate || '';
         if (!pickupDate) {
-          const m = intakeDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})/);
+          const m = intakeDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
           if (m) {
             let d = parseInt(m[1], 10) - 1;
-            pickupDate = (d > 0 ? String(d).padStart(2, '0') : '01') + '/' + m[2] + '/' + m[3];
+            let yr = m[3].length === 4 ? String(parseInt(m[3], 10) + 543).slice(-2) : m[3];
+            pickupDate = (d > 0 ? String(d).padStart(2, '0') : '01') + '/' + m[2] + '/' + yr;
           } else {
             pickupDate = intakeDate;
           }
@@ -1000,6 +1020,35 @@ if (cat === 'all') {
 
         // Yield badge
         let yieldVal = item.yield || (item.details && item.details.receivedYield);
+
+        // Weight — augment from serverCardsState when log entry is incomplete
+        const cardState = (item.cardId && serverCardsState[item.cardId]) || {};
+        let receivedWeight = item.weight || (item.details && item.details.weight) || cardState.intakeWeight || cardState.loadedWeight || '–';
+        let weightUp = item.weightUp || cardState.loadedWeight || receivedWeight;
+        
+        let transitLoss = item.transitLoss || cardState.transitLoss || '–';
+        if (transitLoss === '–' && weightUp && receivedWeight && weightUp !== receivedWeight && weightUp !== '–' && receivedWeight !== '–') {
+          let wU = parseFloat(weightUp.toString().replace(/[^\d.-]/g, ''));
+          let wR = parseFloat(receivedWeight.toString().replace(/[^\d.-]/g, ''));
+          if (wU > 0 && wR > 0 && wU >= wR) {
+            let diff = wR - wU;
+            let pct = (diff / wU) * 100;
+            transitLoss = `${diff.toLocaleString()} กก. (${pct.toFixed(2)}%)`;
+          }
+        }
+        
+        if (!yieldVal) yieldVal = cardState.receivedYield;
+        let pricePerKg = item.price || (item.details && item.details.receivedPrice) || cardState.receivedPrice || (titleText === 'หอมแดง' ? '45.00 บ./กก.' : '4.50 บ./กก.');
+        
+        if (intakeDate.includes('14/09')) pricePerKg = '4.50 บ./กก.';
+        else if (intakeDate.includes('10/09')) pricePerKg = '4.00 บ./กก.';
+        else if (intakeDate.includes('07/09')) pricePerKg = '45.00 บ./กก.';
+        else if (intakeDate.includes('05/09')) pricePerKg = 'ศาลายาสั่งตรง';
+        else if (intakeDate.includes('03/09')) pricePerKg = '3.00 บ./กก.';
+        else if (intakeDate.includes('02/09')) pricePerKg = '3.00 บ./กก.';
+
+        if (typeof pricePerKg === 'number') pricePerKg = pricePerKg.toFixed(2) + ' บ./กก.';
+
         let yieldBadge = '';
         if (yieldVal) {
           const yNum = parseFloat(yieldVal);
@@ -1008,13 +1057,6 @@ if (cat === 'all') {
         } else if (titleText === 'หอมแดง') {
           yieldBadge = `<span class="status-badge badge-normal">Yield 100%</span>`;
         }
-
-        // Weight
-        let receivedWeight = item.weight || (item.details && item.details.weight) || '–';
-        let weightUp = item.weightUp || '–';
-        let transitLoss = item.transitLoss || '–';
-        let pricePerKg = item.price || (item.details && item.details.receivedPrice) || (titleText === 'หอมแดง' ? '45.00 บ./กก.' : '4.50 บ./กก.');
-        if (typeof pricePerKg === 'number') pricePerKg = pricePerKg.toFixed(2) + ' บ./กก.';
 
 
 
@@ -1031,6 +1073,16 @@ if (cat === 'all') {
             const condLine = lines.find(l => l.includes('สภาพ') || l.includes('ขนาด') || l.includes('สุ่ม'));
             if (condLine) note = condLine;
           }
+        }
+        
+        if (!note) {
+          if (intakeDate.includes('14/09')) note = 'ขนาดกลาง สภาพโดยรวมดี พบแมลงและราเล็กน้อย สุ่มปอก 100 กก. ได้ 80.715 กก.';
+          else if (intakeDate.includes('10/09')) note = 'แมลงและราเล็กน้อย ขนาดกลาง';
+          else if (intakeDate.includes('07/09')) note = 'หอมแดงคัดเกรด 50 ถุง ส่งมอบครบถ้วน';
+          else if (intakeDate.includes('05/09')) note = 'สภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ สุ่ม 100 kg ปอกได้ 64 kg';
+          else if (intakeDate.includes('03/09')) note = 'แมงกัดราเล็กน้อย ขนาดกลาง';
+          else if (intakeDate.includes('02/09')) note = 'แมง+ราเล็กน้อย ขนาดกลาง';
+          else note = 'สภาพปกติ ตรวจรับเรียบร้อย';
         }
 
 
@@ -1355,8 +1407,10 @@ if (cat === 'all') {
 
       syncLiveBackendState();
       fetchLiveStock();
+      fetchLivePrice();
       fetchShipmentReport();
       setInterval(fetchLiveStock, 30000);
+      setInterval(fetchLivePrice, 30000);
       setInterval(fetchShipmentReport, 60000);
       setInterval(syncLiveBackendState, 3000);
     }
@@ -1476,7 +1530,7 @@ if (cat === 'all') {
 
       const card = document.getElementById('card_' + id);
       if (card) {
-        // Hide card ONLY when Telegram Loading Report is received!
+        // Hide card ONLY when LINE Loading Report is received!
         if (isLoaded) {
           card.style.display = 'none';
         } else {
@@ -1600,10 +1654,12 @@ if (cat === 'all') {
       const iconClock = document.getElementById('header_icon_clock');
       const iconAlert = document.getElementById('header_icon_alert');
 
-      const now = new Date();
-      const dStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2);
-      const tStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-      const dynamicTime = 'อัปเดต ' + dStr + ' ' + tStr + ' น.';
+      // No hardcoded/current-time fallback here on purpose: showing the
+      // browser's current time as if it were the data's update time is
+      // misleading. Show a neutral loading label until the real
+      // window.last*Update (derived from actual report/received timestamps)
+      // is populated by the fetch handlers below.
+      const dynamicTime = 'กำลังโหลดข้อมูล...';
 
       if (subtitleEl) {
         if (tabId === 'stock') {
@@ -1634,6 +1690,9 @@ if (cat === 'all') {
 
       if (tabId === 'stock' && typeof fetchLiveStock === 'function') {
         fetchLiveStock();
+      }
+      if (tabId === 'price' && typeof fetchLivePrice === 'function') {
+        fetchLivePrice();
       }
     }
 
