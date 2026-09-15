@@ -3,7 +3,7 @@ const path = require('path');
 
 const agyBaseDir = __dirname;
 const MEMORY_FILE = path.join(__dirname, 'secretary_memory.json');
-const WORKSPACE_DIR = 'E:\\รวมงาน\\งาน 25-26';
+const WORKSPACE_DIR = process.env.PSC_WORKSPACE_DIR || 'E:\\รวมงาน\\งาน 25-26';
 const GEMINI_MD_FILE = path.join(WORKSPACE_DIR, 'GEMINI.md');
 const MEMORY_MD_FILE = path.join(__dirname, 'SECRETARY_MEMORY.md');
 
@@ -28,7 +28,7 @@ const DEFAULT_MEMORY = {
         "สต็อกหลักที่ติดตาม: กะหล่ำปลี, หอมใหญ่ (AFT/จีน), แครอท, มันม่วง, มันเหลืองไข่, มันส้ม"
     ],
     custom_directives: [
-        "ส่งไฟล์เอกสาร (Excel, PDF) เข้า LINE ทันทีที่มีการสร้างหรือร้องขอ",
+        "แจ้งพาธไฟล์เอกสาร (Excel, PDF) ที่สร้างเสร็จเข้า LINE ทันทีที่มีการสร้างหรือร้องขอ",
         "ตอบคำถามด้วยข้อมูลจริงที่ค้นพบจากไฟล์ในโฟลเดอร์งาน 25-26 เสมอ"
     ],
     recent_conversations: []
@@ -68,7 +68,7 @@ function saveMemory() {
 function syncToWorkspaceMarkdown() {
     const mem = memoryData || DEFAULT_MEMORY;
     let md = `# 🤖 Google Antigravity & AI Secretary - System Memory & Project Rules\n\n`;
-    md += `*Last Synced from LINE: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}*\n\n`;
+    md += `*Last Synced: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}*\n\n`;
     
     md += `## 👤 User Profile & Communication Directives\n`;
     md += `- **Role:** ${mem.user_profile.role || 'Executive'}\n`;
@@ -203,9 +203,12 @@ function autoLearnFromText(userText) {
     for (const pat of explicitPatterns) {
         const match = t.match(pat);
         if (match && match[1]) {
-            const fact = match[1].trim();
-            if (fact.length >= 3) {
-                rememberItem(fact, fact.includes('ห้าม') || fact.includes('ต้อง') || fact.includes('ทุก') ? 'business_rules' : 'learned_facts');
+            let fact = match[1].trim();
+            // Sanitize against prompt injection / control character attacks
+            fact = fact.replace(/[\r\n\t]+/g, ' ').replace(/["`]/g, "'");
+            if (fact.length >= 3 && fact.length <= 200) {
+                // Fix H-11: Never allow auto-learning to overwrite immutable business rules or system directives
+                rememberItem(fact, 'learned_facts');
                 return fact;
             }
         }
@@ -216,9 +219,10 @@ function autoLearnFromText(userText) {
         (lower.includes('ราคา') || lower.includes('บาท') || lower.includes('ค่ารถ') || lower.includes('yield') || lower.includes('เปอร์เซ็นต์')) &&
         (lower.includes('ปรับ') || lower.includes('เปลี่ยน') || lower.includes('เป็น') || lower.includes('คิด') || lower.includes('กิโล') || lower.includes('กก.'))
     ) {
-        if (t.length >= 8 && t.length <= 150) {
-            rememberItem(t, 'learned_facts');
-            return t;
+        let sanitized = t.replace(/[\r\n\t]+/g, ' ').replace(/["`]/g, "'");
+        if (sanitized.length >= 8 && sanitized.length <= 150) {
+            rememberItem(sanitized, 'learned_facts');
+            return sanitized;
         }
     }
 
@@ -230,21 +234,14 @@ function buildAgyContextPrompt(userPrompt) {
     const groundTruth = (function() {
         try {
             const gtv = require('./ground_truth_validator.js');
-            return gtv.buildGroundTruthContext();
+            return gtv.buildGroundTruthContext(userPrompt);
         } catch(e) {
             return '';
         }
     })();
 
     let contextHeader = `==================================================\n`;
-    contextHeader += `🛡️ [ANTI-HALLUCINATION & STRICT GROUND-TRUTH POLICY]\n`;
-    contextHeader += `1. ตรวจสอบข้อมูลคำสั่งซื้อ วันที่ส่งมอบ และจำนวน กก. ตรงจากไฟล์อีเมลจริงเท่านั้น\n`;
-    contextHeader += `2. ห้ามคิดคำนวณ สมมติ หรือสร้างตัวเลขขึ้นเองโดยเด็ดขาด หากไม่มีในไฟล์ ให้ตอบว่า "ไม่พบข้อมูลในเอกสารล่าสุด"\n`;
-    contextHeader += `3. ทุกครั้งที่ตอบเรื่องตัวเลข ให้ระบุชื่อไฟล์อ้างอิงและรอบ Rev. ประกอบเสมอ\n\n`;
-    contextHeader += `📱 [MOBILE-OPTIMIZED LINE FORMATTING DIRECTIVE]\n`;
-    contextHeader += `• จัดรูปแบบข้อความให้อ่านง่ายบนจอมือถือ (Mobile Screen Friendly)\n`;
-    contextHeader += `• ห้ามใช้ตาราง Markdown แบบหลายคอลัมน์แนวนอน เพราะจะล้นจอและอ่านยากบนมือถือ\n`;
-    contextHeader += `• ให้ใช้รูปแบบ "การ์ดข้อความ (Card Format)" หัวข้อสั้นชัดเจน มี Emoji นำหน้า และแบ่งวรรคตอนด้วยเส้นคั่น ──────────────────\n`;
+    contextHeader += `[ข้อมูลอ้างอิงสำหรับคำถามนี้]\n`;
     contextHeader += `==================================================\n\n`;
 
     if (groundTruth) {
@@ -285,7 +282,7 @@ function buildAgyContextPrompt(userPrompt) {
     return `${contextHeader}\n${userPrompt}`;
 }
 
-function formatMemoryForLINE() {
+function formatMemoryForLine() {
     const mem = loadMemory();
     let out = `🧠 [ระบบความจำและการเรียนรู้ของเลขา AI]\n`;
     out += `📅 อัปเดตล่าสุด: ${new Date(mem.last_updated).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}\n\n`;
@@ -333,6 +330,6 @@ module.exports = {
     addConversationTurn,
     autoLearnFromText,
     buildAgyContextPrompt,
-    formatMemoryForLINE,
+    formatMemoryForLine,
     syncToWorkspaceMarkdown
 };

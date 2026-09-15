@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-14T07:23:00.000Z",
+  "last_updated": "2026-09-15T02:23:29.462Z",
   "active_operations": [
     {
       "id": "OPS-20260914-550",
@@ -134,14 +134,25 @@
   ],
   "history_logs": [
     {
-      "id": "LOG-1789313220000",
-      "timestamp": "2026-09-14T01:39:36.120Z",
-      "date": "14/09/69",
-      "item": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
+      "id": "LOG-1789371708549",
+      "timestamp": "2026-09-14T07:41:48.549Z",
+      "date": "14/09/2026 14:41:48",
+      "item": "หอมแดง (ป้าผา)",
       "weight": "",
       "freight": "",
       "payment": "",
-      "location": "",
+      "location": "นิ่มซี่เส็ง ท่าลี่",
+      "cardId": "tns_shallot_0709"
+    },
+    {
+      "id": "LOG-1789313220000",
+      "timestamp": "2026-09-15T02:23:29.462Z",
+      "date": "14/09/26",
+      "item": "กะหล่ำปลี (เฮียหนิง)",
+      "weight": "9,000 kg",
+      "freight": "13,000 บาท",
+      "payment": "เก็บปลายทาง",
+      "location": "โกดัง อมพาย แม่สะเรียง",
       "cardId": "salaya_1409"
     },
     {
@@ -274,38 +285,6 @@
       "transitLoss": "830 kg (8.94%)",
       "rawReport": "วันที่ 09/09/26\nขึ้นกะหล่ำปลีเฮียหนิง\nน้ำหนักสุทธิ =9,280kg\n\nค่ารถ 13,000บาท\nเก็บปลายทาง 13,000 บาท\n(ขึ้นที่โกดัง  อมพาย แม่สะเรียง ราคา 4 บาท)"
     },
-    "salaya_1409": {
-      "id": "salaya_1409",
-      "supplier": "เฮียหนิง (โกดัง อมพาย แม่สะเรียง)",
-      "truck": "6 ล้อ 1 คัน",
-      "orderChecked": true,
-      "truckChecked": true,
-      "loadedReported": true,
-      "reportedAt": "2026-09-14T01:39:36.120Z",
-      "loadedDate": "14/09/69",
-      "loadedItem": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
-      "loadedWeight": "",
-      "loadedFreight": "",
-      "loadedPayment": "",
-      "loadedLocation": "",
-      "rawReport": "Stock  14/09/69\n*กะหล่ำ = 4,350 kg.\nหอม AFT = 42,980 kg.\nหอมจีน = 4,437 kg.\nแครอทสวย  =  6,250 kg.",
-      "deliveryDate": "14/09/69",
-      "updatedAt": "2026-09-13T16:20:00.000Z",
-      "details": {
-        "cardId": "salaya_1409",
-        "date": "14/09/69",
-        "item": "กระหล่ำ, หอม AFT, หอมจีน, แครอท (สวน)",
-        "weight": "",
-        "freight": "",
-        "payment": "",
-        "location": "",
-        "receivedYield": null,
-        "receivedPrice": null,
-        "receivedCondition": "สวย (เฉพาะแครอท)",
-        "receivedSize": "",
-        "rawText": "Stock  14/09/69\n*กะหล่ำ = 4,350 kg.\nหอม AFT = 42,980 kg.\nหอมจีน = 4,437 kg.\nแครอทสวย  =  6,250 kg."
-      }
-    },
     "tns_shallot_0709": {
       "id": "tns_shallot_0709",
       "supplier": "ป้าผา (หอมแดง)",
@@ -313,12 +292,29 @@
       "orderChecked": true,
       "truckChecked": true,
       "loadedReported": true,
-      "loadedDate": "06/09/69",
+      "loadedDate": "14/09/2026 14:41:48",
       "deliveryDate": "07/09/69",
       "loadedItem": "หอมแดง (ป้าผา)",
-      "loadedWeight": "50 ถุง (500 kg)",
-      "loadedFreight": "นิ่มซี่เส็ง สาขาท่าลี่",
-      "loadedLocation": "ท่าลี่"
+      "loadedWeight": "",
+      "loadedFreight": "",
+      "loadedLocation": "นิ่มซี่เส็ง ท่าลี่",
+      "reportedAt": "2026-09-14T07:41:48.549Z",
+      "details": {
+        "cardId": "tns_shallot_0709",
+        "date": "14/09/2026 14:41:48",
+        "item": "หอมแดง (ป้าผา)",
+        "weight": "",
+        "freight": "",
+        "payment": "",
+        "location": "นิ่มซี่เส็ง ท่าลี่",
+        "receivedYield": null,
+        "receivedPrice": null,
+        "receivedCondition": "",
+        "receivedSize": "",
+        "rawText": "หอมแดงขึ้นของป้าผา ส่งที่นิ่มซี่เส็ง ท่าลี่ สั่งของแล้ว"
+      },
+      "loadedPayment": "",
+      "rawReport": "หอมแดงขึ้นของป้าผา ส่งที่นิ่มซี่เส็ง ท่าลี่ สั่งของแล้ว"
     },
     "tns_pepper_1609": {
       "id": "tns_pepper_1609",
@@ -340,10 +336,32 @@
       "id": "salaya_1509",
       "supplier": "เฮียหนิง (โกดัง อมพาย แม่สะเรียง)",
       "truck": "6 ล้อ 1 คัน",
-      "orderChecked": false,
-      "truckChecked": false,
-      "loadedReported": false,
-      "updatedAt": "2026-09-13T16:20:00.000Z"
+      "orderChecked": true,
+      "truckChecked": true,
+      "loadedReported": true,
+      "updatedAt": "2026-09-13T16:20:00.000Z",
+      "reportedAt": "2026-09-15T02:23:29.462Z",
+      "loadedDate": "14/09/26",
+      "loadedItem": "กะหล่ำปลี (เฮียหนิง)",
+      "loadedWeight": "9,000 kg",
+      "loadedFreight": "13,000 บาท",
+      "loadedPayment": "เก็บปลายทาง",
+      "loadedLocation": "โกดัง อมพาย แม่สะเรียง",
+      "rawReport": "วันที่ 14/09/26\nขึ้นกะหล่ำปลีเฮียหนิง 4.5 บาท\nน้ำหนักสุทธิ =9,000kg\n\nค่ารถ 13,000บาท\nเก็บปลายทาง 13,000 บาท\n(ขึ้นที่โกดัง  อมพาย แม่สะเรียง",
+      "details": {
+        "cardId": "salaya_1509",
+        "date": "14/09/26",
+        "item": "กะหล่ำปลี (เฮียหนิง)",
+        "weight": "9,000 kg",
+        "freight": "13,000 บาท",
+        "payment": "เก็บปลายทาง",
+        "location": "โกดัง อมพาย แม่สะเรียง",
+        "receivedYield": null,
+        "receivedPrice": 4.5,
+        "receivedCondition": "",
+        "receivedSize": "",
+        "rawText": "วันที่ 14/09/26\nขึ้นกะหล่ำปลีเฮียหนิง 4.5 บาท\nน้ำหนักสุทธิ =9,000kg\n\nค่ารถ 13,000บาท\nเก็บปลายทาง 13,000 บาท\n(ขึ้นที่โกดัง  อมพาย แม่สะเรียง"
+      }
     },
     "salaya_1709": {
       "id": "salaya_1709",

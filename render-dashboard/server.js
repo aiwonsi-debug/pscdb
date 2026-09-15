@@ -8,6 +8,17 @@ const fs = require('fs');
 const path = require('path');
 const quotaTracker = { loadQuotaData: () => ({}), saveQuotaData: () => {} };
 
+// Local logger for this module — writes to the same secretary_activity.log
+// that bot.js's writeLog() uses, so both processes' logs interleave in one
+// place. (bot.js's own writeLog() is not in scope here — separate module.)
+function writeLog(msg) {
+    const now = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', hour12: false })
+        .replace(',', '');
+    const line = `[${now}] ${msg}`;
+    try { fs.appendFileSync(path.join(__dirname, 'secretary_activity.log'), line + '\n', 'utf8'); } catch (e) {}
+    try { console.log(line); } catch (e) {}
+}
+
 function escapeHtml(str) {
     if (!str || typeof str !== 'string') return '';
     return str
@@ -50,7 +61,7 @@ let sendLineMessage;
 try {
     sendLineMessage = require('./line_notifier').sendLineMessage;
 } catch (e) {
-    sendLineMessage = async (msg) => { console.log('[Render Server Notify Fallback]:', msg); return { success: false }; };
+    sendLineMessage = async (msg) => { console.log('[Webhook Notify Fallback]:', msg); return { success: false }; };
 }
 
 function sendLineNotification(text) {
@@ -537,6 +548,8 @@ const server = http.createServer(async (req, res) => {
 
         // Security Guard: Authenticate all POST write endpoints (Fix unauthenticated write APIs)
         // Exception: /api/line-webhook authenticates via its own LINE signature
+        // verification (X-Line-Signature + channel_secret HMAC) further below —
+        // LINE's platform has no way to send our internal X-PSC-API-KEY header.
         let isMasterAuth = false;
         let isSessionAuth = false;
         if (req.method === 'POST' && pathname !== '/api/line-webhook') {
@@ -651,7 +664,10 @@ const server = http.createServer(async (req, res) => {
                     Cabbage: { Name: "กะหล่ำปลี", StockKg: 2575 },
                     Onion_AFT: { Name: "หอม AFT", StockKg: 26120 },
                     Onion_Chinese: { Name: "หอมจีน", StockKg: 3560 },
-                    Carrot: { Name: "แครอทสวย", StockKg: 5840 }
+                    Carrot: { Name: "แครอทสวย", StockKg: 5840 },
+                    Purple_Sweet_Potato: { Name: "มันม่วงหัวเล็ก", StockKg: 1690 },
+                    Yellow_Sweet_Potato: { Name: "มันเหลืองไข่", StockKg: 342 },
+                    Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
                 }
             };
             const targetStockFile = [
@@ -746,8 +762,12 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify({ success: true, message: 'Email pushed to LINE bot successfully' }));
         }
 
-        // 3b. LINE Messaging API Webhook
+        // 3b. LINE Messaging API Webhook — receives free-text reports from the team
+        // (prices, stock counts, delivery orders) and routes them through the same
+        // handleCommand()/OKMD-Groq parsing pipeline.
         if (req.method === 'POST' && pathname === '/api/line-webhook') {
+            // Must read the RAW body for signature verification — do not use getBody()'s
+            // auto-JSON-parse here, since the LINE signature is computed over raw bytes.
             const rawBodyBuffer = await new Promise((resolve, reject) => {
                 const chunks = [];
                 let len = 0;
@@ -769,17 +789,20 @@ const server = http.createServer(async (req, res) => {
             const expectedSignature = channelSecret ? crypto.createHmac('sha256', channelSecret).update(rawBodyBuffer).digest('base64') : '';
 
             if (channelSecret && signature !== expectedSignature) {
-                console.warn(`[LINE Webhook] Signature mismatch: received="${signature}" expected="${expectedSignature}"`);
+                writeLog(`[LINE Webhook] Signature mismatch — received="${signature}" expected="${expectedSignature}" secretLen=${channelSecret.length}`);
                 res.writeHead(401);
                 return res.end(JSON.stringify({ success: false, error: 'Invalid signature' }));
             }
 
-            // Acknowledge LINE platform immediately
+            // Respond 200 immediately — LINE requires a fast ack and will retry/disable
+            // the webhook if it doesn't get one, regardless of how long processing takes.
             res.writeHead(200);
             res.end(JSON.stringify({ success: true }));
 
-            // Forward to local agent machine if Tailscale Funnel / tunnel is configured, or forward to local port
-            const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook').trim();
+            // If running on Render or proxy URL configured, forward payload to local bot machine
+            const isCloud = !!process.env.RENDER || !!process.env.IS_RENDER;
+            const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || (isCloud ? 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook' : '')).trim();
+
             if (localTunnelUrl) {
                 try {
                     const parsedUrl = new URL(localTunnelUrl);
@@ -796,15 +819,51 @@ const server = http.createServer(async (req, res) => {
                             'Content-Length': Buffer.byteLength(rawBody)
                         }
                     }, (fwdRes) => {
-                        console.log(`[LINE Proxy] Forwarded to ${localTunnelUrl} -> Status ${fwdRes.statusCode}`);
+                        writeLog(`[LINE Proxy] Forwarded to ${localTunnelUrl} -> Status ${fwdRes.statusCode}`);
                     });
                     fwdReq.on('error', (err) => {
-                        console.error('[LINE Proxy] Forwarding error:', err.message);
+                        writeLog(`[LINE Proxy] Forwarding error: ${err.message}`);
                     });
                     fwdReq.write(rawBody);
                     fwdReq.end();
                 } catch (proxyErr) {
-                    console.error('[LINE Proxy] Setup error:', proxyErr.message);
+                    writeLog(`[LINE Proxy] Setup error: ${proxyErr.message}`);
+                }
+                return;
+            }
+
+            let payload = {};
+            try { payload = JSON.parse(rawBody); } catch (e) { return; }
+
+            const events = payload.events || [];
+            for (const event of events) {
+                if (event.type !== 'message' || !event.message) continue;
+                const sourceId = event.source.groupId || event.source.roomId || event.source.userId;
+                if (!sourceId) continue;
+
+                if (event.message.type === 'text') {
+                    const text = (event.message.text || '').trim();
+                    if (!text) continue;
+
+                    writeLog(`[LINE Message] From ${sourceId}: ${text}`);
+
+                    try {
+                        const bot = require('./bot.js');
+                        bot.handleCommand(`LINE:${sourceId}`, text, null);
+                    } catch (err) {
+                        writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
+                    }
+                } else if (event.message.type === 'image') {
+                    const messageId = event.message.id;
+                    writeLog(`[LINE Image] Received from ${sourceId}, messageId=${messageId}`);
+                    try {
+                        const bot = require('./bot.js');
+                        if (typeof bot.handleLineImage === 'function') {
+                            bot.handleLineImage(`LINE:${sourceId}`, messageId);
+                        }
+                    } catch (err) {
+                        writeLog(`[LINE Image Error]: ${err.message}`);
+                    }
                 }
             }
             return;
