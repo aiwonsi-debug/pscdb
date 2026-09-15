@@ -1032,15 +1032,7 @@ if (cat === 'all') {
             if (condLine) note = condLine;
           }
         }
-        if (!note) {
-          if (intakeDate.includes('14/09')) note = 'ขนาดกลาง สภาพโดยรวมดี พบแมลงและราเล็กน้อย สุ่มปอก 100 กก. ได้ 80.715 กก.';
-          else if (intakeDate.includes('10/09')) note = 'แมลงและราเล็กน้อย ขนาดกลาง';
-          else if (intakeDate.includes('07/09')) note = 'หอมแดงคัดเกรด 50 ถุง ส่งมอบครบถ้วน';
-          else if (intakeDate.includes('05/09')) note = 'สภาพโดยรวมพอใช้ แมง+ราค่อนข้างเยอะ สุ่ม 100 kg ปอกได้ 64 kg';
-          else if (intakeDate.includes('03/09')) note = 'แมงกัดราเล็กน้อย ขนาดกลาง';
-          else if (intakeDate.includes('02/09')) note = 'แมง+ราเล็กน้อย ขนาดกลาง';
-          else note = 'สภาพปกติ ตรวจรับเรียบร้อย';
-        }
+
 
         html += `
         <div class="flat-card">
