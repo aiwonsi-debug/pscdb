@@ -3,7 +3,7 @@ const path = require('path');
 
 const agyBaseDir = __dirname;
 const MEMORY_FILE = path.join(__dirname, 'secretary_memory.json');
-const WORKSPACE_DIR = 'E:\\รวมงาน\\งาน 25-26';
+const WORKSPACE_DIR = process.env.PSC_WORKSPACE_DIR || 'E:\\รวมงาน\\งาน 25-26';
 const GEMINI_MD_FILE = path.join(WORKSPACE_DIR, 'GEMINI.md');
 const MEMORY_MD_FILE = path.join(__dirname, 'SECRETARY_MEMORY.md');
 
@@ -28,7 +28,7 @@ const DEFAULT_MEMORY = {
         "สต็อกหลักที่ติดตาม: กะหล่ำปลี, หอมใหญ่ (AFT/จีน), แครอท, มันม่วง, มันเหลืองไข่, มันส้ม"
     ],
     custom_directives: [
-        "ส่งไฟล์เอกสาร (Excel, PDF) เข้า Telegram ทันทีที่มีการสร้างหรือร้องขอ",
+        "แจ้งพาธไฟล์เอกสาร (Excel, PDF) ที่สร้างเสร็จเข้า LINE ทันทีที่มีการสร้างหรือร้องขอ",
         "ตอบคำถามด้วยข้อมูลจริงที่ค้นพบจากไฟล์ในโฟลเดอร์งาน 25-26 เสมอ"
     ],
     recent_conversations: []
@@ -68,7 +68,7 @@ function saveMemory() {
 function syncToWorkspaceMarkdown() {
     const mem = memoryData || DEFAULT_MEMORY;
     let md = `# 🤖 Google Antigravity & AI Secretary - System Memory & Project Rules\n\n`;
-    md += `*Last Synced from Telegram: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}*\n\n`;
+    md += `*Last Synced: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}*\n\n`;
     
     md += `## 👤 User Profile & Communication Directives\n`;
     md += `- **Role:** ${mem.user_profile.role || 'Executive'}\n`;
@@ -96,7 +96,7 @@ function syncToWorkspaceMarkdown() {
     }
 
     if (mem.recent_conversations && mem.recent_conversations.length > 0) {
-        md += `## 💬 Recent Telegram Dialogue Key Points (Episodic Memory)\n`;
+        md += `## 💬 Recent LINE Dialogue Key Points (Episodic Memory)\n`;
         mem.recent_conversations.slice(-8).forEach(turn => {
             md += `> **[${turn.timestamp || ''}] User:** ${turn.user}\n`;
             md += `> **Assistant Summary:** ${turn.summary || turn.assistant}\n\n`;
@@ -248,7 +248,7 @@ function buildAgyContextPrompt(userPrompt) {
         contextHeader += `${groundTruth}\n`;
     }
 
-    contextHeader += `[ระบบความจำเลขา & กฎเกณฑ์ที่เรียนรู้จาก Telegram]:\n`;
+    contextHeader += `[ระบบความจำเลขา & กฎเกณฑ์ที่เรียนรู้จาก LINE]:\n`;
     
     // Inject active rules
     if (mem.business_rules && mem.business_rules.length > 0) {
@@ -282,7 +282,7 @@ function buildAgyContextPrompt(userPrompt) {
     return `${contextHeader}\n${userPrompt}`;
 }
 
-function formatMemoryForTelegram() {
+function formatMemoryForLine() {
     const mem = loadMemory();
     let out = `🧠 [ระบบความจำและการเรียนรู้ของเลขา AI]\n`;
     out += `📅 อัปเดตล่าสุด: ${new Date(mem.last_updated).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}\n\n`;
@@ -330,6 +330,6 @@ module.exports = {
     addConversationTurn,
     autoLearnFromText,
     buildAgyContextPrompt,
-    formatMemoryForTelegram,
+    formatMemoryForLine,
     syncToWorkspaceMarkdown
 };

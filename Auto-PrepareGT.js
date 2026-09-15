@@ -3,18 +3,8 @@ const path = require('path');
 const https = require('https');
 
 const agyBaseDir = 'E:\\agy';
-const tgConfigPath = path.join(agyBaseDir, 'telegram_config.json');
 const notifiedHistoryPath = path.join(agyBaseDir, 'notified_gt_deliveries.json');
 const deliveriesConfigPath = path.join(__dirname, 'gt_deliveries_config.json');
-
-function getTelegramConfig() {
-    if (fs.existsSync(tgConfigPath)) {
-        try {
-            return JSON.parse(fs.readFileSync(tgConfigPath, 'utf8'));
-        } catch (e) {}
-    }
-    return { BotToken: process.env.TELEGRAM_BOT_TOKEN || '', ChatId: process.env.TELEGRAM_CHAT_ID || '1532466397' };
-}
 
 function getDeliveries() {
     if (fs.existsSync(deliveriesConfigPath)) {
@@ -27,27 +17,16 @@ function getDeliveries() {
     return [];
 }
 
-function sendTGAlert(botToken, chatId, message) {
-    return new Promise((resolve) => {
-        const payload = JSON.stringify({ chat_id: chatId, text: message });
-        const opt = {
-            hostname: 'api.telegram.org',
-            port: 443,
-            path: `/bot${botToken}/sendMessage`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                'Content-Length': Buffer.byteLength(payload, 'utf8')
-            },
-            timeout: 15000
-        };
-        const req = https.request(opt, (res) => {
-            resolve(res.statusCode >= 200 && res.statusCode < 300);
-        });
-        req.on('error', () => resolve(false));
-        req.write(payload, 'utf8');
-        req.end();
-    });
+const lineNotifier = require('./line_notifier.js');
+
+async function sendAlert(message) {
+    try {
+        const res = await lineNotifier.sendLineMessage(message);
+        return res && res.success;
+    } catch (err) {
+        console.error('LINE Send Error:', err.message);
+        return false;
+    }
 }
 
 function computeTriggerInfo(deliv, dDate) {
@@ -97,7 +76,7 @@ async function runAutoPrepareGT(currentDateStr) {
         } catch (e) {}
     }
 
-    const { BotToken, ChatId } = getTelegramConfig();
+
     const deliveries = getDeliveries();
 
     let alertsTriggered = 0;
@@ -113,7 +92,7 @@ async function runAutoPrepareGT(currentDateStr) {
             const msg = buildAlertMessage(deliv, alertLeadText, sampleDate);
 
             console.log(`[Trigger GT Alert] ${key}`);
-            const sent = await sendTGAlert(BotToken, ChatId, msg);
+            const sent = await sendAlert(msg);
             if (sent) {
                 notified[key] = new Date().toISOString();
                 alertsTriggered++;

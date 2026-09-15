@@ -73,7 +73,7 @@ function doPost(e) {
 }
 
 /**
- * Trigger Function: Push incoming unread email directly to Render & Telegram Bot
+ * Trigger Function: Push incoming unread email directly to Render & LINE Bot
  */
 function pushIncomingMailToBot() {
   var threads = GmailApp.search('is:unread label:inbox');

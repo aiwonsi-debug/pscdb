@@ -58,7 +58,7 @@
       "Timestamp": "2026-09-05T19:01:58.347Z",
       "Item": "Cabbage",
       "NewKg": 8875,
-      "Source": "LINE Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
+      "Source": "Telegram Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
     },
     {
       "Timestamp": "2026-09-04T02:38:11.096Z",
@@ -66,7 +66,7 @@
       "ItemName": "กะหล่ำปลี",
       "PreviousKg": 6075,
       "NewKg": 8800,
-      "Source": "LINE Unified Ingestion",
+      "Source": "Telegram Unified Ingestion",
       "MessageDate": "04/09/69"
     },
     {
@@ -75,7 +75,7 @@
       "ItemName": "หอม AFT",
       "PreviousKg": 26120,
       "NewKg": 25480,
-      "Source": "LINE Unified Ingestion",
+      "Source": "Telegram Unified Ingestion",
       "MessageDate": "04/09/69"
     },
     {
@@ -84,7 +84,7 @@
       "ItemName": "หอมจีน",
       "PreviousKg": 7760,
       "NewKg": 7010,
-      "Source": "LINE Verified Ingestion",
+      "Source": "Telegram Verified Ingestion",
       "MessageDate": "05/09/69"
     },
     {
@@ -93,7 +93,7 @@
       "ItemName": "แครอทสวย",
       "PreviousKg": 5830,
       "NewKg": 4090,
-      "Source": "LINE Verified Ingestion",
+      "Source": "Telegram Verified Ingestion",
       "MessageDate": "05/09/69"
     },
     {
@@ -103,8 +103,8 @@
       "PreviousValue": 0.648,
       "NewValue": 0.64,
       "Unit": "factor",
-      "Source": "LINE Sample Test Ingestion",
-      "EventId": "LINE:1532466397:1319:Cabbage_Yield_AFT"
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:1532466397:1319:Cabbage_Yield_AFT"
     },
     {
       "Timestamp": "2026-09-12T01:22:46.533Z",
@@ -143,8 +143,8 @@
       "PreviousValue": 9650,
       "NewValue": 4350,
       "Unit": "kg",
-      "Source": "LINE Unified Ingestion",
-      "EventId": "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage"
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage"
     },
     {
       "Timestamp": "2026-09-14T01:39:36.113Z",
@@ -153,8 +153,8 @@
       "PreviousValue": 44660,
       "NewValue": 42980,
       "Unit": "kg",
-      "Source": "LINE Unified Ingestion",
-      "EventId": "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT"
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT"
     },
     {
       "Timestamp": "2026-09-14T01:39:36.113Z",
@@ -163,8 +163,8 @@
       "PreviousValue": 5440,
       "NewValue": 4437,
       "Unit": "kg",
-      "Source": "LINE Unified Ingestion",
-      "EventId": "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese"
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese"
     },
     {
       "Timestamp": "2026-09-14T01:39:36.113Z",
@@ -173,8 +173,8 @@
       "PreviousValue": 6560,
       "NewValue": 6250,
       "Unit": "kg",
-      "Source": "LINE Unified Ingestion",
-      "EventId": "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot"
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot"
     },
     {
       "Timestamp": "2026-09-14T08:05:34.387Z",
@@ -183,8 +183,8 @@
       "PreviousValue": 0.64,
       "NewValue": 0.80715,
       "Unit": "factor",
-      "Source": "LINE Sample Test Ingestion",
-      "EventId": "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
     },
     {
       "Timestamp": "2026-09-14T14:13:57.131Z",
@@ -305,16 +305,16 @@
     }
   ],
   "ProcessedEvents": [
-    "LINE:1532466397:1319:Cabbage_Yield_AFT",
+    "telegram:1532466397:1319:Cabbage_Yield_AFT",
     "update_Cabbage_1789176166548",
     "update_Onion_AFT_1789176166626",
     "update_Onion_Chinese_1789176166708",
     "update_Carrot_1789176166782",
-    "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage",
-    "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT",
-    "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese",
-    "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot",
-    "LINE:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT",
     "cli:load:Cabbage:1789396575333:7504:CLI_integration_test",
     "cli:update:Cabbage:1789396577873:5060:restore_test_stock",
     "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Cabbage",
@@ -324,19 +324,8 @@
   ],
   "RecentAudits": [
     {
-      "AsOfDate": "15/09/69",
-      "Label": "ตรวจนับจริง 15/09/69 (ล่าสุด)",
-      "Timestamp": "2026-09-15T01:42:50.320Z",
-      "Items": {
-        "Cabbage": 5800,
-        "Onion_AFT": 41740,
-        "Onion_Chinese": 4437,
-        "Carrot": 6250
-      }
-    },
-    {
       "AsOfDate": "14/09/69",
-      "Label": "ตรวจนับจริง 14/09/69 (รอบก่อนหน้า)",
+      "Label": "ตรวจนับจริง 14/09/69 (ล่าสุด)",
       "Timestamp": "2026-09-14T01:39:36.113Z",
       "Items": {
         "Cabbage": 4350,

@@ -1,0 +1,226 @@
+{
+  "AsOfDate": "14/09/26",
+  "LastUpdated": "2026-09-14T08:05:34.388Z",
+  "Items": {
+    "Cabbage": {
+      "Name": "กะหล่ำปลี",
+      "StockKg": 4350,
+      "Yield": {
+        "AFT": 0.80715,
+        "TNS": 0.99
+      }
+    },
+    "Onion_AFT": {
+      "Name": "หอม AFT",
+      "StockKg": 42980
+    },
+    "Onion_Chinese": {
+      "Name": "หอมจีน",
+      "StockKg": 4437
+    },
+    "Carrot": {
+      "Name": "แครอทสวย",
+      "StockKg": 6250
+    }
+  },
+  "AuditTrail": [
+    {
+      "Timestamp": "2026-09-11T03:05:00.000Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 11,975 kg, Onion AFT: 19,140 kg, Onion CN: 5,440 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (11/09/69 Stock Audit)"
+    },
+    {
+      "Timestamp": "2026-09-10T11:25:00.000Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 5,025 kg, Onion AFT: 20,280 kg, Onion CN: 5,440 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (10/09/69 Stock Audit)"
+    },
+    {
+      "Timestamp": "2026-09-06T00:43:24.298Z",
+      "Item": "Stock Removal",
+      "Details": "นำมันเหลืองไข่และมันส้มออกจากสต็อกคงเหลือตามคำสั่งผู้ใช้งาน (สต็อกหมดแล้ว)",
+      "Source": "User Explicit Directive"
+    },
+    {
+      "Timestamp": "2026-09-05T20:18:11.230Z",
+      "Item": "Stock History Record (04/09/69)",
+      "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,760 kg, Carrot: 5,830 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (04/09/69 Stock Audit Baseline)"
+    },
+    {
+      "Timestamp": "2026-09-05T19:58:27.544Z",
+      "Item": "Stock Baseline Update",
+      "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
+      "Source": "User Explicit Directive (05/09/69 Stock Audit)"
+    },
+    {
+      "Timestamp": "2026-09-05T19:01:58.347Z",
+      "Item": "Cabbage",
+      "NewKg": 8875,
+      "Source": "Telegram Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Cabbage",
+      "ItemName": "กะหล่ำปลี",
+      "PreviousKg": 6075,
+      "NewKg": 8800,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-04T02:38:11.096Z",
+      "ItemKey": "Onion_AFT",
+      "ItemName": "หอม AFT",
+      "PreviousKg": 26120,
+      "NewKg": 25480,
+      "Source": "Telegram Unified Ingestion",
+      "MessageDate": "04/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Onion_Chinese",
+      "ItemName": "หอมจีน",
+      "PreviousKg": 7760,
+      "NewKg": 7010,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T08:21:00.000Z",
+      "ItemKey": "Carrot",
+      "ItemName": "แครอทสวย",
+      "PreviousKg": 5830,
+      "NewKg": 4090,
+      "Source": "Telegram Verified Ingestion",
+      "MessageDate": "05/09/69"
+    },
+    {
+      "Timestamp": "2026-09-05T13:03:12.273Z",
+      "ItemKey": "Cabbage_Yield_AFT",
+      "Field": "Yield.AFT",
+      "PreviousValue": 0.648,
+      "NewValue": 0.64,
+      "Unit": "factor",
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:1532466397:1319:Cabbage_Yield_AFT"
+    },
+    {
+      "Timestamp": "2026-09-12T01:22:46.533Z",
+      "ItemKey": "Cabbage",
+      "Field": "StockKg",
+      "PreviousValue": 11975,
+      "NewValue": 9650,
+      "Unit": "kg",
+      "Source": "Stock 12/09/69",
+      "EventId": "update_Cabbage_1789176166548"
+    },
+    {
+      "Timestamp": "2026-09-12T01:22:46.626Z",
+      "ItemKey": "Onion_AFT",
+      "Field": "StockKg",
+      "PreviousValue": 19140,
+      "NewValue": 44160,
+      "Unit": "kg",
+      "Source": "Stock 12/09/69",
+      "EventId": "update_Onion_AFT_1789176166626"
+    },
+    {
+      "Timestamp": "2026-09-12T01:22:46.781Z",
+      "ItemKey": "Carrot",
+      "Field": "StockKg",
+      "PreviousValue": 3950,
+      "NewValue": 6560,
+      "Unit": "kg",
+      "Source": "Stock 12/09/69",
+      "EventId": "update_Carrot_1789176166782"
+    },
+    {
+      "Timestamp": "2026-09-14T01:39:36.112Z",
+      "ItemKey": "Cabbage",
+      "Field": "StockKg",
+      "PreviousValue": 9650,
+      "NewValue": 4350,
+      "Unit": "kg",
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage"
+    },
+    {
+      "Timestamp": "2026-09-14T01:39:36.113Z",
+      "ItemKey": "Onion_AFT",
+      "Field": "StockKg",
+      "PreviousValue": 44660,
+      "NewValue": 42980,
+      "Unit": "kg",
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT"
+    },
+    {
+      "Timestamp": "2026-09-14T01:39:36.113Z",
+      "ItemKey": "Onion_Chinese",
+      "Field": "StockKg",
+      "PreviousValue": 5440,
+      "NewValue": 4437,
+      "Unit": "kg",
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese"
+    },
+    {
+      "Timestamp": "2026-09-14T01:39:36.113Z",
+      "ItemKey": "Carrot",
+      "Field": "StockKg",
+      "PreviousValue": 6560,
+      "NewValue": 6250,
+      "Unit": "kg",
+      "Source": "Telegram Unified Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot"
+    },
+    {
+      "Timestamp": "2026-09-14T08:05:34.387Z",
+      "ItemKey": "Cabbage_Yield_AFT",
+      "Field": "Yield.AFT",
+      "PreviousValue": 0.64,
+      "NewValue": 0.80715,
+      "Unit": "factor",
+      "Source": "Telegram Sample Test Ingestion",
+      "EventId": "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
+    }
+  ],
+  "ProcessedEvents": [
+    "telegram:1532466397:1319:Cabbage_Yield_AFT",
+    "update_Cabbage_1789176166548",
+    "update_Onion_AFT_1789176166626",
+    "update_Onion_Chinese_1789176166708",
+    "update_Carrot_1789176166782",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Cabbage",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_AFT",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Onion_Chinese",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789349976112:Carrot",
+    "telegram:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789373134387:Cabbage_Yield_AFT"
+  ],
+  "RecentAudits": [
+    {
+      "AsOfDate": "14/09/69",
+      "Label": "ตรวจนับจริง 14/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-14T01:39:36.113Z",
+      "Items": {
+        "Cabbage": 4350,
+        "Onion_AFT": 42980,
+        "Onion_Chinese": 4437,
+        "Carrot": 6250
+      }
+    },
+    {
+      "AsOfDate": "12/09/69",
+      "Label": "ตรวจนับจริง 12/09/69 (รอบก่อนหน้า)",
+      "Timestamp": "2026-09-12T01:22:46.533Z",
+      "Items": {
+        "Cabbage": 9650,
+        "Onion_AFT": 44660,
+        "Onion_Chinese": 5440,
+        "Carrot": 6560
+      }
+    }
+  ]
+}

@@ -28,7 +28,7 @@ const DEFAULT_MEMORY = {
         "สต็อกหลักที่ติดตาม: กะหล่ำปลี, หอมใหญ่ (AFT/จีน), แครอท, มันม่วง, มันเหลืองไข่, มันส้ม"
     ],
     custom_directives: [
-        "ส่งไฟล์เอกสาร (Excel, PDF) เข้า Telegram ทันทีที่มีการสร้างหรือร้องขอ",
+        "ส่งไฟล์เอกสาร (Excel, PDF) เข้า LINE ทันทีที่มีการสร้างหรือร้องขอ",
         "ตอบคำถามด้วยข้อมูลจริงที่ค้นพบจากไฟล์ในโฟลเดอร์งาน 25-26 เสมอ"
     ],
     recent_conversations: []
@@ -68,7 +68,7 @@ function saveMemory() {
 function syncToWorkspaceMarkdown() {
     const mem = memoryData || DEFAULT_MEMORY;
     let md = `# 🤖 Google Antigravity & AI Secretary - System Memory & Project Rules\n\n`;
-    md += `*Last Synced from Telegram: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}*\n\n`;
+    md += `*Last Synced from LINE: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}*\n\n`;
     
     md += `## 👤 User Profile & Communication Directives\n`;
     md += `- **Role:** ${mem.user_profile.role || 'Executive'}\n`;
@@ -96,7 +96,7 @@ function syncToWorkspaceMarkdown() {
     }
 
     if (mem.recent_conversations && mem.recent_conversations.length > 0) {
-        md += `## 💬 Recent Telegram Dialogue Key Points (Episodic Memory)\n`;
+        md += `## 💬 Recent LINE Dialogue Key Points (Episodic Memory)\n`;
         mem.recent_conversations.slice(-8).forEach(turn => {
             md += `> **[${turn.timestamp || ''}] User:** ${turn.user}\n`;
             md += `> **Assistant Summary:** ${turn.summary || turn.assistant}\n\n`;
@@ -241,7 +241,7 @@ function buildAgyContextPrompt(userPrompt) {
     contextHeader += `1. ตรวจสอบข้อมูลคำสั่งซื้อ วันที่ส่งมอบ และจำนวน กก. ตรงจากไฟล์อีเมลจริงเท่านั้น\n`;
     contextHeader += `2. ห้ามคิดคำนวณ สมมติ หรือสร้างตัวเลขขึ้นเองโดยเด็ดขาด หากไม่มีในไฟล์ ให้ตอบว่า "ไม่พบข้อมูลในเอกสารล่าสุด"\n`;
     contextHeader += `3. ทุกครั้งที่ตอบเรื่องตัวเลข ให้ระบุชื่อไฟล์อ้างอิงและรอบ Rev. ประกอบเสมอ\n\n`;
-    contextHeader += `📱 [MOBILE-OPTIMIZED TELEGRAM FORMATTING DIRECTIVE]\n`;
+    contextHeader += `📱 [MOBILE-OPTIMIZED LINE FORMATTING DIRECTIVE]\n`;
     contextHeader += `• จัดรูปแบบข้อความให้อ่านง่ายบนจอมือถือ (Mobile Screen Friendly)\n`;
     contextHeader += `• ห้ามใช้ตาราง Markdown แบบหลายคอลัมน์แนวนอน เพราะจะล้นจอและอ่านยากบนมือถือ\n`;
     contextHeader += `• ให้ใช้รูปแบบ "การ์ดข้อความ (Card Format)" หัวข้อสั้นชัดเจน มี Emoji นำหน้า และแบ่งวรรคตอนด้วยเส้นคั่น ──────────────────\n`;
@@ -251,7 +251,7 @@ function buildAgyContextPrompt(userPrompt) {
         contextHeader += `${groundTruth}\n`;
     }
 
-    contextHeader += `[ระบบความจำเลขา & กฎเกณฑ์ที่เรียนรู้จาก Telegram]:\n`;
+    contextHeader += `[ระบบความจำเลขา & กฎเกณฑ์ที่เรียนรู้จาก LINE]:\n`;
     
     // Inject active rules
     if (mem.business_rules && mem.business_rules.length > 0) {
@@ -285,7 +285,7 @@ function buildAgyContextPrompt(userPrompt) {
     return `${contextHeader}\n${userPrompt}`;
 }
 
-function formatMemoryForTelegram() {
+function formatMemoryForLINE() {
     const mem = loadMemory();
     let out = `🧠 [ระบบความจำและการเรียนรู้ของเลขา AI]\n`;
     out += `📅 อัปเดตล่าสุด: ${new Date(mem.last_updated).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}\n\n`;
@@ -333,6 +333,6 @@ module.exports = {
     addConversationTurn,
     autoLearnFromText,
     buildAgyContextPrompt,
-    formatMemoryForTelegram,
+    formatMemoryForLINE,
     syncToWorkspaceMarkdown
 };

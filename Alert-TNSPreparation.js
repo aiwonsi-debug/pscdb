@@ -4,22 +4,7 @@ const https = require('https');
 const parser = require('./tns_order_parser.js');
 
 const agyBaseDir = 'E:\\agy';
-const configPath = path.join(agyBaseDir, 'secretary_config.json');
-const logFile = path.join(agyBaseDir, 'secretary_activity.log');
 const notifiedFile = path.join(agyBaseDir, 'notified_tns_alerts.json');
-
-// Load configurations
-let config = {};
-if (fs.existsSync(configPath)) {
-  try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8').replace(/^\uFEFF/, ''));
-  } catch (e) {
-    console.error('Error reading config:', e.message);
-  }
-}
-
-const botToken = config.BotToken || '8259461159:AAEiB3pZpGv1z1aY_r0Z8u-mH2-X4f4P0s';
-const chatId = config.ChatId || '1532466397';
 
 let notified = {};
 if (fs.existsSync(notifiedFile)) {
@@ -30,47 +15,7 @@ if (fs.existsSync(notifiedFile)) {
   }
 }
 
-function sendTGMessage(token, chat, text) {
-  return new Promise((resolve) => {
-    const data = JSON.stringify({
-      chat_id: chat,
-      text: text,
-      parse_mode: 'HTML'
-    });
 
-    const options = {
-      hostname: 'api.telegram.org',
-      port: 443,
-      path: `/bot${token}/sendMessage`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Content-Length': Buffer.byteLength(data)
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let resData = '';
-      res.on('data', chunk => resData += chunk);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(resData);
-          resolve(json.ok);
-        } catch (e) {
-          resolve(false);
-        }
-      });
-    });
-
-    req.on('error', (err) => {
-      console.error('TG Send Error:', err.message);
-      resolve(false);
-    });
-
-    req.write(data, 'utf8');
-    req.end();
-  });
-}
 
 const lineNotifier = require('./line_notifier.js');
 
@@ -122,27 +67,8 @@ async function runTNSAlerts() {
       const formattedDelivery = ord.date.split('-').reverse().join('/');
       const isUrgent = daysLeft <= 2;
       const stageHeader = isUrgent ? `🚨 [แจ้งเตือนสั่งวัตถุดิบด่วน - TNS]` : `🔔 [แจ้งเตือนจัดเตรียมวัตถุดิบ - TNS]`;
-      const actionText = (ord.product === 'หอมแดง' && isUrgent)
-        ? `• <b>สั่งหอมแดงด่วน:</b> ประสานงานสวน/ผู้จัดส่ง สั่งซื้อหอมแดงทันทีเพื่อเตรียมส่งมอบตามกำหนด`
-        : `• <b>เตรียมสั่งวัตถุดิบ</b> (จัดหา ประสานงาน และสั่งซื้อวัตถุดิบจากแหล่งสวน/ซัพพลายเออร์)`;
 
       const opsWebUrl = lineNotifier.getOpsWebUrl ? lineNotifier.getOpsWebUrl() : 'https://pscdb.onrender.com/ops';
-
-      const messageTG = `${stageHeader}
-กำหนดแจ้งเตือน: ล่วงหน้า ${daysLeft} วัน (D-${daysLeft})
-
-🏢 <b>ลูกค้า:</b> TNS (Thai Nisshin Seifun)
-📦 <b>รายการสินค้า:</b> ${ord.product} <b>${ord.qty.toLocaleString()} ${ord.unit}</b>
-📅 <b>กำหนดส่งมอบ:</b> ${formattedDelivery} (อีก ${daysLeft} วัน)
-📁 <b>ข้อมูลอ้างอิง:</b> ${ord.sheet || 'SEP Order PSC.xlsx'}
-
-🎯 <b>ขั้นตอนปฏิบัติงาน:</b>
-${actionText}
-────────────────────
-🌐 <b>ระบบสั่งงานและติดตาม:</b>
-<a href="${opsWebUrl}">${opsWebUrl}</a>
-────────────────────
-✨ <i>ระบบแจ้งเตือนอัตโนมัติ บจก.ไพศาลเจริญ (1988)</i>`;
 
       const plainActionText = (ord.product === 'หอมแดง' && isUrgent)
         ? `• สั่งหอมแดงด่วน: ประสานงานสวน/ผู้จัดส่ง สั่งซื้อหอมแดงทันทีเพื่อเตรียมส่งมอบตามกำหนด`
@@ -166,10 +92,6 @@ ${opsWebUrl}
 ✨ ระบบแจ้งเตือนอัตโนมัติ บจก.ไพศาลเจริญ (1988)`;
 
       console.log('\n----------------------------------------');
-      console.log(messageTG);
-
-      // Send to Telegram
-      const sentTG = await sendTGMessage(botToken, chatId, messageTG);
       
       // Send to LINE Group
       let sentLINE = false;
@@ -180,9 +102,9 @@ ${opsWebUrl}
         console.error('LINE Send Error:', err.message);
       }
 
-      if (sentTG || sentLINE) {
+      if (sentLINE) {
         notified[eventKey] = todayStr;
-        console.log(`✅ Alert sent successfully for ${eventKey} (TG: ${sentTG}, LINE: ${sentLINE})`);
+        console.log(`✅ Alert sent successfully for ${eventKey} (LINE: ${sentLINE})`);
       }
     }
   }

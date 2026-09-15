@@ -1,10 +1,10 @@
-﻿<#
+<#
 .SYNOPSIS
     Antigravity AI Secretary Background Daemon (Centralized in E:\agy)
 .DESCRIPTION
     Runs continuously in background, checks Gmail for new POs every 5 minutes,
     downloads attachments to PO month folders, updates Excel databases & GT schedules,
-    triggers Windows Desktop Toast Notifications, and pushes Telegram Alerts to mobile.
+    triggers Windows Desktop Toast Notifications, and pushes LINE Alerts to mobile.
 #>
 param (
     [int]$IntervalMinutes = 5,
@@ -15,7 +15,6 @@ param (
 $configFile = Join-Path $AgyBaseDir "gmail_config.json"
 $processedFile = Join-Path $AgyBaseDir "processed_emails.json"
 $logFile = Join-Path $AgyBaseDir "secretary_activity.log"
-$tgConfigFile = Join-Path $AgyBaseDir "telegram_config.json"
 $lineConfigFile = Join-Path $AgyBaseDir "line_config.json"
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -71,97 +70,7 @@ function Show-Notification {
     return
 }
 
-function Send-TelegramPush {
-    param ([string]$text, [string[]]$filePaths = @())
-    if (-not (Test-Path $tgConfigFile)) { return }
-    try {
-        $tgCfg = Get-Content $tgConfigFile -Raw | ConvertFrom-Json
-        if (-not $tgCfg.BotToken -or -not $tgCfg.ChatId) { return }
-        
-        $baseUrl = "https://api.telegram.org/bot$($tgCfg.BotToken)"
-        
-        # Send Text Message (Safe HTML / Plain text)
-        $cleanText = $text -replace '<[^>]+>', ''
-        $body = @{
-            chat_id = "$($tgCfg.ChatId)"
-            text = $text
-            parse_mode = "HTML"
-        } | ConvertTo-Json -Compress
-        
-        $utf8Bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-        $req = [System.Net.WebRequest]::Create("$baseUrl/sendMessage")
-        $req.Method = "POST"
-        $req.ContentType = "application/json; charset=utf-8"
-        $req.ContentLength = $utf8Bytes.Length
-        $reqStream = $req.GetRequestStream()
-        $reqStream.Write($utf8Bytes, 0, $utf8Bytes.Length)
-        $reqStream.Close()
-        try {
-            $res = $req.GetResponse()
-            $res.Close()
-        } catch {
-            # Fallback to plain text if HTML fails
-            $bodyPlain = @{
-                chat_id = "$($tgCfg.ChatId)"
-                text = $cleanText
-            } | ConvertTo-Json -Compress
-            $utf8BytesPlain = [System.Text.Encoding]::UTF8.GetBytes($bodyPlain)
-            $reqPlain = [System.Net.WebRequest]::Create("$baseUrl/sendMessage")
-            $reqPlain.Method = "POST"
-            $reqPlain.ContentType = "application/json; charset=utf-8"
-            $reqPlain.ContentLength = $utf8BytesPlain.Length
-            $reqStreamPlain = $reqPlain.GetRequestStream()
-            $reqStreamPlain.Write($utf8BytesPlain, 0, $utf8BytesPlain.Length)
-            $reqStreamPlain.Close()
-            $resPlain = $reqPlain.GetResponse()
-            $resPlain.Close()
-        }
-        
-        # Send Attached PDF documents
-        foreach ($fp in $filePaths) {
-            if (Test-Path $fp) {
-                $boundary = [System.Guid]::NewGuid().ToString()
-                $fileBytes = [System.IO.File]::ReadAllBytes($fp)
-                $fileName = [System.IO.Path]::GetFileName($fp)
-                
-                $dReq = [System.Net.WebRequest]::Create("$baseUrl/sendDocument")
-                $dReq.Method = "POST"
-                $dReq.ContentType = "multipart/form-data; boundary=$boundary"
-                
-                $memStream = New-Object System.IO.MemoryStream
-                $writer = New-Object System.IO.StreamWriter($memStream, [System.Text.Encoding]::UTF8)
-                
-                $writer.WriteLine("--$boundary")
-                $writer.WriteLine("Content-Disposition: form-data; name=`"chat_id`"")
-                $writer.WriteLine()
-                $writer.WriteLine("$($tgCfg.ChatId)")
-                
-                $writer.WriteLine("--$boundary")
-                $writer.WriteLine("Content-Disposition: form-data; name=`"document`"; filename=`"$fileName`"")
-                $writer.WriteLine("Content-Type: application/pdf")
-                $writer.WriteLine()
-                $writer.Flush()
-                
-                $memStream.Write($fileBytes, 0, $fileBytes.Length)
-                $writer.WriteLine()
-                $writer.WriteLine("--$boundary--")
-                $writer.Flush()
-                
-                $dReq.ContentLength = $memStream.Length
-                $dReqStream = $dReq.GetRequestStream()
-                $memStream.Position = 0
-                $memStream.CopyTo($dReqStream)
-                $dReqStream.Close()
-                $memStream.Close()
-                
-                $dRes = $dReq.GetResponse()
-                $dRes.Close()
-            }
-        }
-    } catch {
-        Write-Log "Telegram push error: $_" "DarkGray"
-    }
-}
+
 
 # Compile Fast IMAP Client
 $sourceCode = @"
@@ -402,23 +311,16 @@ while ($true) {
                             }
                         }
                         
-                        # Trigger Desktop Notification & Telegram Push
+                        # Trigger Desktop Notification & LINE Push
                         if ($downloadedInThisMsg.Count -gt 0) {
                             $filesStr = $downloadedInThisMsg -join ", "
                             Show-Notification -title "🔔 [เลขา AI] ได้รับใบสั่งซื้อ PO ใหม่!" -message "ไฟล์แนบ: $filesStr`nบันทึกเข้าโฟลเดอร์ $targetMonth/ เรียบร้อยแล้ว"
-                            
-                            $tgMsg = "🔔 *[เลขา AI] ได้รับใบสั่งซื้อ PO ใหม่เข้า Gmail!*`n`n" +
-                                     "📧 *หัวข้อ:* $subject`n" +
-                                     "📄 *ไฟล์แนบ:* $filesStr`n" +
-                                     "📁 *จัดเก็บ:* `PO/$targetMonth/``n`n" +
-                                     "📊 ระบบได้อัปเดตไฟล์ Excel และ GT Schedule ให้เรียบร้อยแล้วครับ!"
                             $lineMsg = "🔔 [เลขา AI] ได้รับใบสั่งซื้อ PO ใหม่เข้า Gmail!`n`n" +
                                        "📧 หัวข้อ: $subject`n" +
                                        "📄 ไฟล์แนบ: $filesStr`n" +
                                        "📁 จัดเก็บ: PO/$targetMonth/`n`n" +
                                        "📊 ระบบอัปเดตไฟล์ Excel และ GT Schedule เรียบร้อยแล้วครับ!"
                             Send-LinePush -text $lineMsg
-                            Send-TelegramPush -text $tgMsg -filePaths $downloadedFullPaths
                         }
                     }
                 }

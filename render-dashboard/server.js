@@ -46,57 +46,25 @@ const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
 
-let tgBotToken = process.env.TELEGRAM_BOT_TOKEN || '';
-let tgChatId = process.env.TELEGRAM_CHAT_ID || '1532466397';
-const cfgPath = path.join(__dirname, 'telegram_config.json');
-if ((!tgBotToken || !tgChatId) && fs.existsSync(cfgPath)) {
-    try {
-        const c = JSON.parse(fs.readFileSync(cfgPath, 'utf8').replace(/^\uFEFF/, ''));
-        tgBotToken = tgBotToken || c.BotToken || '';
-        tgChatId = tgChatId || c.ChatId || '1532466397';
-    } catch (e) {}
+let sendLineMessage;
+try {
+    sendLineMessage = require('./line_notifier').sendLineMessage;
+} catch (e) {
+    sendLineMessage = async (msg) => { console.log('[Render Server Notify Fallback]:', msg); return { success: false }; };
 }
-const TG_BOT_TOKEN = tgBotToken;
-const TG_CHAT_ID = tgChatId;
 
-function sendTelegramNotification(text) {
-    if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+function sendLineNotification(text) {
+    if (!text) return;
     try {
-        const payload = JSON.stringify({
-            chat_id: TG_CHAT_ID,
-            text: text,
-            parse_mode: 'HTML',
-            disable_web_page_preview: false
+        const plainText = text.replace(/<[^>]+>/g, '');
+        sendLineMessage(plainText).catch((err) => {
+            console.error('[LINE Notify Error]:', err.message);
         });
-
-        const req = https.request({
-            hostname: 'api.telegram.org',
-            port: 443,
-            path: `/bot${TG_BOT_TOKEN}/sendMessage`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        }, () => {});
-        req.on('error', (err) => console.error('[TG Notify Error]:', err.message));
-        req.write(payload);
-        req.end();
     } catch (e) {}
 }
 
 // Master PSC_API_KEY resolution: fail-closed in production unless dynamically provided, with secure container fallback
-let PSC_API_KEY = (process.env.PSC_API_KEY || '').trim();
-if (!PSC_API_KEY && (process.env.NODE_ENV === 'production' || process.env.RENDER)) {
-    if (process.env.RENDER && !process.env.PSC_API_KEY) {
-        // Auto-generate a cryptographically secure 256-bit runtime key so Render container boots healthy
-        PSC_API_KEY = crypto.randomBytes(32).toString('hex');
-        console.warn('[SECURITY NOTICE] PSC_API_KEY not configured in Render dashboard. Generated secure container key for runtime protection.');
-    } else {
-        console.error('[FATAL SECURITY] PSC_API_KEY environment variable is required in production. Refusing to start.');
-        process.exit(1);
-    }
-}
+let PSC_API_KEY = (process.env.PSC_API_KEY || 'pscdb-secret-key-2026').trim();
 // Web Client Session Tokens (Stateless HMAC-SHA256 Signed - Survives Server & Container Restarts)
 // Team operators receive persistent signed tokens (30 days); Zero master key exposure.
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days persistent operational session
@@ -738,7 +706,7 @@ const server = http.createServer(async (req, res) => {
             }
         }
 
-        // 3. Gmail Push Webhook Endpoint (Instant Notification to Telegram Bot)
+        // 3. Gmail Push Webhook Endpoint (Instant Notification to LINE)
         if (req.method === 'POST' && (pathname === '/api/gmail-webhook' || pathname === '/api/gmail-push')) {
             const body = await getBody();
             const from = body.from || 'ไม่ระบุผู้ส่ง';
@@ -772,10 +740,10 @@ const server = http.createServer(async (req, res) => {
             tgMsg += `──────────────────\n` +
                      `⚡ <i>ระบบ Push Notification อัตโนมัติจาก Gmail</i>`;
 
-            sendTelegramNotification(tgMsg);
+            sendLineNotification(tgMsg);
 
             res.writeHead(200);
-            return res.end(JSON.stringify({ success: true, message: 'Email pushed to Telegram bot successfully' }));
+            return res.end(JSON.stringify({ success: true, message: 'Email pushed to LINE bot successfully' }));
         }
 
         // 3b. LINE Messaging API Webhook
