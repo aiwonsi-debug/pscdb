@@ -774,10 +774,7 @@ if (cat === 'all') {
             const asOf = data.AsOfDate || '05/09/69';
             document.getElementById('stock_as_of_badge').textContent = 'อัปเดตสต็อก: ' + asOf + ' ' + timeStr + ' น.';
             
-            const now = new Date();
-            const dStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2);
-            const tStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-            window.lastStockUpdate = 'อัปเดต ' + dStr + ' ' + tStr + ' น.';
+            window.lastStockUpdate = 'อัปเดต ' + asOf + ' ' + timeStr + ' น.';
             if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_stock') && document.getElementById('tab_btn_stock').classList.contains('active')) {
                 document.getElementById('header_timestamp_val').textContent = window.lastStockUpdate;
             }
@@ -868,10 +865,7 @@ if (cat === 'all') {
                   document.getElementById('ops_sync_badge').textContent = 'อัปเดตล่าสุด: ' + dStr + ' ' + timeStr + ' น.';
                 }
                 
-                const now = new Date();
-                const nowDStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2);
-                const nowTStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-                window.lastOpsUpdate = 'อัปเดต ' + nowDStr + ' ' + nowTStr + ' น.';
+                window.lastOpsUpdate = 'อัปเดต ' + dStr + ' ' + timeStr + ' น.';
                 if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_delivery') && document.getElementById('tab_btn_delivery').classList.contains('active')) {
                     document.getElementById('header_timestamp_val').textContent = window.lastOpsUpdate;
                 }
