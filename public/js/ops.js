@@ -1007,10 +1007,11 @@ if (cat === 'all') {
       let html = '';
       try {
         schedules.forEach((s, idx) => {
-          const cardKey = s.id || ('sched_' + idx);
-        const state = cardsState[cardKey] || {};
-        const isLoaded = state.loadedReported || (state.status && (state.status.includes('เรียบร้อย') || state.status.includes('ส่งมอบแล้ว') || state.status.includes('รับของแล้ว')));
-        const statusText = state.status || s.status || 'รอดำเนินการ';
+          // Use both ID and idx to guarantee uniqueness for duplicated rows
+          const cardKey = s.id ? (s.id + '_' + idx) : ('sched_' + idx);
+          const state = cardsState[cardKey] || {};
+          const isLoaded = state.loadedReported || (state.status && (state.status.includes('เรียบร้อย') || state.status.includes('ส่งมอบแล้ว') || state.status.includes('รับของแล้ว')));
+          const statusText = state.status || s.status || 'รอดำเนินการ';
 
         // Do not display completed/received items in pending tracking queue
         if (isLoaded || statusText.includes('เรียบร้อย') || statusText.includes('ส่งมอบแล้ว') || statusText.includes('รับของแล้ว')) {
