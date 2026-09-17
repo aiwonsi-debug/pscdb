@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const secretsLoader = require('./secrets_loader');
 
-const CONFIG_FILE = path.join(__dirname, 'line_config.json');
+const CONFIG_FILE = secretsLoader.getSecretPath('line_config.json', __dirname);
 const OPS_STATUS_FILE = path.join(__dirname, 'team_ops_status.json');
 const TUNNEL_URL_FILE = path.join(__dirname, 'public_tunnel_url.txt');
 
@@ -18,12 +19,7 @@ function loadLineConfig() {
     line_target_group_id: "",
     last_sent_date: ""
   };
-  if (fs.existsSync(CONFIG_FILE)) {
-    try {
-      return Object.assign(defaultConfig, JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')));
-    } catch (e) {}
-  }
-  return defaultConfig;
+  return Object.assign(defaultConfig, secretsLoader.readSecretJson('line_config.json', __dirname));
 }
 
 function saveLineConfig(cfg) {

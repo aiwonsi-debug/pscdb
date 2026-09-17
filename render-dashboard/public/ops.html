@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/ops.css?v=20260914_dyn_v1">
   <script>
-    function (window.updateTabHeader || updateTabHeader)(tabId) {
+    function updateTabHeader(tabId) {
       const subtitleEl = document.getElementById('header_subtitle');
       const timeEl = document.getElementById('header_timestamp_val');
       const badgeEl = document.getElementById('header_timestamp_badge');
@@ -17,19 +17,19 @@
       if (subtitleEl) {
         if (tabId === 'stock') {
           subtitleEl.textContent = 'สต็อกตรวจนับจริงล่าสุด';
-          if (timeEl) timeEl.textContent = 'กำลังโหลด...';
+          if (timeEl) timeEl.textContent = window.lastStockUpdate || 'อัปเดต 17/09 09:58 น.';
           if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
         } else if (tabId === 'price') {
           subtitleEl.textContent = 'ราคาวัตถุดิบ & ค่าขนส่ง';
-          if (timeEl) timeEl.textContent = 'กำลังโหลด...';
-          if (badgeEl) badgeEl.className = 'header-timestamp status-aged';
-          if (iconClock) iconClock.style.display = 'none';
-          if (iconAlert) iconAlert.style.display = 'block';
+          if (timeEl) timeEl.textContent = window.lastPriceUpdate || 'อัปเดต 16/09 14:00 น.';
+          if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
+          if (iconClock) iconClock.style.display = 'block';
+          if (iconAlert) iconAlert.style.display = 'none';
         } else {
           subtitleEl.textContent = 'รายการรอส่งมอบ';
-          if (timeEl) timeEl.textContent = 'กำลังโหลด...';
+          if (timeEl) timeEl.textContent = window.lastDeliveryUpdate || 'อัปเดต 17/09 เรียลไทม์';
           if (badgeEl) badgeEl.className = 'header-timestamp status-fresh';
           if (iconClock) iconClock.style.display = 'block';
           if (iconAlert) iconAlert.style.display = 'none';
@@ -59,9 +59,10 @@
         }, 500);
       }
 
-      (window.updateTabHeader || updateTabHeader)(tabId);
+      updateTabHeader(tabId);
     }
     window.switchAppTab = switchAppTab;
+    window.updateTabHeader = updateTabHeader;
 
     // Real-time synchronization via IntersectionObserver on compositor thread (Zero layout thrashing)
     document.addEventListener('DOMContentLoaded', () => {
@@ -78,7 +79,7 @@
             document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
             const btn = document.getElementById('tab_btn_' + tabId);
             if (btn) btn.classList.add('active');
-            (window.updateTabHeader || updateTabHeader)(tabId);
+            updateTabHeader(tabId);
           }
         });
       }, {
@@ -109,7 +110,7 @@
           <line x1="12" y1="9" x2="12" y2="13"></line>
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
-        <span id="header_timestamp_val">กำลังโหลด...</span>
+        <span id="header_timestamp_val">อัปเดตเรียลไทม์</span>
       </div>
     </header>
 
@@ -131,6 +132,29 @@
       
       <!-- Section 1: ตารางติดตามขึ้นของสวน -->
       <div class="section-headline">ตารางติดตามขึ้นของสวน</div>
+
+      <!-- Item 0: กะหล่ำปลี 8 ตัน (ขึ้น 18/09 เข้า 18-19/09) -->
+      <div id="card_salaya_1809" class="flat-card warning-card order-card salaya cat-salaya">
+        <div class="card-header-row">
+          <div class="card-title-text">🥬 กะหล่ำปลี 8 ตัน (บ่อสลี)</div>
+          <span class="status-badge badge-warning" id="disp_status_salaya_1809">สั่งของแล้ว (รอยืนยันรถ)</span>
+        </div>
+        <div class="route-row">
+          <span>ขึ้นของ 18/09 (บ่อสลี)</span>
+          <span class="route-arrow">→</span>
+          <span>เข้าศาลายา 18/09</span>
+        </div>
+        <div class="columns-2">
+          <div>
+            <span class="col-label">แหล่งสวน</span>
+            <div class="col-val" id="disp_supplier_salaya_1809">เฮียหนิง (บ่อสลี)</div>
+          </div>
+          <div>
+            <span class="col-label">รถขนส่ง</span>
+            <div class="col-val" id="disp_truck_salaya_1809">6 ล้อ เฮียหนิง</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Item 1: กะหล่ำปลี 8 ตัน (ขึ้น 14/09 เข้า 15/09) -->
       <div id="card_salaya_1509" class="flat-card warning-card order-card">
@@ -823,34 +847,48 @@
     <!-- ========================================== -->
     <main id="sec_price" class="app-section">
       
-      <!-- List: ราคากะหล่ำปลีตามแหล่ง (ประจำวันที่ 13/09/69) -->
-      <div class="section-headline">ราคากะหล่ำปลี ตามแหล่ง (13/09/69)</div>
+      <!-- List: ราคากะหล่ำปลีตามแหล่ง (ประจำวันที่ 16/09/69) -->
+      <div class="section-headline">ราคากะหล่ำปลี ตามแหล่ง (16/09/69)</div>
       <div class="flat-card" style="padding: 6px 14px;">
         <div class="price-list-item">
           <div>
             <div class="price-source-name">เฮียหนิง (พันธุ์ช้าง)</div>
-            <div style="font-size: 11px; color: var(--text-muted);">ฮอด / อมพาย</div>
+            <div style="font-size: 11px; color: var(--text-muted);">ฮอด / อมพาย / บ่อสลี (มีขนาดเล็ก กับ กลาง)</div>
           </div>
-          <span class="price-amount">4.50 <span class="sub-unit">บ./กก.</span></span>
+          <span class="price-amount">5.00 <span class="sub-unit">บ./กก.</span></span>
+        </div>
+        <div class="price-list-item">
+          <div>
+            <div class="price-source-name">เจ๊พรรณี</div>
+            <div style="font-size: 11px; color: var(--text-muted);">มีของขนาดเล็ก</div>
+          </div>
+          <span class="price-amount lowest">4.50 <span class="sub-unit">บ./กก.</span></span>
         </div>
         <div class="price-list-item">
           <div>
             <div class="price-source-name">เจ๊อารีย์</div>
-            <div style="font-size: 11px; color: var(--status-critical-text); font-weight: 500;">พรุ่งนี้ของไม่มีค่ะ</div>
+            <div style="font-size: 11px; color: var(--status-critical-text); font-weight: 500;">ไม่มีของค่ะ</div>
           </div>
-          <span class="price-amount lowest">4.00 <span class="sub-unit">บ./กก.</span></span>
+          <span class="price-amount">5.00 <span class="sub-unit">บ./กก.</span></span>
         </div>
         <div class="price-list-item">
           <div>
             <div class="price-source-name">เฮียบุญชู</div>
-            <div style="font-size: 11px; color: var(--status-warning-text); font-weight: 500;">พรุ่งนี้ของไม่พอ รถ 6 ล้อค่ะ</div>
+            <div style="font-size: 11px; color: var(--status-critical-text); font-weight: 500;">ไม่มีของค่ะ</div>
           </div>
-          <span class="price-amount">4.50 <span class="sub-unit">บ./กก.</span></span>
+          <span class="price-amount">5.00 <span class="sub-unit">บ./กก.</span></span>
+        </div>
+        <div class="price-list-item">
+          <div>
+            <div class="price-source-name">เฮียธงชัย</div>
+            <div style="font-size: 11px; color: var(--status-warning-text); font-weight: 500;">ยังไม่มีของค่ะ</div>
+          </div>
+          <span class="price-amount">-</span>
         </div>
       </div>
 
       <!-- Freight Rate Standard Tiers -->
-      <div class="section-headline" style="margin-top: 20px;">อัตราค่าขนส่งมาตรฐาน</div>
+      <div class="section-headline" style="margin-top: 20px;">อัตราค่าขนส่งมาตรฐาน (16/09/69)</div>
 
       <!-- Tier 1: 6 ล้อ -->
       <div class="section-headline" style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">6 ล้อ</div>
@@ -870,13 +908,6 @@
           </div>
         </div>
         <div class="tier-item-row">
-          <span class="tier-dest">เฮียบุญชู</span>
-          <div class="tier-prices">
-            <span class="tier-total">13,000 บ.</span>
-            <span class="tier-per-kg">1.63 บ./กก.</span>
-          </div>
-        </div>
-        <div class="tier-item-row">
           <span class="tier-dest">เชียงดาว + แม่เหาะ (พี่อั๋น)</span>
           <div class="tier-prices">
             <span class="tier-total">13,000 บ.</span>
@@ -890,27 +921,28 @@
             <span class="tier-per-kg">1.75 บ./กก.</span>
           </div>
         </div>
+        <div class="tier-item-row">
+          <span class="tier-dest">เฮียบุญชู</span>
+          <div class="tier-prices">
+            <span class="tier-total">14,000 บ.</span>
+            <span class="tier-per-kg">1.75 บ./กก.</span>
+          </div>
+        </div>
       </div>
 
       <!-- Tier 2: 4 ล้อ -->
       <div class="section-headline" style="margin-top: 14px; font-size: 12px; color: var(--text-muted);">4 ล้อ</div>
       <div class="flat-card" style="padding: 6px 14px;">
         <div class="tier-item-row">
-          <span class="tier-dest">ฮอด</span>
-          <div class="tier-prices">
-            <span class="tier-total">7,000 บ.</span>
-          </div>
-        </div>
-        <div class="tier-item-row">
-          <span class="tier-dest">บ่อสลี</span>
-          <div class="tier-prices">
-            <span class="tier-total">7,500 บ.</span>
-          </div>
-        </div>
-        <div class="tier-item-row">
-          <span class="tier-dest">อมพาย</span>
+          <span class="tier-dest">ฮอด (พี่บู้ / สวน)</span>
           <div class="tier-prices">
             <span class="tier-total">8,000 บ.</span>
+          </div>
+        </div>
+        <div class="tier-item-row">
+          <span class="tier-dest">บ่อสลี + แม่เหาะ + อมพาย (พี่บู้ / เฮียหนิง)</span>
+          <div class="tier-prices">
+            <span class="tier-total">8,500 บ.</span>
           </div>
         </div>
         <div class="tier-item-row">
@@ -934,41 +966,41 @@
     <!-- ========================================== -->
     <main id="sec_stock" class="app-section">
 
-      <!-- 1. กะหล่ำปลี (Severity: Tracking, +33.3%) -->
+      <!-- 1. กะหล่ำปลี (Severity: Tracking, -16.6%) -->
       <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">กะหล่ำปลี</div>
           <span class="status-badge badge-warning" id="stk_badge_cabbage">ติดตาม</span>
         </div>
         <div class="metric-row">
-          <span class="big-metric" id="stk_val_cabbage">5,800</span>
+          <span class="big-metric" id="stk_val_cabbage">4,835</span>
           <span class="metric-unit">กก.</span>
         </div>
         <div class="card-forecast" id="stk_forecast_cabbage">
           รับเข้า 15/09 สด 7,900 กก. · Yield ปอกล่าสุด 67.65%
         </div>
         <div class="comparison-bar" id="stk_cmp_cabbage">
-          <span>เทียบ 14/09: 4,350 กก.</span>
-          <span class="comparison-diff diff-positive">+1,450 (+33.3%)</span>
+          <span id="stk_cmp_lbl_cabbage">เทียบ 15/09: 5,800 กก.</span>
+          <span class="comparison-diff diff-negative" id="stk_cmp_diff_cabbage">-965 (-16.6%)</span>
         </div>
       </div>
 
-      <!-- 2. หอมจีน (Severity: Normal, 0%) -->
+      <!-- 2. หอมจีน (Severity: Normal, -36.5%) -->
       <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">หอมจีน</div>
           <span class="status-badge badge-normal" id="stk_badge_onion_chinese">ปกติ</span>
         </div>
         <div class="metric-row">
-          <span class="big-metric" id="stk_val_onion_chinese">4,437</span>
+          <span class="big-metric" id="stk_val_onion_chinese">2,817</span>
           <span class="metric-unit">กก.</span>
         </div>
-        <div class="card-forecast">
-          พอตลอดเดือน · ไม่มีแผนเบิกใช้ปริมาณสูงในเดือนนี้
+        <div class="card-forecast" id="stk_forecast_onion_chinese">
+          พอตลอดเดือน · เบิกใช้ตามรอบปกติ
         </div>
         <div class="comparison-bar" id="stk_cmp_onion_chinese">
-          <span>เทียบ 14/09: 4,437 กก.</span>
-          <span class="comparison-diff">0 (0%)</span>
+          <span id="stk_cmp_lbl_onion_chinese">เทียบ 15/09: 4,437 กก.</span>
+          <span class="comparison-diff diff-negative" id="stk_cmp_diff_onion_chinese">-1,620 (-36.5%)</span>
         </div>
       </div>
 
@@ -982,31 +1014,31 @@
           <span class="big-metric" id="stk_val_carrot">6,250</span>
           <span class="metric-unit">กก.</span>
         </div>
-        <div class="card-forecast">
+        <div class="card-forecast" id="stk_forecast_carrot">
           พอถึง 30/09 ตาม PO · เข้ารวม 5,670 กก. เหลือสต็อก ~580 กก.
         </div>
         <div class="comparison-bar" id="stk_cmp_carrot">
-          <span>เทียบ 14/09: 6,250 กก.</span>
-          <span class="comparison-diff">0 (0%)</span>
+          <span id="stk_cmp_lbl_carrot">เทียบ 15/09: 6,250 กก.</span>
+          <span class="comparison-diff" id="stk_cmp_diff_carrot">0 (0%)</span>
         </div>
       </div>
 
-      <!-- 4. หอม AFT (Severity: Tracking, -2.9%) -->
+      <!-- 4. หอม AFT (Severity: Tracking, -3.6%) -->
       <div class="flat-card">
         <div class="card-header-row">
           <div class="card-title-text">หอม AFT</div>
           <span class="status-badge badge-warning" id="stk_badge_onion_aft">ติดตาม</span>
         </div>
         <div class="metric-row">
-          <span class="big-metric" id="stk_val_onion_aft">41,740</span>
+          <span class="big-metric" id="stk_val_onion_aft">40,220</span>
           <span class="metric-unit">กก.</span>
         </div>
-        <div class="card-forecast">
-          พอถึง 30/09 ตาม PO · ใช้ไป 12,000 กก. เหลือปลายเดือน ~29,740 กก.
+        <div class="card-forecast" id="stk_forecast_onion_aft">
+          พอถึง 30/09 ตาม PO · ใช้ไป 12,000 กก. เหลือปลายเดือน ~28,220 กก.
         </div>
         <div class="comparison-bar" id="stk_cmp_onion_aft">
-          <span>เทียบ 14/09: 42,980 กก.</span>
-          <span class="comparison-diff diff-negative">-1,240 (-2.9%)</span>
+          <span id="stk_cmp_lbl_onion_aft">เทียบ 15/09: 41,740 กก.</span>
+          <span class="comparison-diff diff-negative" id="stk_cmp_diff_onion_aft">-1,520 (-3.6%)</span>
         </div>
       </div>
 
@@ -1021,6 +1053,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="/js/ops.js?v=20260915_dyn_v6"></script>
+  <script src="/js/ops.js?v=20260917_v1"></script>
 </body>
 </html>

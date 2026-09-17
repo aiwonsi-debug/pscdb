@@ -1,22 +1,22 @@
 {
-  "AsOfDate": "15/09/69",
-  "LastUpdated": "2026-09-15T01:42:50.323Z",
+  "AsOfDate": "17/09/69",
+  "LastUpdated": "2026-09-17T09:58:22.546775",
   "Items": {
     "Cabbage": {
       "Name": "กะหล่ำปลี",
-      "StockKg": 5800,
+      "StockKg": 4835,
       "Yield": {
-        "AFT": 0.80715,
+        "AFT": 0.67648,
         "TNS": 0.99
       }
     },
     "Onion_AFT": {
       "Name": "หอม AFT",
-      "StockKg": 41740
+      "StockKg": 40220
     },
     "Onion_Chinese": {
       "Name": "หอมจีน",
-      "StockKg": 4437
+      "StockKg": 2817
     },
     "Carrot": {
       "Name": "แครอทสวย",
@@ -24,6 +24,12 @@
     }
   },
   "AuditTrail": [
+    {
+      "Timestamp": "2026-09-15T09:40:00.000Z",
+      "Item": "Cabbage Intake & Sample Peel (15/09/69)",
+      "Details": "รับเข้ากะหล่ำปลี เฮียหนิง 7,900 kg (กลาง 4,425 kg, เล็ก 3,475 kg), สุ่มปอก 100 kg ได้ 67.648 kg (Yield 67.65%), Transit Loss -1,100 kg (-12.22%)",
+      "Source": "LINE Field Report 15/09/69"
+    },
     {
       "Timestamp": "2026-09-11T03:05:00.000Z",
       "Item": "Stock Baseline Update",
@@ -302,6 +308,12 @@
       "Unit": "kg",
       "Source": "LINE Unified Ingestion",
       "EventId": "line:LINE:U76c6d85d3b7d46fc13c17ebbd99b90a6:1789436570320:Onion_AFT"
+    },
+    {
+      "timestamp": "2026-09-17T09:58:22.546775",
+      "source": "LINE_DIRECT",
+      "action": "daily_stock_count",
+      "summary": "กะหล่ำ 4,835 kg, หอม AFT 40,220 kg, หอมจีน 2,817 kg, แครอท 6,250 kg"
     }
   ],
   "ProcessedEvents": [
@@ -324,8 +336,19 @@
   ],
   "RecentAudits": [
     {
+      "AsOfDate": "17/09/69",
+      "Label": "ตรวจนับจริง 17/09/69 (ล่าสุด)",
+      "Timestamp": "2026-09-17T09:58:22.546Z",
+      "Items": {
+        "Cabbage": 4835,
+        "Onion_AFT": 40220,
+        "Onion_Chinese": 2817,
+        "Carrot": 6250
+      }
+    },
+    {
       "AsOfDate": "15/09/69",
-      "Label": "ตรวจนับจริง 15/09/69 (ล่าสุด)",
+      "Label": "ตรวจนับจริง 15/09/69 (รอบก่อนหน้า)",
       "Timestamp": "2026-09-15T01:42:50.320Z",
       "Items": {
         "Cabbage": 5800,
