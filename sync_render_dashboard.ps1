@@ -1,4 +1,4 @@
-﻿# sync_render_dashboard.ps1 — run from project root before every deploy.
+# sync_render_dashboard.ps1 — run from project root before every deploy.
 # Root files are the source of truth; render-dashboard/ is the deploy copy.
 $ErrorActionPreference = "Stop"
 
@@ -10,7 +10,9 @@ $files = @(
     "cabbage_prices_transport.json",
     "stock_inventory.json",
     "team_ops_status.json",
-    "secretary_memory.json"
+    "secretary_memory.json",
+    "public\ops.html",
+    "public\js\ops.js"
 )
 
 Write-Host "== Checking for drift before sync ==" -ForegroundColor Cyan

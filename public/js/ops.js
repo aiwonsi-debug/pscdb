@@ -882,10 +882,17 @@ if (cat === 'all') {
         });
     }
 
-    function syncLiveBackendState() {
-      fetch('/api/team-status')
+    function syncLiveBackendState(isForce = false) {
+      const url = '/api/team-status' + (isForce ? '?force=1&t=' + Date.now() : '');
+      if (isForce) showToast('🔄 กำลังดึงข้อมูลล่าสุดจาก Google Sheet...');
+      fetch(url)
         .then(res => res.json())
         .then(data => {
+          if (data && Array.isArray(data.live_schedules) && data.live_schedules.length > 0) {
+            renderDynamicScheduleCards(data.live_schedules, data.cards_state || {});
+            if (isForce) showToast('✅ ซิงค์ข้อมูลจาก Google Sheet สำเร็จ!');
+          }
+
           if (data && data.cards_state) {
             serverCardsState = data.cards_state;
             if (document.getElementById('ops_sync_badge') || document.getElementById('sys_sync_time')) {
@@ -973,6 +980,57 @@ if (cat === 'all') {
           }
         })
         .catch(e => {});
+    }
+
+    function renderDynamicScheduleCards(schedules, cardsState = {}) {
+      const container = document.getElementById('schedule_cards_container');
+      if (!container || !Array.isArray(schedules) || schedules.length === 0) return;
+
+      let html = '';
+      schedules.forEach((s, idx) => {
+        const cardKey = s.id || ('sched_' + idx);
+        const state = cardsState[cardKey] || {};
+        const supplier = state.supplier || s.supplier || 'ยังไม่ระบุ';
+        const truck = state.truck || s.truck || 'ยังไม่ระบุ';
+        const statusText = state.status || s.status || 'รอดำเนินการ';
+
+        let badgeClass = 'badge-info';
+        if (statusText.includes('เรียบร้อย') || statusText.includes('แล้ว')) {
+          badgeClass = 'badge-normal';
+        } else if (statusText.includes('รอ')) {
+          badgeClass = 'badge-warning';
+        }
+
+        const isSalaya = s.cat === 'salaya';
+        const iconEmoji = isSalaya ? '🥬' : (s.product.includes('หอม') ? '🧅' : '🫑');
+        const weightText = s.weight ? (parseFloat(s.weight) >= 1000 ? (parseFloat(s.weight) / 1000) + ' ตัน' : s.weight + ' kg') : '';
+        const title = `${iconEmoji} ${s.customer}: ${s.product} ${weightText} (${s.origin || supplier})`;
+
+        html += `
+        <div id="card_${cardKey}" class="flat-card warning-card order-card ${s.cat} cat-${s.cat}">
+          <div class="card-header-row">
+            <div class="card-title-text">${title}</div>
+            <span class="status-badge ${badgeClass}" id="disp_status_${cardKey}">${statusText}</span>
+          </div>
+          <div class="route-row">
+            <span>ขึ้นของ: ${s.date || '–'} (${s.origin || 'สวน'})</span>
+            <span class="route-arrow">→</span>
+            <span>${s.detail || ('ส่งมอบ ' + s.customer)}</span>
+          </div>
+          <div class="columns-2">
+            <div>
+              <span class="col-label">แหล่งสวน</span>
+              <div class="col-val ${supplier === 'ยังไม่ระบุ' ? 'empty' : ''}" id="disp_supplier_${cardKey}">${supplier}</div>
+            </div>
+            <div>
+              <span class="col-label">รถขนส่ง</span>
+              <div class="col-val ${truck === 'ยังไม่ระบุ' ? 'empty' : ''}" id="disp_truck_${cardKey}">${truck}</div>
+            </div>
+          </div>
+        </div>`;
+      });
+
+      container.innerHTML = html;
     }
 
     function renderDynamicIntakeCards(historyLogs) {
@@ -1820,6 +1878,8 @@ if (cat === 'all') {
       updateNotificationBtn(); 
       scheduleDaily8AMAlert(); 
     };
+
+    window.syncLiveBackendState = syncLiveBackendState;
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initCalFilterListeners);

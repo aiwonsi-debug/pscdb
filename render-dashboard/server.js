@@ -209,6 +209,116 @@ function syncToGoogleSheets(payload) {
     }
 }
 
+function httpsGetFollow(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, (res) => {
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                return httpsGetFollow(res.headers.location).then(resolve).catch(reject);
+            }
+            if (res.statusCode !== 200) {
+                return reject(new Error('HTTP ' + res.statusCode));
+            }
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => resolve(data));
+        }).on('error', reject);
+    });
+}
+
+function parseCsv(text) {
+    if (!text) return [];
+    const lines = text.trim().split(/\r?\n/);
+    const rows = [];
+    for (const line of lines) {
+        const row = [];
+        let inQuote = false;
+        let field = '';
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') {
+                if (inQuote && line[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                } else {
+                    inQuote = !inQuote;
+                }
+            } else if (c === ',' && !inQuote) {
+                row.push(field.trim());
+                field = '';
+            } else {
+                field += c;
+            }
+        }
+        row.push(field.trim());
+        rows.push(row);
+    }
+    return rows;
+}
+
+const SCHEDULE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1232005308';
+let cachedScheduleSheet = { timestamp: 0, schedules: [] };
+
+async function fetchGoogleSheetsLiveSchedule(force = false) {
+    const now = Date.now();
+    if (!force && cachedScheduleSheet.schedules.length > 0 && (now - cachedScheduleSheet.timestamp < 30000)) {
+        return cachedScheduleSheet.schedules;
+    }
+    try {
+        const csvText = await httpsGetFollow(SCHEDULE_SHEET_CSV);
+        const rows = parseCsv(csvText);
+        const schedules = [];
+        // Header is at row index 2: ["รหัสงาน","กำหนดวันดำเนินการ","ผู้จำหน่าย / สวน","จุดนัดรับ / แหล่งสินค้า","ผู้ให้บริการรถ / ชนิดรถ","รายละเอียดงาน","น้ำหนัก กก.","สถานะงาน"]
+        for (let i = 3; i < rows.length; i++) {
+            const r = rows[i];
+            if (!r || !r[0] || !r[0].trim()) continue;
+            const code = r[0].trim();
+            const date = (r[1] || '').trim();
+            const supplier = (r[2] || '').trim();
+            const origin = (r[3] || '').trim();
+            const truck = (r[4] || '').trim();
+            const detail = (r[5] || '').trim();
+            const weight = (r[6] || '').trim();
+            const status = (r[7] || 'รอดำเนินการ').trim();
+
+            let customer = 'โรงงานศาลายา';
+            let product = 'กะหล่ำปลี';
+            let cat = 'salaya';
+
+            const lowerDetail = (detail + ' ' + supplier).toLowerCase();
+            if (lowerDetail.includes('tns') || lowerDetail.includes('พริกหวาน') || lowerDetail.includes('หอมแดง')) {
+                customer = 'TNS';
+                cat = 'tns';
+                if (lowerDetail.includes('พริกหวาน')) product = 'พริกหวานเขียว';
+                else if (lowerDetail.includes('หอมแดง')) product = 'หอมแดง';
+            } else if (lowerDetail.includes('ศาลายา') || lowerDetail.includes('กะหล่ำ')) {
+                customer = 'โรงงานศาลายา';
+                product = 'กะหล่ำปลี';
+                cat = 'salaya';
+            }
+
+            schedules.push({
+                id: code,
+                rowIndex: i,
+                date: date,
+                supplier: supplier,
+                origin: origin,
+                truck: truck,
+                detail: detail,
+                weight: weight,
+                status: status,
+                customer: customer,
+                product: product,
+                cat: cat
+            });
+        }
+        cachedScheduleSheet = { timestamp: now, schedules: schedules };
+        return schedules;
+    } catch (e) {
+        console.error('[fetchGoogleSheetsLiveSchedule Error]:', e.message);
+        return cachedScheduleSheet.schedules;
+    }
+}
+
 function fetchGoogleSheetsData(queryParam = '') {
     return new Promise((resolve) => {
         if (!GAS_URL) return resolve(null);
@@ -941,8 +1051,19 @@ const server = http.createServer(async (req, res) => {
         // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)
         if (req.method === 'GET' && pathname === '/api/team-status') {
             const ops = loadTeamOps();
+            const isForce = reqUrl.searchParams.get('force') === '1' || reqUrl.searchParams.get('force') === 'true';
+
+            // 4a. Fetch live schedules directly from Google Sheets
+            try {
+                const liveSchedules = await fetchGoogleSheetsLiveSchedule(isForce);
+                if (Array.isArray(liveSchedules) && liveSchedules.length > 0) {
+                    ops.live_schedules = liveSchedules;
+                }
+            } catch (sheetErr) {
+                console.error('[Live Schedules Fetch Error]:', sheetErr.message);
+            }
             
-            // Fetch latest from Google Sheets and merge with conflict resolution
+            // 4b. Fetch latest from Google Sheets App Script and merge with conflict resolution
             try {
                 const sheetData = await fetchGoogleSheetsData();
                 if (sheetData && typeof sheetData === 'object') {
