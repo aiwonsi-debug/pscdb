@@ -260,11 +260,14 @@ let cachedScheduleSheet = { timestamp: 0, schedules: [] };
 
 async function fetchGoogleSheetsLiveSchedule(force = false) {
     const now = Date.now();
-    if (!force && cachedScheduleSheet.schedules.length > 0 && (now - cachedScheduleSheet.timestamp < 30000)) {
+    // Reduce cache to 5000ms (5 seconds) for faster live updates
+    if (!force && cachedScheduleSheet.schedules.length > 0 && (now - cachedScheduleSheet.timestamp < 5000)) {
         return cachedScheduleSheet.schedules;
     }
     try {
-        const csvText = await httpsGetFollow(SCHEDULE_SHEET_CSV);
+        // Append timestamp to bypass Google CDN cache for /export?format=csv
+        const cacheBusterUrl = SCHEDULE_SHEET_CSV + '&t=' + now;
+        const csvText = await httpsGetFollow(cacheBusterUrl);
         const rows = parseCsv(csvText);
         const schedules = [];
         // Header is at row index 2: ["รหัสงาน","กำหนดวันดำเนินการ","ผู้จำหน่าย / สวน","จุดนัดรับ / แหล่งสินค้า","ผู้ให้บริการรถ / ชนิดรถ","รายละเอียดงาน","น้ำหนัก กก.","สถานะงาน"]

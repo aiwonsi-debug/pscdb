@@ -978,6 +978,10 @@ if (cat === 'all') {
           if (data && data.other_tasks) {
             renderOtherTasks(data.other_tasks);
           }
+
+          if (typeof currentFilter !== 'undefined') {
+            filterCategory(currentFilter);
+          }
         })
         .catch(e => {});
     }
