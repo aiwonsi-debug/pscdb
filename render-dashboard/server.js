@@ -622,6 +622,9 @@ const server = http.createServer(async (req, res) => {
                 const sameSiteAttr = isHttps ? 'SameSite=None; Secure' : 'SameSite=Lax';
                 const cookieFlags = `psc_session=${sessionToken}; Path=/; Max-Age=${maxAgeSec}; HttpOnly; ${sameSiteAttr}`;
                 res.setHeader('Set-Cookie', cookieFlags);
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
                 res.writeHead(200);
                 const htmlContent = fs.readFileSync(mobileHtmlFile, 'utf8')
                     .replace(/__PSC_API_KEY_PLACEHOLDER__/g, '')
