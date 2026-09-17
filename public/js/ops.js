@@ -886,10 +886,14 @@ if (cat === 'all') {
       const url = '/api/team-status' + (isForce ? '?force=1&t=' + Date.now() : '?t=' + Date.now());
       if (isForce) showToast('🔄 กำลังดึงข้อมูลล่าสุดจาก Google Sheet...');
       fetch(url)
-        .then(res => res.json())
+        .then(res => {
+          const dbg = document.getElementById('fetch_debug');
+          if (dbg) dbg.innerText = 'HTTP ' + res.status;
+          return res.json();
+        })
         .then(data => {
           const dbg = document.getElementById('fetch_debug');
-          if (dbg) dbg.innerText = 'Fetched at ' + new Date().toLocaleTimeString() + ' | live_schedules len: ' + (data && data.live_schedules ? data.live_schedules.length : 'N/A');
+          if (dbg) dbg.innerText += ' | JSON OK | schedules: ' + (data && data.live_schedules ? data.live_schedules.length : 'undefined');
 
           if (data && Array.isArray(data.live_schedules) && data.live_schedules.length > 0) {
             renderDynamicScheduleCards(data.live_schedules, data.cards_state || {});
@@ -986,7 +990,10 @@ if (cat === 'all') {
             filterCategory(currentFilter);
           }
         })
-        .catch(e => {});
+        .catch(e => {
+          const dbg = document.getElementById('fetch_debug');
+          if (dbg) dbg.innerText += ' | ERR: ' + e.message;
+        });
     }
 
     function renderDynamicScheduleCards(schedules, cardsState = {}) {
