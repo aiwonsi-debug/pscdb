@@ -1051,7 +1051,7 @@ const server = http.createServer(async (req, res) => {
         // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)
         if (req.method === 'GET' && pathname === '/api/team-status') {
             const ops = loadTeamOps();
-            const isForce = reqUrl.searchParams.get('force') === '1' || reqUrl.searchParams.get('force') === 'true';
+            const isForce = parsedUrl.query && (parsedUrl.query.force === '1' || parsedUrl.query.force === 'true');
 
             // 4a. Fetch live schedules directly from Google Sheets
             try {
