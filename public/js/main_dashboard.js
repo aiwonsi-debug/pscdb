@@ -604,7 +604,7 @@ if (cat === 'all') {
 
     // ─── Report Tab: Shipment & Delivery Log ────────────────────────────────
     function fetchShipmentReport() {
-      fetch('/api/team-status?t=' + Date.now())
+      fetch('/api/live-sheets?t=' + Date.now())
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (!data) return;
@@ -883,7 +883,7 @@ if (cat === 'all') {
     }
 
     function syncLiveBackendState(isForce = false) {
-      const url = '/api/team-status' + (isForce ? '?force=1&t=' + Date.now() : '?t=' + Date.now());
+      const url = '/api/live-sheets' + (isForce ? '?force=1&t=' + Date.now() : '?t=' + Date.now());
       if (isForce) showToast('🔄 กำลังดึงข้อมูลล่าสุดจาก Google Sheet...');
       fetch(url)
         .then(res => {
