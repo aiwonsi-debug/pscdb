@@ -723,6 +723,22 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify(stockData, null, 2));
         }
 
+        // Live Sheets Complete Dataset Endpoint (Stock, Schedules, Prices direct from Google Sheets)
+        if (req.method === 'GET' && (pathname === '/api/live-sheets' || pathname === '/api/sheets-data' || pathname === '/api/schedules')) {
+            let liveData = { ok: true, stock: [], schedules: [], prices: [] };
+            try {
+                const sheetResult = await fetchGoogleSheetsData('action=summary');
+                if (sheetResult && typeof sheetResult === 'object') {
+                    liveData = sheetResult;
+                }
+            } catch (err) {
+                console.error('[Live Sheets API Error]:', err.message);
+            }
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.writeHead(200);
+            return res.end(JSON.stringify(liveData, null, 2));
+        }
+
         // 2. Health Check
         if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
             res.writeHead(200);
