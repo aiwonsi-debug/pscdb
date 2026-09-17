@@ -1010,12 +1010,14 @@ if (cat === 'all') {
         const iconEmoji = isSalaya ? '🥬' : (s.product.includes('หอม') ? '🧅' : '🫑');
         const weightText = s.weight ? (parseFloat(s.weight) >= 1000 ? (parseFloat(s.weight) / 1000) + ' ตัน' : s.weight + ' kg') : '';
         const title = `${iconEmoji} ${s.customer}: ${s.product} ${weightText} (${s.origin || supplier})`;
+        // Use unique DOM id per row to avoid duplicate IDs when same order ID appears on multiple rows
+        const domId = 'sched_' + idx;
 
         html += `
-        <div id="card_${cardKey}" class="flat-card warning-card order-card ${s.cat} cat-${s.cat}">
+        <div id="card_${domId}" class="flat-card warning-card order-card ${s.cat} cat-${s.cat}">
           <div class="card-header-row">
             <div class="card-title-text">${title}</div>
-            <span class="status-badge ${badgeClass}" id="disp_status_${cardKey}">${statusText}</span>
+            <span class="status-badge ${badgeClass}" id="disp_status_${domId}">${statusText}</span>
           </div>
           <div class="route-row">
             <span>ขึ้นของ: ${s.date || '–'} (${s.origin || 'สวน'})</span>
@@ -1025,11 +1027,11 @@ if (cat === 'all') {
           <div class="columns-2">
             <div>
               <span class="col-label">แหล่งสวน</span>
-              <div class="col-val ${supplier === 'ยังไม่ระบุ' ? 'empty' : ''}" id="disp_supplier_${cardKey}">${supplier}</div>
+              <div class="col-val ${supplier === 'ยังไม่ระบุ' ? 'empty' : ''}" id="disp_supplier_${domId}">${supplier}</div>
             </div>
             <div>
               <span class="col-label">รถขนส่ง</span>
-              <div class="col-val ${truck === 'ยังไม่ระบุ' ? 'empty' : ''}" id="disp_truck_${cardKey}">${truck}</div>
+              <div class="col-val ${truck === 'ยังไม่ระบุ' ? 'empty' : ''}" id="disp_truck_${domId}">${truck}</div>
             </div>
           </div>
         </div>`;
