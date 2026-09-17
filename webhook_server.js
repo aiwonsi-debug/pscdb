@@ -739,6 +739,24 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify(liveData, null, 2));
         }
 
+        // Cabbage Prices and Transport Rates Endpoint
+        if (req.method === 'GET' && (pathname === '/api/prices' || pathname === '/api/price-update')) {
+            let priceData = { AsOfDate: '16/09/69', Suppliers: [] };
+            const targetPriceFile = [
+                path.join(__dirname, 'cabbage_prices_transport.json'),
+                path.join(__dirname, '..', 'cabbage_prices_transport.json'),
+                path.join(__dirname, 'data', 'cabbage_prices_transport.json')
+            ].find(f => fs.existsSync(f));
+            if (targetPriceFile) {
+                try {
+                    priceData = JSON.parse(fs.readFileSync(targetPriceFile, 'utf8'));
+                } catch (e) {}
+            }
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.writeHead(200);
+            return res.end(JSON.stringify(priceData, null, 2));
+        }
+
         // 2. Health Check
         if (req.method === 'GET' && (pathname === '/api/health' || pathname === '/api/status')) {
             res.writeHead(200);

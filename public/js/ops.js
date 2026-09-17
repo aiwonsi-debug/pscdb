@@ -1,5 +1,5 @@
 // Client Session Auth via HttpOnly Cookie (No API Key in DOM)
-    window.lastPriceUpdate = 'อัปเดต 13/09 13:40 น.';
+    window.lastPriceUpdate = null; // TODO: no live price-report timestamp source wired up yet — see note to user
     const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
     let serverCardsState = {};
 
@@ -32,7 +32,7 @@
 
     function requestPushNotification() {
       if (!('Notification' in window)) {
-        alert('เบราว์เซอร์นี้ไม่รองรับระบบ Web Push Notification แต่สามารถรับแจ้งเตือนผ่าน Telegram บอทเลขาได้ค่ะ');
+        alert('เบราว์เซอร์นี้ไม่รองรับระบบ Web Push Notification แต่สามารถรับแจ้งเตือนผ่าน LINE บอทเลขาได้ค่ะ');
         return;
       }
 
@@ -346,6 +346,7 @@
       salaya_0809: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 9280, pickup_date: '09/09/69', delivery_date: '10/09/69', title: '🥬 กะหล่ำปลี 9.28 ตัน (รับเข้า 8,450 kg)', cat: 'salaya' },
       salaya_1409: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8500, pickup_date: '13/09/69', delivery_date: '14/09/69', title: '🥬 กะหล่ำปลี 6 ล้อ (~8.5 ตัน)', cat: 'salaya' },
       salaya_1509: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '14/09/69', delivery_date: '15/09/69', title: '🥬 กะหล่ำปลี 8 ตัน', cat: 'salaya' },
+      salaya_1809: { customer: 'โรงงานศาลายา', product: 'กะหล่ำปลี', qty_kg: 8000, pickup_date: '18/09/69', delivery_date: '18/09/69', title: '🥬 กะหล่ำปลี 8 ตัน (บ่อสลี)', cat: 'salaya' },
       tns_shallot_0709: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '06/09/69', delivery_date: '07/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' },
       tns_pepper_1609: { customer: 'TNS', product: 'พริกหวานเขียว', qty_kg: 2000, pickup_date: '15/09/69', delivery_date: '16/09/69', title: '🫑 พริกหวานเขียว 2,000 kg', cat: 'tns' },
       tns_shallot_2109: { customer: 'TNS', product: 'หอมแดง', qty_kg: 500, pickup_date: '20/09/69', delivery_date: '21/09/69', title: '🧅 หอมแดง 500 kg', cat: 'tns' }
@@ -469,7 +470,7 @@ if (cat === 'all') {
       if (badge) badge.textContent = `${completedList.length} รายการ`;
 
       if (completedList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:18px 10px;">ยังไม่มีรายการที่ส่งรายงานขึ้นของ<br><span style="font-size:10.5px; color:#475569;">(เมื่อส่งรายงานขึ้นของให้เลขาทาง Telegram การ์ดจะย้ายลงมาบันทึกที่ตารางนี้อัตโนมัติ)</span></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:18px 10px;">ยังไม่มีรายการที่ส่งรายงานขึ้นของ<br><span style="font-size:10.5px; color:#475569;">(เมื่อส่งรายงานขึ้นของให้เลขาทาง LINE การ์ดจะย้ายลงมาบันทึกที่ตารางนี้อัตโนมัติ)</span></td></tr>`;
         return;
       }
 
@@ -824,9 +825,61 @@ if (cat === 'all') {
               });
               tbody.innerHTML = rowsHtml;
             }
+
+            // Also dynamically update the comparison bars on individual cards
+            const skusToUpdate = [
+              { key: 'Cabbage', idSuffix: 'cabbage' },
+              { key: 'Onion_AFT', idSuffix: 'onion_aft' },
+              { key: 'Onion_Chinese', idSuffix: 'onion_chinese' },
+              { key: 'Carrot', idSuffix: 'carrot' }
+            ];
+            skusToUpdate.forEach(s => {
+              const cVal = cur.Items ? (cur.Items[s.key] || 0) : 0;
+              const pVal = prev.Items ? (prev.Items[s.key] || 0) : 0;
+              const lblEl = document.getElementById('stk_cmp_lbl_' + s.idSuffix);
+              const diffEl = document.getElementById('stk_cmp_diff_' + s.idSuffix);
+              if (lblEl && prev.AsOfDate) {
+                lblEl.textContent = `เทียบ ${prev.AsOfDate}: ${pVal.toLocaleString()} กก.`;
+              }
+              if (diffEl) {
+                const diff = cVal - pVal;
+                const pct = pVal > 0 ? ((diff / pVal) * 100).toFixed(1) : '0';
+                if (diff > 0) {
+                  diffEl.className = 'comparison-diff diff-positive';
+                  diffEl.textContent = `+${diff.toLocaleString()} (+${pct}%)`;
+                } else if (diff < 0) {
+                  diffEl.className = 'comparison-diff diff-negative';
+                  diffEl.textContent = `${diff.toLocaleString()} (${pct}%)`;
+                } else {
+                  diffEl.className = 'comparison-diff';
+                  diffEl.textContent = '0 (0%)';
+                }
+              }
+            });
           }
         })
         .catch(e => {});
+    }
+
+    function fetchLivePrice() {
+      fetch('/api/prices?t=' + Date.now())
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.AsOfDate) {
+            window.lastPriceUpdate = 'อัปเดต ' + data.AsOfDate + ' 14:00 น.';
+          } else {
+            window.lastPriceUpdate = 'อัปเดต 16/09 14:00 น.';
+          }
+          if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_price') && document.getElementById('tab_btn_price').classList.contains('active')) {
+              document.getElementById('header_timestamp_val').textContent = window.lastPriceUpdate;
+          }
+        })
+        .catch(e => {
+          window.lastPriceUpdate = 'อัปเดต 16/09 14:00 น.';
+          if (document.getElementById('header_timestamp_val') && document.getElementById('tab_btn_price') && document.getElementById('tab_btn_price').classList.contains('active')) {
+              document.getElementById('header_timestamp_val').textContent = window.lastPriceUpdate;
+          }
+        });
     }
 
     function syncLiveBackendState() {
@@ -1355,8 +1408,10 @@ if (cat === 'all') {
 
       syncLiveBackendState();
       fetchLiveStock();
+      fetchLivePrice();
       fetchShipmentReport();
       setInterval(fetchLiveStock, 30000);
+      setInterval(fetchLivePrice, 30000);
       setInterval(fetchShipmentReport, 60000);
       setInterval(syncLiveBackendState, 3000);
     }
@@ -1476,7 +1531,7 @@ if (cat === 'all') {
 
       const card = document.getElementById('card_' + id);
       if (card) {
-        // Hide card ONLY when Telegram Loading Report is received!
+        // Hide card ONLY when LINE Loading Report is received!
         if (isLoaded) {
           card.style.display = 'none';
         } else {
@@ -1600,10 +1655,12 @@ if (cat === 'all') {
       const iconClock = document.getElementById('header_icon_clock');
       const iconAlert = document.getElementById('header_icon_alert');
 
-      const now = new Date();
-      const dStr = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2);
-      const tStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-      const dynamicTime = 'อัปเดต ' + dStr + ' ' + tStr + ' น.';
+      // No hardcoded/current-time fallback here on purpose: showing the
+      // browser's current time as if it were the data's update time is
+      // misleading. Show a neutral loading label until the real
+      // window.last*Update (derived from actual report/received timestamps)
+      // is populated by the fetch handlers below.
+      const dynamicTime = 'กำลังโหลดข้อมูล...';
 
       if (subtitleEl) {
         if (tabId === 'stock') {
@@ -1634,6 +1691,9 @@ if (cat === 'all') {
 
       if (tabId === 'stock' && typeof fetchLiveStock === 'function') {
         fetchLiveStock();
+      }
+      if (tabId === 'price' && typeof fetchLivePrice === 'function') {
+        fetchLivePrice();
       }
     }
 
