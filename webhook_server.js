@@ -906,6 +906,55 @@ const server = http.createServer(async (req, res) => {
                 return res.end(JSON.stringify({ success: false, error: e.message }));
             }
         }
+        if (req.method === 'POST' && pathname === '/api/team-cleanup') {
+            if (!isMasterAuth) {
+                res.writeHead(403);
+                return res.end(JSON.stringify({ success: false, error: 'Forbidden: /api/team-cleanup requires Master API Key' }));
+            }
+            const body = await getBody();
+            const removeIds = Array.isArray(body && body.remove_ids) && body.remove_ids.length
+                ? body.remove_ids
+                : ['test', '209', 'test_write_1788655978366', 'โรงงานศาลายา'];
+
+            const opsData = loadTeamOps();
+            const before = Object.keys(opsData.cards_state || {});
+            const merged = {};
+            const removed = [];
+            const mergedFrom = {};
+
+            before.forEach(rawKey => {
+                if (removeIds.includes(rawKey)) {
+                    removed.push(rawKey);
+                    return;
+                }
+                const cleanKey = rawKey.trim();
+                const incoming = opsData.cards_state[rawKey];
+                if (!merged[cleanKey]) {
+                    merged[cleanKey] = incoming;
+                } else {
+                    const existingTime = merged[cleanKey].updatedAt ? new Date(merged[cleanKey].updatedAt).getTime() : 0;
+                    const incomingTime = incoming.updatedAt ? new Date(incoming.updatedAt).getTime() : 0;
+                    merged[cleanKey] = incomingTime >= existingTime ? incoming : merged[cleanKey];
+                    mergedFrom[cleanKey] = mergedFrom[cleanKey] || [];
+                    mergedFrom[cleanKey].push(rawKey);
+                }
+                if (cleanKey !== rawKey) {
+                    if (typeof merged[cleanKey].id === 'string') merged[cleanKey].id = cleanKey;
+                }
+            });
+
+            opsData.cards_state = merged;
+            saveTeamOps(opsData);
+
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                success: true,
+                before_count: before.length,
+                after_count: Object.keys(merged).length,
+                removed_ids: removed,
+                merged_duplicates: mergedFrom
+            }));
+        }
 
         // 3. Gmail Push Webhook Endpoint (Instant Notification to LINE)
         if (req.method === 'POST' && (pathname === '/api/gmail-webhook' || pathname === '/api/gmail-push')) {

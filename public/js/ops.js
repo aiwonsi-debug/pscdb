@@ -1916,3 +1916,20 @@ if (cat === 'all') {
     } else {
       initCalFilterListeners();
     }
+            // Normalize keys: trim whitespace so IDs with accidental trailing/leading
+            // spaces (e.g. from Google Sheets cell entry) merge into the canonical ID
+            // instead of creating a duplicate, orphaned entry that never displays.
+            serverCardsState = {};
+            Object.keys(data.cards_state).forEach(rawKey => {
+              const cleanKey = rawKey.trim();
+              const existing = serverCardsState[cleanKey];
+              const incoming = data.cards_state[rawKey];
+              if (!existing) {
+                serverCardsState[cleanKey] = incoming;
+              } else {
+                // Keep whichever entry has the more recent updatedAt
+                const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+                const incomingTime = incoming.updatedAt ? new Date(incoming.updatedAt).getTime() : 0;
+                serverCardsState[cleanKey] = incomingTime >= existingTime ? incoming : existing;
+              }
+            });
