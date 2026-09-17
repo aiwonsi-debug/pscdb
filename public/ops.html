@@ -947,12 +947,12 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="/js/ops.js?v=20260918_v3" defer></script>
+  <script src="/js/main_dashboard.js?v=20260918_v4" defer></script>
   <script>
     setTimeout(() => {
       const dbg = document.getElementById('fetch_debug');
       if (dbg && typeof syncLiveBackendState !== 'function') {
-        dbg.innerText = 'FATAL: ops.js failed to load';
+        dbg.innerText = 'FATAL: main_dashboard.js failed to load';
         dbg.style.color = 'red';
       } else if (dbg && !dbg.innerText) {
         dbg.innerText = 'Fallback init...';
