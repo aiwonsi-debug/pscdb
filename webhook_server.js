@@ -209,11 +209,12 @@ function syncToGoogleSheets(payload) {
     }
 }
 
-function fetchGoogleSheetsData() {
+function fetchGoogleSheetsData(queryParam = '') {
     return new Promise((resolve) => {
         if (!GAS_URL) return resolve(null);
         try {
-            https.get(GAS_URL, (res) => {
+            const fetchUrl = queryParam ? `${GAS_URL}${GAS_URL.includes('?') ? '&' : '?'}${queryParam}` : GAS_URL;
+            https.get(fetchUrl, (res) => {
                 if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
                     https.get(res.headers.location, (redRes) => {
                         let data = '';
@@ -656,7 +657,7 @@ const server = http.createServer(async (req, res) => {
             }
         }
 
-        // Real-Time Live Stock Inventory Endpoint
+        // Real-Time Live Stock Inventory Endpoint (Direct Sheets Sync with Local Fallback)
         if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
             let stockData = {
                 AsOfDate: new Date().toISOString().slice(0, 10),
@@ -678,14 +679,48 @@ const server = http.createServer(async (req, res) => {
                 stockFile + '.example'
             ].find(f => fs.existsSync(f));
             if (targetStockFile) {
-          try {
-            stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));
-          } catch (e) {}
-        }
-        // Prevent caching of stock data to ensure UI reflects latest values
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.writeHead(200);
-        return res.end(JSON.stringify(stockData, null, 2));
+                try {
+                    stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));
+                } catch (e) {}
+            }
+
+            // Real-Time Sheets Direct Sync: Fetch live stock array from Google Apps Script
+            try {
+                const liveSheets = await fetchGoogleSheetsData('action=summary');
+                if (liveSheets && Array.isArray(liveSheets.stock) && liveSheets.stock.length > 0) {
+                    if (!stockData.Items) stockData.Items = {};
+                    liveSheets.stock.forEach(row => {
+                        const name = (row.name || '').trim();
+                        const qty = Number(row.actualQtyKg) || 0;
+                        if (name.includes('กะหล่ำ')) {
+                            stockData.Items.Cabbage = Object.assign(stockData.Items.Cabbage || { Name: 'กะหล่ำปลี' }, { StockKg: qty });
+                        } else if (name.includes('AFT') || (name.includes('หอม') && name.includes('ใหญ่') && !name.includes('จีน'))) {
+                            stockData.Items.Onion_AFT = Object.assign(stockData.Items.Onion_AFT || { Name: 'หอม AFT' }, { StockKg: qty });
+                        } else if (name.includes('จีน')) {
+                            stockData.Items.Onion_Chinese = Object.assign(stockData.Items.Onion_Chinese || { Name: 'หอมจีน' }, { StockKg: qty });
+                        } else if (name.includes('แครอท')) {
+                            stockData.Items.Carrot = Object.assign(stockData.Items.Carrot || { Name: 'แครอทสวย' }, { StockKg: qty });
+                        } else if (name.includes('มันม่วง')) {
+                            stockData.Items.Purple_Sweet_Potato = Object.assign(stockData.Items.Purple_Sweet_Potato || { Name: 'มันม่วงหัวเล็ก' }, { StockKg: qty });
+                        } else if (name.includes('มันเหลือง')) {
+                            stockData.Items.Yellow_Sweet_Potato = Object.assign(stockData.Items.Yellow_Sweet_Potato || { Name: 'มันเหลืองไข่' }, { StockKg: qty });
+                        } else if (name.includes('มันส้ม')) {
+                            stockData.Items.Orange_Sweet_Potato = Object.assign(stockData.Items.Orange_Sweet_Potato || { Name: 'มันส้ม' }, { StockKg: qty });
+                        }
+                    });
+                    const now = new Date();
+                    stockData.LastUpdated = now.toISOString();
+                    stockData.AsOfDate = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + (now.getFullYear() + 543).toString().slice(-2);
+                    stockData.LiveSource = 'Google Sheets Realtime';
+                }
+            } catch (err) {
+                console.error('[Live Stock Sync Error]:', err.message);
+            }
+
+            // Prevent caching of stock data to ensure UI reflects latest values
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.writeHead(200);
+            return res.end(JSON.stringify(stockData, null, 2));
         }
 
         // 2. Health Check
