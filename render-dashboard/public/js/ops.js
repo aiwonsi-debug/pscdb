@@ -883,7 +883,7 @@ if (cat === 'all') {
     }
 
     function syncLiveBackendState(isForce = false) {
-      const url = '/api/team-status' + (isForce ? '?force=1&t=' + Date.now() : '');
+      const url = '/api/team-status' + (isForce ? '?force=1&t=' + Date.now() : '?t=' + Date.now());
       if (isForce) showToast('🔄 กำลังดึงข้อมูลล่าสุดจาก Google Sheet...');
       fetch(url)
         .then(res => res.json())

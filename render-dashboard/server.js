@@ -1096,6 +1096,9 @@ const server = http.createServer(async (req, res) => {
                 }
             } catch (e) {}
 
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
             res.writeHead(200);
             return res.end(JSON.stringify(ops, null, 2));
         }
