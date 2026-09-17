@@ -131,7 +131,11 @@
       <main id="sec_delivery" class="app-section active">
       
       <!-- Section 1: ตารางติดตามขึ้นของสวน -->
-      <div class="section-headline">ตารางติดตามขึ้นของสวน</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="section-headline" style="margin-bottom:0;">ตารางติดตามขึ้นของสวน (ดึงจาก Google Sheet)</div>
+        <button type="button" onclick="syncLiveBackendState(true)" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#38bdf8; border-radius:6px; font-size:12px; font-weight:600; padding:4px 10px; cursor:pointer;">🔄 ซิงค์ชีตสด</button>
+      </div>
+      <div id="schedule_cards_container">
 
       <!-- Item 0: กะหล่ำปลี 8 ตัน (ขึ้น 18/09 เข้า 18-19/09) -->
       <div id="card_salaya_1809" class="flat-card warning-card order-card salaya cat-salaya">
@@ -248,6 +252,7 @@
         </div>
       </div>
 
+      </div>
       <!-- Section 2: ประวัติรับเข้าวัตถุดิบ (Stacked Cards) -->
       <div class="section-headline" style="margin-top: 20px;">ประวัติรับเข้าวัตถุดิบ</div>
       <div id="intake_cards_container">
