@@ -1,7 +1,7 @@
 # PSCDB — Urgent LINE Intake Routing Handover
 
 **วันที่:** 18 กันยายน 2026  
-**สถานะ:** แก้ไขโค้ดและ Deploy workflow แล้ว — รอทดสอบข้อความ LINE จริง 1 ครั้ง
+**สถานะ:** ลบเส้นทาง Desktop/tunnel เดิมแล้ว — LINE Webhook ใช้ Apps Script เป็นเส้นทางเดียว
 
 ## ปัญหาที่พบ
 
@@ -11,11 +11,11 @@
 ✅ [บันทึกงานขึ้นของ PSC เรียบร้อย]
 ```
 
-สาเหตุคือ LINE Webhook บน Render ส่งข้อความรับเข้าไปยัง Desktop bot process รุ่นเก่า ซึ่งยังใช้เส้นทาง loading/dispatch เดิม
+สาเหตุเดิมคือ LINE Webhook บน Render ส่งข้อความบางประเภทไปยัง Desktop bot process รุ่นเก่า ซึ่งยังใช้เส้นทาง loading/dispatch เดิม
 
 ## การแก้ไขล่าสุด
 
-ระบบถูกแก้ให้ Render ตรวจจับข้อความรับเข้าโดยตรงก่อนส่งต่อไปยัง Desktop bot โดยใช้คำสำคัญต่อไปนี้:
+ระบบถูกแก้ให้ Render ส่ง LINE event ทุกประเภทเข้า Google Apps Script โดยตรง โดยไม่มี Desktop bot หรือ tunnel เป็นทางเลือกสำรองอีกต่อไป การจำแนกรายงานรับเข้ายังคงใช้คำสำคัญต่อไปนี้:
 
 - `รับกะหล่ำ`
 - `รับหอม`
@@ -23,7 +23,7 @@
 - `สุ่มปอก`
 - `ปอกได้`
 
-เมื่อพบข้อความดังกล่าว Render จะส่ง LINE event เข้า Google Apps Script Web App โดยตรง และ **ไม่ forward ไปยัง Desktop bot**
+เมื่อพบข้อความดังกล่าว Apps Script จะตั้ง `reportType` เป็น `intake` และเขียนไปยังแท็บรับเข้า โดย **ไม่มีการ forward ไปยัง Desktop bot** ระบบข้อความประเภทอื่นก็ส่งเข้า Apps Script โดยตรงเช่นกัน
 
 Apps Script เวอร์ชันที่ใช้งานจริงคือ **version 35** โดย routing จะเลือกแท็บตามลำดับดังนี้:
 
@@ -110,7 +110,7 @@ curl -sS https://pscdb.onrender.com/api/live-sheets
 
 ## หากข้อความยังตอบเป็นงานขึ้นของ
 
-1. รอให้ Render deploy commit `85c2a4b` เสร็จสมบูรณ์
+1. รอให้ Render deploy commit `c8fda3e` เสร็จสมบูรณ์
 2. อย่าส่งข้อความซ้ำหลายครั้งทันที เพราะอาจเกิดรายการซ้ำ
 3. ตรวจ Render service health ให้เป็น `ONLINE`
 4. ส่งข้อความทดสอบอีกครั้ง
@@ -118,9 +118,9 @@ curl -sS https://pscdb.onrender.com/api/live-sheets
 
 ## ไฟล์สำคัญ
 
-- `render-dashboard/server.js` — ดักข้อความรับเข้าบน Render ก่อน forward
-- `bot.js` — แยก response ระหว่าง intake และ dispatch สำหรับ Desktop bot
-- `webhook_server.js` — เก็บ intake history และ sync ข้อมูล
+- `render-dashboard/server.js` — เส้นทาง LINE production เดียว ส่งเข้า Apps Script
+- `bot.js` — parser เดิมสำหรับงานภายในที่ไม่ถูกเรียกจาก LINE Webhook production แล้ว
+- `webhook_server.js` — เส้นทาง webhook หลัก ส่งเข้า Apps Script โดยตรง
 - `integrations/google-apps-script/psc_wdb_web_app.gs` — เขียนข้อมูลเข้าแท็บ WDB
 - `docs/HANDOVER_DOCUMENTATION.md` — เอกสารระบบฉบับเต็ม
 
