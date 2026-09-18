@@ -14,7 +14,7 @@ The dashboard loader now retries the WDB endpoint up to three times and renders 
 
 The LINE bot parser now recognizes receiving reports that use wording such as `รับกะหล่ำปลี`, `สุ่มปอก`, and `ปอกได้`. For the reported example, it extracts 7,425 kg, a 100 kg sample, 74.93 kg peeled, and a 74.93% yield. The bot routing fix forces these receiving reports into the intake workflow instead of the shipment workflow.
 
-The repository contains a new Apps Script routing patch that classifies receiving reports as `intake`, avoids writing them to `Next Schedule & Other Tasks`, and writes them to the Dispatch & Intake destination. **This Apps Script source still requires deployment to the active Apps Script project before the spreadsheet routing change takes effect.**
+The Apps Script routing patch is deployed to the active PSC WDB web app as version 35. It classifies receiving reports as `intake`, avoids writing them to `Next Schedule & Other Tasks`, and resolves the live destination tab as `Dispatch & Intake Log` with compatibility fallbacks for `Dispatch & Intake` and `LINE Intake Inbox`.
 
 ## Runtime architecture
 
@@ -32,7 +32,7 @@ The LINE webhook enters the application through `/api/line-webhook`. Text messag
 | Live schedules | WDB Apps Script summary | Dashboard Pending tab |
 | Price and transport rows | WDB Apps Script summary | Dashboard Price tab |
 | Customer PO demand | WDB Apps Script summary | Dashboard Stock forecast chart |
-| LINE receiving reports | Apps Script direct-event handler | Dispatch & Intake destination |
+| LINE receiving reports | Apps Script direct-event handler | Dispatch & Intake Log destination |
 | Shipment or loading plans | Apps Script direct-event handler | Next Schedule & Other Tasks |
 | Local operational intake history | `webhook_server.js` and `team_ops_status.json` | Dashboard History / intake data |
 
@@ -83,19 +83,19 @@ The recent commits are:
 | `ec4d734` | Normalized transporter owner grouping. |
 | `3c7401e` | Grouped transport rows by owner, route, vehicle type, and price. |
 
-The Apps Script source currently includes an uncommitted handover-period patch in `integrations/google-apps-script/psc_wdb_web_app.gs`. It adds receiving classification, sends `scheduleRow: null`, and writes the intake row to `Dispatch & Intake` when that tab exists.
+The Apps Script source in `integrations/google-apps-script/psc_wdb_web_app.gs` adds receiving classification, sends `scheduleRow: null`, and writes the intake row to `Dispatch & Intake Log`. The deployed web app is version 35.
 
-## Required deployment step
+## Post-deployment verification
 
-Open the active Apps Script project used by PSCDB and deploy the updated source. The project previously used for the WDB integration is the PSC WDB Apps Script project. After deployment, send one receiving report and verify all of the following:
+The active Apps Script project used by PSCDB is the PSC WDB Apps Script project. Version 35 is deployed and the web-app endpoint returned HTTP 200 with live JSON after propagation. Send one receiving report and verify all of the following:
 
 1. The LINE reply says `บันทึกรับเข้า/รับของ PSC เรียบร้อย`.
 2. No new row appears in `Next Schedule & Other Tasks`.
-3. A new row appears in the Dispatch & Intake destination.
+3. A new row appears in the `Dispatch & Intake Log` destination.
 4. The row contains the item, supplier, quantity, sample weight, peeled weight, and yield.
 5. The dashboard intake/history endpoint shows the new receiving record.
 
-The web application code cannot change an already deployed Apps Script project by itself. The Apps Script deployment is therefore the only remaining operational handover step for the spreadsheet tab-routing correction.
+The remaining verification step is an end-to-end LINE message test. The repository and live deployment are now aligned with the actual spreadsheet tab name.
 
 ## Verification commands
 

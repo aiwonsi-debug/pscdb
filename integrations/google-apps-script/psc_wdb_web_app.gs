@@ -1104,7 +1104,7 @@ function appendFarmOpsTask_(opts) {
   try {
     const farmOpsSs = SpreadsheetApp.openById(FARM_OPS_ID);
     const scheduleSheet = farmOpsSs.getSheetByName("Next Schedule & Other Tasks");
-    const inboxSheet = farmOpsSs.getSheetByName("Dispatch & Intake") || farmOpsSs.getSheetByName("LINE Intake Inbox");
+    const inboxSheet = farmOpsSs.getSheetByName("Dispatch & Intake Log") || farmOpsSs.getSheetByName("Dispatch & Intake") || farmOpsSs.getSheetByName("LINE Intake Inbox");
 
     if (opts.scheduleRow && scheduleSheet) {
       scheduleSheet.appendRow(opts.scheduleRow);
