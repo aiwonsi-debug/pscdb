@@ -268,6 +268,7 @@ function parseCsv(text) {
 
 const PO_REGISTER_CSV = 'https://docs.google.com/spreadsheets/d/1FfkSYTCxUFYj3dE6VHAOWEqDa4MVU3yMz7rwjefh-Ig/export?format=csv&gid=1245149988';
 let cachedPORegister = { timestamp: 0, rows: [] };
+let cachedTeamStatus = { timestamp: 0, data: null };
 async function fetchCustomerPORegister(force = false) {
     const now = Date.now();
     if (!force && cachedPORegister.rows.length > 0 && now - cachedPORegister.timestamp < 5000) return cachedPORegister.rows;
@@ -1131,55 +1132,47 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        // 4. Team Status GET (Fetches from Google Sheets if cloud storage is fresh)
+        // 4. Team Status GET (parallel Google Sheet fetches + short server cache)
         if (req.method === 'GET' && pathname === '/api/team-status') {
-            const ops = loadTeamOps();
             const isForce = parsedUrl.query && (parsedUrl.query.force === '1' || parsedUrl.query.force === 'true');
-
-            // 4a. Fetch live schedules directly from Google Sheets
-            try {
-                const liveSchedules = await fetchGoogleSheetsLiveSchedule(isForce);
-                if (Array.isArray(liveSchedules) && liveSchedules.length > 0) {
-                    ops.live_schedules = liveSchedules;
-                }
-            } catch (sheetErr) {
-                console.error('[Live Schedules Fetch Error]:', sheetErr.message);
+            const now = Date.now();
+            if (!isForce && cachedTeamStatus.data && now - cachedTeamStatus.timestamp < 10000) {
+                res.setHeader('Cache-Control', 'private, max-age=5, stale-while-revalidate=15');
+                res.writeHead(200);
+                return res.end(JSON.stringify(cachedTeamStatus.data));
             }
-            try { ops.customer_pos = await fetchCustomerPORegister(isForce); }
-            catch (poErr) { console.error('[PO Register Error]:', poErr.message); }
-            
-            // 4b. Fetch latest from Google Sheets App Script and merge with conflict resolution
-            try {
-                const sheetData = await fetchGoogleSheetsData();
-                if (sheetData && typeof sheetData === 'object') {
-                    if (!ops.cards_state) ops.cards_state = {};
-                    Object.keys(sheetData).forEach(rawId => {
-                        const id = rawId.trim();
-                        const item = sheetData[rawId];
-                        if (item && id) {
-                            const localItem = ops.cards_state[id];
-                            const localUpdatedAt = localItem && localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
-                            const sheetUpdatedAt = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
-                            
-                            // Only allow Google Sheets to update if local state doesn't have newer changes
-                            if (!localItem || sheetUpdatedAt >= localUpdatedAt) {
-                                if (!ops.cards_state[id]) ops.cards_state[id] = { id: id };
-                                if (item.supplier) ops.cards_state[id].supplier = item.supplier;
-                                if (item.truck) ops.cards_state[id].truck = item.truck;
-                                if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
-                                if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
-                                if (item.updatedAt) ops.cards_state[id].updatedAt = item.updatedAt;
-                            }
-                        }
-                    });
-                }
-            } catch (e) {}
-
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
+            const ops = loadTeamOps();
+            const [scheduleResult, poResult, sheetResult] = await Promise.allSettled([
+                fetchGoogleSheetsLiveSchedule(isForce),
+                fetchCustomerPORegister(isForce),
+                fetchGoogleSheetsData()
+            ]);
+            if (scheduleResult.status === 'fulfilled' && Array.isArray(scheduleResult.value)) ops.live_schedules = scheduleResult.value;
+            if (poResult.status === 'fulfilled' && Array.isArray(poResult.value)) ops.customer_pos = poResult.value;
+            if (sheetResult.status === 'fulfilled' && sheetResult.value && typeof sheetResult.value === 'object') {
+                const sheetData = sheetResult.value;
+                if (!ops.cards_state) ops.cards_state = {};
+                Object.keys(sheetData).forEach(rawId => {
+                    const id = rawId.trim(), item = sheetData[rawId];
+                    if (!item || !id) return;
+                    const localItem = ops.cards_state[id];
+                    const localUpdatedAt = localItem && localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
+                    const sheetUpdatedAt = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+                    if (!localItem || sheetUpdatedAt >= localUpdatedAt) {
+                        if (!ops.cards_state[id]) ops.cards_state[id] = { id };
+                        if (item.supplier) ops.cards_state[id].supplier = item.supplier;
+                        if (item.truck) ops.cards_state[id].truck = item.truck;
+                        if (item.orderChecked !== undefined) ops.cards_state[id].orderChecked = item.orderChecked;
+                        if (item.truckChecked !== undefined) ops.cards_state[id].truckChecked = item.truckChecked;
+                        if (item.updatedAt) ops.cards_state[id].updatedAt = item.updatedAt;
+                    }
+                });
+            }
+            const payload = normalizeAdDates(ops);
+            cachedTeamStatus = { timestamp: now, data: payload };
+            res.setHeader('Cache-Control', 'private, max-age=5, stale-while-revalidate=15');
             res.writeHead(200);
-            return res.end(JSON.stringify(normalizeAdDates(ops), null, 2));
+            return res.end(JSON.stringify(payload));
         }
 
         // 5. Team Update POST (Syncs to Google Sheets & Updates Memory)
