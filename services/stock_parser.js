@@ -26,6 +26,10 @@ function extractLoadingReportFromText(text) {
     const sampleKg = sampleMatch ? parseFloat(sampleMatch[1].replace(/,/g, '')) : null;
     const peeledKg = peeledMatch ? parseFloat(peeledMatch[1].replace(/,/g, '')) : null;
     const yieldPct = sampleKg && peeledKg !== null ? Number(((peeledKg / sampleKg) * 100).toFixed(2)) : null;
+    const sizeMatch = text.match(/ขนาด\s*([^\n\r]+)/i);
+    const conditionMatch = text.match(/สภาพ(?:โดยรวม)?\s*([^\n\r]+)/i);
+    const size = sizeMatch ? sizeMatch[1].trim() : null;
+    const condition = conditionMatch ? conditionMatch[1].trim() : null;
 
     let supplier = 'เฮียหนิง';
     if (text.includes('เจ๊นก') || text.includes('เจ้นก')) supplier = 'เจ๊นก';
@@ -54,6 +58,8 @@ function extractLoadingReportFromText(text) {
         sample_kg: sampleKg,
         peeled_kg: peeledKg,
         yield_pct: yieldPct,
+        size,
+        condition,
         stock_inventory: null
     };
 }

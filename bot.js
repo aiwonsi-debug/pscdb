@@ -884,7 +884,7 @@ function handleCommand(chatId, text, msg = null) {
     // =========================================================================
     const isOpsOrStockPattern = !hasNegation && (
         text.includes('สต็อก') || text.includes('สต๊อก') || text.toLowerCase().includes('stock') ||
-        text.includes('ขึ้นของ') || text.includes('รับเข้า') || text.includes('ขึ้นกะหล่ำ') ||
+        text.includes('ขึ้นของ') || text.includes('รับเข้า') || text.includes('รับกะหล่ำ') || text.includes('รับหอม') || text.includes('รับพริก') || text.includes('ขึ้นกะหล่ำ') ||
         text.includes('ขึ้นหอม') || text.includes('กะหล่ำเข้า') || text.includes('หอมเข้า') ||
         text.includes('สุ่มปอก') || text.includes('ปอกได้') || text.includes('จำนวนที่ได้รับ') ||
         text.includes('น้ำหนักสุทธิ') || text.includes('เก็บปลายทาง') ||
@@ -956,7 +956,11 @@ function handleCommand(chatId, text, msg = null) {
                         try { result = JSON.parse(parsed.choices[0].message.content.trim()); } catch(e){}
                     }
 
-                    if (!result) {
+                    const forcedIntakeText = /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(text);
+                    const deterministicIntake = forcedIntakeText ? extractLoadingReportFromText(text) : null;
+                    if (deterministicIntake) {
+                        result = Object.assign({}, result || {}, deterministicIntake);
+                    } else if (!result) {
                         result = extractLoadingReportFromText(text) || extractStockFromText(text);
                     }
 
@@ -1105,6 +1109,9 @@ function handleCommand(chatId, text, msg = null) {
                         calcYield ||
                         text.includes('ขึ้นของ') ||
                         text.includes('รับเข้า') ||
+                        text.includes('รับกะหล่ำ') ||
+                        text.includes('รับหอม') ||
+                        text.includes('รับพริก') ||
                         text.includes('ขึ้นกะหล่ำ') ||
                         text.includes('ขึ้นหอม') ||
                         text.includes('กะหล่ำเข้า')
