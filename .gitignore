@@ -43,3 +43,15 @@ ssh_host_key.pem
 .tmp.driveupload/ 
 archive/nested_zips/ 
 archive/agymemory_snapshot_20260913/ 
+
+# Repository hygiene: never commit downloaded Drive exports, local binaries,
+# captured operational images, historical backups, or generated audit dumps.
+archive/
+backups/
+received_images/
+*.xlsx
+*.xls
+*.zip
+view_chunks.json
+rep*.txt
+docs/ALL_SOURCE_CODE_FOR_AUDIT.txt

@@ -142,3 +142,9 @@
 
 ---
 *เอกสารนี้จัดทำขึ้นเพื่อให้การส่งมอบงานมีความโปร่งใส ตรวจสอบได้ และรักษามาตรฐานการดำเนินงานอย่างต่อเนื่อง*
+
+## 7. นโยบายโครงสร้าง repository หลัง cleanup
+
+ไฟล์ legacy, patch scripts, ไฟล์ export จาก Drive, รูปภาพ PO, backup ตามวันที่, source dump และ workbook binary ถูกนำออกจาก repository แล้ว ระบบ live ควรใช้ PSC WDB/Google Sheets ผ่าน `/api/live-sheets` เป็นแหล่งข้อมูลหลัก ส่วน JSON ที่ยังคงอยู่มีไว้เพื่อ compatibility fallback ของ local bot และ Render เท่านั้น ไม่ใช่ source of truth หลักของ dashboard
+
+รายละเอียดโครงสร้างปัจจุบันอยู่ที่ [`docs/REPOSITORY_STRUCTURE.md`](docs/REPOSITORY_STRUCTURE.md)

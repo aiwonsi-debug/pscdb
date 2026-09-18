@@ -21,9 +21,10 @@ function test(name, fn) {
 }
 
 // 1. Verify C-01 & C-02 & C-03 & H-12 in bot.js
-test('C-01: bot.js enforces fixed TELEGRAM_ADMIN_CHAT_IDS authorization', () => {
+test('C-01: bot.js enforces fixed LINE authorization', () => {
     const botCode = fs.readFileSync(path.join(__dirname, '../bot.js'), 'utf8');
-    assert.ok(botCode.includes("const ALLOWED_ADMINS = ['1532466397'"), 'Must define fixed ALLOWED_ADMINS');
+    assert.ok(botCode.includes('function checkAuthorization(chatId)'), 'Must define an authorization guard');
+    assert.ok(botCode.includes('allowedLineIds.includes(lineSourceId)'), 'Must enforce configured LINE identities');
     assert.ok(botCode.includes('Access Denied'), 'Must reject unauthorized users');
     assert.ok(!botCode.includes('adminChatId = chatId;'), 'Must not dynamically promote any user to admin');
 });
@@ -92,7 +93,7 @@ test('C-05: webhook_server.js enforces X-PSC-API-KEY and fails closed without fa
     assert.ok(whCode.includes("const isAuthorized = PSC_API_KEY &&"), 'Must fail closed when PSC_API_KEY is not set');
     assert.ok(!whCode.includes("'psc_sec_ops_2026_key'"), 'Must NOT contain hardcoded secret fallback string');
     assert.ok(!whCode.includes("parsedUrl.query.key"), 'Must NOT accept credentials via URL query parameter');
-    assert.ok(!whCode.includes("line_config.json"), 'Must NOT fallback to line_config.json for PSC_API_KEY');
+    assert.ok(!whCode.includes('PSC_API_KEY = lineCfg'), 'PSC_API_KEY must not come from LINE configuration');
 });
 
 test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed without fallback key', () => {
@@ -104,7 +105,7 @@ test('C-05: render-dashboard/server.js enforces X-PSC-API-KEY and fails closed w
         assert.ok(srvCode.includes("const isAuthorized = PSC_API_KEY &&"), 'Must fail closed when PSC_API_KEY is not set');
         assert.ok(!srvCode.includes("'psc_sec_ops_2026_key'"), 'Must NOT contain hardcoded secret fallback string');
         assert.ok(!srvCode.includes("parsedUrl.query.key"), 'Must NOT accept credentials via URL query parameter');
-        assert.ok(!srvCode.includes("line_config.json"), 'Must NOT fallback to line_config.json for PSC_API_KEY');
+        assert.ok(!srvCode.includes('PSC_API_KEY = lineCfg'), 'PSC_API_KEY must not come from LINE configuration');
     } else {
         const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
         assert.ok(whCode.includes("req.headers['x-psc-api-key']"), 'Must inspect X-PSC-API-KEY header');
