@@ -3,279 +3,469 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ราคากะหล่ำวันนี้</title>
+<title>รายการรอส่งมอบ — ตัวอย่างปรับปรุง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper: #EFE9DC;
+    --paper: #F2EFE6;
     --ink: #23241F;
-    --ink-soft: #5B5A50;
-    --leaf-dark: #2B3A2E;
-    --leaf: #5C7A4C;
-    --leaf-light: #8FAE73;
-    --rust: #B85C2C;
-    --rust-soft: #E8C9AE;
-    --line: #D5CDB8;
-    --card: #F7F4EA;
+    --ink-soft: #6B6A5F;
+    --field-dark: #2C4A3E;
+    --field: #4E7A63;
+    --field-light: #A9C4B2;
+    --clay: #B5602E;
+    --line: #DAD4C2;
+    --card: #FBFAF4;
+    --green-status: #3D7A4E;
+    --green-bg: #E4EFE3;
+    --amber-status: #A6741B;
+    --amber-bg: #F5EAD3;
+    --red-status: #B23A2E;
+    --red-bg: #F6E1DC;
     --radius: 10px;
   }
   :root:not([data-theme="light"]){
     @media (prefers-color-scheme: dark){
-      --paper: #1B1D17;
-      --ink: #EDEAE0;
-      --ink-soft: #A9A597;
-      --leaf-dark: #A9C99A;
-      --leaf: #7FA366;
-      --leaf-light: #5C7A4C;
-      --rust: #E39A66;
-      --rust-soft: #3A2A1E;
-      --line: #38392F;
-      --card: #23251E;
+      --paper: #191B16;
+      --ink: #E9E6DB;
+      --ink-soft: #9C9A8C;
+      --field-dark: #A9C4B2;
+      --field: #7FA88E;
+      --field-light: #3E5B4C;
+      --clay: #E1935F;
+      --line: #35362C;
+      --card: #212319;
+      --green-status: #8FC49A;
+      --green-bg: #223326;
+      --amber-status: #E0B25C;
+      --amber-bg: #362C18;
+      --red-status: #E38B7E;
+      --red-bg: #3A241F;
     }
   }
   :root[data-theme="dark"]{
-    --paper: #1B1D17;
-    --ink: #EDEAE0;
-    --ink-soft: #A9A597;
-    --leaf-dark: #A9C99A;
-    --leaf: #7FA366;
-    --leaf-light: #5C7A4C;
-    --rust: #E39A66;
-    --rust-soft: #3A2A1E;
-    --line: #38392F;
-    --card: #23251E;
+    --paper: #191B16;
+    --ink: #E9E6DB;
+    --ink-soft: #9C9A8C;
+    --field-dark: #A9C4B2;
+    --field: #7FA88E;
+    --field-light: #3E5B4C;
+    --clay: #E1935F;
+    --line: #35362C;
+    --card: #212319;
+    --green-status: #8FC49A;
+    --green-bg: #223326;
+    --amber-status: #E0B25C;
+    --amber-bg: #362C18;
+    --red-status: #E38B7E;
+    --red-bg: #3A241F;
   }
 
-  *{ box-sizing:border-box; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
   html,body{ margin:0; padding:0; }
   body{
     background: var(--paper);
     color: var(--ink);
     font-family: 'IBM Plex Sans Thai', sans-serif;
-    line-height: 1.55;
-    max-width: 560px;
+    line-height: 1.5;
+    max-width: 480px;
     margin: 0 auto;
-    padding-bottom: 48px;
+    padding-bottom: 40px;
   }
 
-  header.top{
-    padding: 22px 18px 18px;
+  /* ---- browser chrome mimic (context only) ---- */
+  .browser-bar{
+    background: var(--card);
     border-bottom: 1px solid var(--line);
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    display:flex; align-items:center; gap:6px;
   }
-  .eyebrow-row{
+  .browser-bar .dot{ width:6px; height:6px; border-radius:50%; background:var(--field); }
+
+  header.app-head{
+    padding: 16px 16px 0;
+  }
+  .head-row{
     display:flex; justify-content:space-between; align-items:baseline;
-    font-size: 13px; color: var(--ink-soft);
-    margin-bottom: 6px;
+  }
+  .eyebrow{
+    font-size: 12px; color: var(--ink-soft);
+  }
+  .updated{
+    font-size: 11px;
+    color: var(--field);
+    background: var(--green-bg);
+    padding: 3px 9px;
+    border-radius: 999px;
   }
   h1{
     font-family: 'Noto Serif Thai', serif;
     font-weight: 700;
-    font-size: 28px;
-    margin: 0;
-    color: var(--leaf-dark);
-    letter-spacing: 0.2px;
-  }
-  .subdate{
-    font-size: 14px;
-    color: var(--ink-soft);
-    margin-top: 4px;
+    font-size: 23px;
+    margin: 6px 0 12px;
+    color: var(--field-dark);
   }
 
-  section.summary{
+  /* top-level tabs (unchanged concept) */
+  .top-tabs{
+    display:flex;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    margin: 0 16px 14px;
+  }
+  .top-tab{
+    flex:1; text-align:center;
+    padding: 9px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    color: var(--ink-soft);
+  }
+  .top-tab.active{
+    background: var(--field-dark);
+    color: var(--paper);
+    font-weight: 600;
+  }
+
+  /* summary bar */
+  .summary{
+    margin: 0 16px 14px;
     display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
+    grid-template-columns: repeat(3,1fr);
+    gap:1px;
     background: var(--line);
-    margin: 16px 18px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow:hidden;
   }
-  .stat{
+  .summary .cell{
     background: var(--card);
-    padding: 14px 10px;
-    text-align: center;
+    padding: 12px 8px;
+    text-align:center;
   }
-  .stat .num{
+  .summary .num{
     font-family: 'Noto Serif Thai', serif;
-    font-weight: 700;
-    font-size: 22px;
-    color: var(--ink);
+    font-weight:700;
+    font-size: 19px;
   }
-  .stat .num.high{ color: var(--rust); }
-  .stat .num.low{ color: var(--leaf); }
-  .stat .lbl{
-    font-size: 12px;
+  .summary .num.warn{ color: var(--red-status); }
+  .summary .lbl{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+
+  /* sub toggle: pending vs history */
+  .sub-toggle{
+    display:flex; gap:8px;
+    margin: 0 16px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sub-tab{
+    padding: 8px 4px 10px;
+    font-size: 14px;
     color: var(--ink-soft);
-    margin-top: 2px;
+    border-bottom: 2px solid transparent;
+    cursor:pointer;
+  }
+  .sub-tab.active{
+    color: var(--field-dark);
+    font-weight:600;
+    border-bottom-color: var(--field-dark);
   }
 
+  /* crop filter chips */
   .filter-row{
-    display:flex; gap:8px; overflow-x:auto;
-    padding: 0 18px 6px;
-    scrollbar-width: none;
+    display:flex; gap:7px; overflow-x:auto;
+    padding: 0 16px 4px;
+    scrollbar-width:none;
   }
   .filter-row::-webkit-scrollbar{ display:none; }
   .chip{
-    flex: 0 0 auto;
-    padding: 7px 14px;
+    flex:0 0 auto;
+    padding: 6px 13px;
     border-radius: 999px;
     border: 1px solid var(--line);
     background: var(--card);
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--ink-soft);
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    cursor:pointer;
   }
   .chip.active{
-    background: var(--leaf-dark);
-    border-color: var(--leaf-dark);
+    background: var(--field-dark);
+    border-color: var(--field-dark);
     color: var(--paper);
   }
 
-  main{ padding: 8px 18px 0; }
+  main{ padding: 4px 16px 0; }
 
-  h2.section-title{
-    font-family: 'Noto Serif Thai', serif;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--leaf-dark);
-    margin: 22px 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
+  .date-group-title{
+    font-family:'Noto Serif Thai', serif;
+    font-size: 14px;
+    font-weight:600;
+    color: var(--field-dark);
+    margin: 20px 2px 8px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .date-group-title .count{
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    font-weight:400;
+    font-size:12px;
+    color: var(--ink-soft);
   }
 
-  .vendor-card{
-    border: 1px solid var(--line);
+  .item-card{
+    border:1px solid var(--line);
     border-radius: var(--radius);
     background: var(--card);
-    margin-bottom: 10px;
-    overflow: hidden;
+    margin-bottom: 9px;
+    padding: 12px 13px;
   }
-  .vendor-head{
-    display:flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 13px 14px;
-    cursor: pointer;
+  .item-top{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
   }
-  .vendor-head:focus-visible{
-    outline: 2px solid var(--leaf);
-    outline-offset: -2px;
+  .crop-name{ font-weight:600; font-size:15px; }
+  .status-pill{
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space:nowrap;
+    font-weight:600;
   }
-  .vendor-name-wrap{ min-width:0; }
-  .vendor-name{
-    font-weight: 600;
-    font-size: 15.5px;
-    color: var(--ink);
-  }
-  .vendor-stock{
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    margin-top: 2px;
-  }
-  .vendor-stock.none{ color: var(--rust); }
-  .price-block{
-    display:flex; align-items:baseline; gap:4px; flex:0 0 auto; margin-left:10px;
-  }
-  .price-num{
-    font-family: 'Noto Serif Thai', serif;
-    font-weight: 700;
-    font-size: 20px;
-  }
-  .price-unit{ font-size: 12px; color: var(--ink-soft); }
-  .chevron{
-    width: 18px; height: 18px; margin-left: 8px; flex:0 0 auto;
-    transition: transform 0.2s;
-    color: var(--ink-soft);
-  }
-  .vendor-card.open .chevron{ transform: rotate(180deg); }
+  .status-pill.green{ color:var(--green-status); background:var(--green-bg); }
+  .status-pill.amber{ color:var(--amber-status); background:var(--amber-bg); }
+  .status-pill.red{ color:var(--red-status); background:var(--red-bg); }
 
-  .freight-panel{
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease;
-    border-top: 1px solid transparent;
+  .item-badges{
+    display:flex; flex-wrap:wrap; gap:6px;
+    margin: 6px 0 8px;
   }
-  .vendor-card.open .freight-panel{
-    border-top: 1px solid var(--line);
+  .badge{
+    font-size: 11.5px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: var(--field-light);
+    color: var(--field-dark);
   }
-  .freight-inner{ padding: 12px 14px 14px; }
-  .freight-row{
-    display:flex; justify-content:space-between; gap: 10px;
-    font-size: 13.5px;
-    padding: 6px 0;
-    border-bottom: 1px dashed var(--line);
-  }
-  .freight-row:last-child{ border-bottom:none; }
-  .freight-route{ color: var(--ink); }
-  .freight-truck{
+  :root[data-theme="dark"] .badge{ color: var(--field-dark); }
+  .badge.transport{
+    background: transparent;
+    border: 1px solid var(--line);
     color: var(--ink-soft);
+  }
+
+  .item-meta{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 10px;
+    font-size: 13px;
+  }
+  .meta-lbl{ color: var(--ink-soft); font-size:11.5px; }
+  .meta-val{ font-weight:500; margin-top:1px; }
+  .meta-val.qty{ color: var(--clay); font-weight:600; }
+
+  /* history cards */
+  .hist-card{
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card);
+    margin-bottom: 9px;
+    padding: 12px 13px;
+  }
+  .hist-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  .hist-crop{ font-weight:600; font-size:15px; }
+  .hist-farm{ font-size:12.5px; color:var(--ink-soft); margin-top:1px; }
+  .yield-pill{
+    font-size:11.5px; font-weight:600;
+    padding:3px 9px; border-radius:999px;
+  }
+  .hist-meta{
+    display:grid; grid-template-columns: 1fr 1fr;
+    gap: 8px 10px; font-size:13px; margin-top:9px;
+  }
+  .hist-note{
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
     font-size: 12px;
-    display:block;
+    color: var(--ink-soft);
   }
-  .freight-price{
-    color: var(--rust);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .no-freight{
-    font-size: 13px; color: var(--ink-soft); font-style: italic;
-  }
+  .hist-note b{ color: var(--ink); }
 
   .hidden{ display:none !important; }
 
   footer.note{
-    padding: 20px 18px 4px;
-    font-size: 12px;
+    padding: 20px 16px 4px;
+    font-size: 11.5px;
     color: var(--ink-soft);
     border-top: 1px solid var(--line);
-    margin-top: 24px;
+    margin-top: 20px;
   }
 
-  .data-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);margin-bottom:10px;padding:13px 14px}
-  .data-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;border-top:1px solid var(--line);padding-top:10px}
-  .data-grid div{min-width:0}.data-grid span{display:block}.data-label{font-size:12px;color:var(--ink-soft)}.data-value{font-size:14px;color:var(--ink);font-weight:500;word-break:break-word}
-  .section-note{font-size:12px;color:var(--ink-soft);margin:-5px 0 10px}.empty{padding:14px 0;color:var(--ink-soft)}
-  .app-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin:16px 18px 0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.app-tab{border:0;background:var(--card);color:var(--ink-soft);padding:9px 4px;font:inherit;cursor:pointer}.app-tab.active{background:var(--leaf-dark);color:var(--paper)}.panel{display:none}.panel.active{display:block}
+/* Stock forecast design from supplied Drive HTML */
+
+  :root{
+    --paper: #F2EFE6;
+    --ink: #23241F;
+    --ink-soft: #6B6A5F;
+    --field-dark: #2C4A3E;
+    --field: #4E7A63;
+    --field-light: #A9C4B2;
+    --clay: #B5602E;
+    --line: #DAD4C2;
+    --card: #FBFAF4;
+    --green-status: #3D7A4E;
+    --green-bg: #E4EFE3;
+    --amber-status: #A6741B;
+    --amber-bg: #F5EAD3;
+    --red-status: #B23A2E;
+    --red-bg: #F6E1DC;
+    --radius: 10px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --paper: #191B16; --ink: #E9E6DB; --ink-soft: #9C9A8C;
+      --field-dark: #A9C4B2; --field: #7FA88E; --field-light: #3E5B4C;
+      --clay: #E1935F; --line: #35362C; --card: #212319;
+      --green-status: #8FC49A; --green-bg: #223326;
+      --amber-status: #E0B25C; --amber-bg: #362C18;
+      --red-status: #E38B7E; --red-bg: #3A241F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #191B16; --ink: #E9E6DB; --ink-soft: #9C9A8C;
+    --field-dark: #A9C4B2; --field: #7FA88E; --field-light: #3E5B4C;
+    --clay: #E1935F; --line: #35362C; --card: #212319;
+    --green-status: #8FC49A; --green-bg: #223326;
+    --amber-status: #E0B25C; --amber-bg: #362C18;
+    --red-status: #E38B7E; --red-bg: #3A241F;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    line-height: 1.5;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+  }
+  header.app-head{ padding: 18px 16px 0; }
+  .eyebrow{ font-size: 12px; color: var(--ink-soft); }
+  h1{
+    font-family: 'Noto Serif Thai', serif;
+    font-weight: 700; font-size: 23px;
+    margin: 6px 0 4px; color: var(--field-dark);
+  }
+  .subline{ font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; }
+
+  .item-tabs{
+    display:flex; gap:7px; overflow-x:auto;
+    padding: 0 16px 14px;
+    scrollbar-width:none;
+  }
+  .item-tabs::-webkit-scrollbar{ display:none; }
+  .item-tab{
+    flex:0 0 auto; padding: 8px 15px;
+    border-radius: 999px; border:1px solid var(--line);
+    background: var(--card); font-size: 13px; color: var(--ink-soft);
+    cursor:pointer;
+  }
+  .item-tab.active{ background: var(--field-dark); border-color: var(--field-dark); color: var(--paper); font-weight:600; }
+
+  main{ padding: 0 16px; }
+
+  .stock-card{
+    border:1px solid var(--line); border-radius: var(--radius);
+    background: var(--card); padding: 14px 15px; margin-bottom: 12px;
+  }
+  .stock-top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .stock-name{ font-weight:600; font-size:16px; }
+  .stock-asof{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .runout-pill{
+    font-size:11.5px; font-weight:600;
+    padding:4px 11px; border-radius:999px; white-space:nowrap;
+  }
+  .runout-pill.green{ color:var(--green-status); background:var(--green-bg); }
+  .runout-pill.amber{ color:var(--amber-status); background:var(--amber-bg); }
+  .runout-pill.red{ color:var(--red-status); background:var(--red-bg); }
+
+  .stock-num-row{
+    display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    margin: 12px 0 4px;
+  }
+  .stock-num-row .lbl{ font-size:11.5px; color:var(--ink-soft); }
+  .stock-num-row .num{
+    font-family:'Noto Serif Thai', serif; font-weight:700; font-size:20px;
+    margin-top:2px;
+  }
+  .stock-num-row .num.demand{ color: var(--clay); }
+
+  .chart-wrap{ margin-top: 12px; height: 190px; }
+
+  .forecast-note{
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    font-size: 12.5px; color: var(--ink-soft);
+  }
+  .forecast-note b{ color: var(--ink); }
+
+  h2.section-title{
+    font-family:'Noto Serif Thai', serif; font-size:15px; font-weight:600;
+    color: var(--field-dark); margin: 22px 2px 10px;
+    padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+
+  table.demand-table{
+    width:100%; border-collapse:collapse; font-size:12.5px;
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden;
+  }
+  table.demand-table th, table.demand-table td{
+    padding: 7px 6px; text-align:center; border-bottom:1px solid var(--line);
+  }
+  table.demand-table th{ color:var(--ink-soft); font-weight:600; font-size:11px; }
+  table.demand-table td.date-col{ text-align:left; color:var(--ink-soft); }
+  table.demand-table tr:last-child td{ border-bottom:none; }
+  table.demand-table td.neg{ color: var(--red-status); font-weight:600; }
+
+  .source-list{
+    font-size: 11.5px; color: var(--ink-soft);
+    margin: 4px 2px 0; line-height:1.7;
+  }
+
+  footer.note{
+    padding: 22px 16px 4px; font-size: 11.5px; color: var(--ink-soft);
+    border-top: 1px solid var(--line); margin-top: 24px;
+  }
+
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="eyebrow-row"><span>PSC FIELD OPERATIONS</span><span id="dateLabel">กำลังโหลดข้อมูล</span></div>
-  <h1>ศูนย์ปฏิบัติการภาคสนาม</h1>
-  <div class="subdate">ราคา สต็อก การขึ้นของ และประวัติรับเข้าจากฐานข้อมูลกลาง</div>
-</header>
-<nav class="app-tabs"><button class="app-tab active" data-panel="delivery">ขึ้นของ / รับเข้า</button><button class="app-tab" data-panel="price">ราคา</button><button class="app-tab" data-panel="stock">สต็อก</button></nav>
-<main>
-<section id="panel-delivery" class="panel active">
-  <h2 class="section-title">ตารางติดตามขึ้นของสวน</h2><div id="deliveryList"><div class="empty">กำลังโหลดข้อมูล...</div></div>
-  <h2 class="section-title">ประวัติรับเข้าวัตถุดิบ</h2><div class="section-note">เรียงวันรับเข้าล่าสุดก่อน | แหล่งข้อมูล: Dispatch & Intake Log</div><div id="intakeList"><div class="empty">กำลังโหลดข้อมูล...</div></div>
-</section>
-<section id="panel-price" class="panel">
-  <div class="summary" id="summaryStats"><div class="stat"><div class="num high" id="statHigh">–</div><div class="lbl">สูงสุด (บาท/กก.)</div></div><div class="stat"><div class="num low" id="statLow">–</div><div class="lbl">ต่ำสุด (บาท/กก.)</div></div><div class="stat"><div class="num" id="statAvg">–</div><div class="lbl">เฉลี่ย (บาท/กก.)</div></div></div>
-  <h2 class="section-title">ผู้ค้าและค่าขนส่ง</h2><div id="priceMeta" class="section-note"></div><div id="vendorList"><div class="empty">กำลังโหลดข้อมูล...</div></div>
-</section>
-<section id="panel-stock" class="panel">
-  <h2 class="section-title">สต็อกตรวจนับจริงล่าสุด</h2><div id="stockMeta" class="section-note"></div><div id="stockList"><div class="empty">กำลังโหลดข้อมูล...</div></div>
-</section>
-</main><footer class="note">ข้อมูลดึงตรงจากฐานข้อมูล PSC เมื่อเปิดหรือรีเฟรชหน้า</footer>
+<div class="browser-bar"><span class="dot"></span> pscdb.onrender.com</div>
+<header class="app-head"><div class="head-row"><span class="eyebrow">PSC field operations</span><span class="updated" id="updatedLabel">กำลังโหลดข้อมูล</span></div><h1 id="pageTitle">รายการรอส่งมอบ</h1></header>
+<div class="top-tabs"><div class="top-tab active" data-panel="delivery">รอส่งมอบ</div><div class="top-tab" data-panel="price">ราคา</div><div class="top-tab" data-panel="stock">สต็อก</div></div>
+<section id="panel-delivery" class="page-panel active"><div class="summary" id="summaryBar"></div><div class="sub-toggle"><div class="sub-tab active" data-target="pending">รอรับของ</div><div class="sub-tab" data-target="history">ประวัติรับเข้า</div></div><div class="filter-row" id="filterRow"></div><main><div id="pendingView"></div><div id="historyView" class="hidden"></div></main></section>
+<section id="panel-price" class="page-panel"><main><h2 class="section-title">ราคาวัตถุดิบและค่าขนส่ง</h2><div id="priceMeta" class="section-note"></div><div id="priceView"></div></main></section>
+<section id="panel-stock" class="page-panel"><main><h2 class="section-title">สต็อกและพยากรณ์วัตถุดิบ</h2><div id="stockMeta" class="section-note"></div><div id="stockView"></div><h2 class="section-title">แหล่งข้อมูล</h2><div id="stockSource" class="source-list"></div></main></section>
+<footer class="note">ข้อมูลดึงตรงจากฐานข้อมูล PSC เมื่อเปิดหรือรีเฟรชหน้า</footer>
 <script>
 (function(){
-  const $=id=>document.getElementById(id), esc=v=>String(v??'-').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const num=v=>{const m=String(v??'').replace(/,/g,'').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null};
-  const dateTH=v=>{if(!v)return '-';const d=new Date(v);return Number.isNaN(d.getTime())?v:d.toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric',timeZone:'Asia/Bangkok'})};
-  const dataCard=(title,sub,body)=>`<div class="data-card"><div class="vendor-name">${esc(title)}</div><div class="vendor-stock">${esc(sub||'')}</div>${body}</div>`;
-  const grid=items=>`<div class="data-grid">${items.map(([a,b])=>`<div><span class="data-label">${esc(a)}</span><span class="data-value">${esc(b)}</span></div>`).join('')}</div>`;
-  async function get(path){const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error(path+' '+r.status);return r.json()}
-  function renderDelivery(d){const a=(d.live_schedules||[]).slice(0,5);$('deliveryList').innerHTML=a.length?a.map(x=>dataCard(x.product||'รายการขึ้นของ',x.supplier||x.truck||'',grid([['วันขึ้นของ',x.dispatchDate||x.date||'-'],['วันรับของ',x.intakeDate||x.deliveryDate||'-'],['ปริมาณ',x.weight||'-'],['สถานะ',x.status||'-']]))).join(''):'<div class="empty">ไม่มีรายการ</div>'}
-  function renderIntake(d){const a=d.intake_records||[];$('intakeList').innerHTML=a.length?a.map(x=>{const up=num(x.weightUp),got=num(x.weight),loss=up!=null&&got!=null?up-got:x.transitLoss||'-';const pct=up&&got!=null?` (${(loss/up*100).toFixed(2)}%)`:'';return dataCard(x.item||'วัตถุดิบ',x.supplier||'',grid([['วันขึ้นของ',x.dispatchDate||'-'],['วันรับเข้า',x.intakeDate||x.date||'-'],['น้ำหนักขึ้นต้นทาง',x.weightUp||'-'],['น้ำหนักรับเข้าจริง',x.weight||'-'],['น้ำหนักหาย',`${loss}${pct}`],['Yield',x.yield==null?'-':Number(x.yield).toFixed(2)+'%']])+`<div class="freight-inner" style="padding:10px 0 0;border-top:1px solid var(--line);margin-top:10px"><b>ขนาด / คุณภาพ:</b> ${esc(x.size||'-')}<br><b>หมายเหตุ:</b> ${esc(x.condition||'-')}<br><b>แหล่งขึ้นสินค้า:</b> ${esc(x.location||'-')}</div>`)}).join(''):'<div class="empty">ไม่มีประวัติรับเข้า</div>'}
-  function renderPrices(d){const h=d.PriceHistory||[],latest=h[h.length-1]||{},sup=latest.Suppliers||[];const ps=sup.map(x=>num(x.price)).filter(x=>x!=null);$('statHigh').textContent=ps.length?Math.max(...ps).toFixed(1):'–';$('statLow').textContent=ps.length?Math.min(...ps).toFixed(1):'–';$('statAvg').textContent=ps.length?(ps.reduce((a,b)=>a+b,0)/ps.length).toFixed(2):'–';$('priceMeta').textContent=`ได้รับข้อมูล ${latest.ParsedAt?new Date(latest.ParsedAt).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Bangkok'}):'-'} | วันที่ราคา ${dateTH(latest.Date||d.AsOfDate)}`;$('vendorList').innerHTML=sup.length?sup.map(x=>dataCard(x.name||'ผู้จำหน่าย',x.notes||'',`<div class="price-block"><span class="price-num">${esc(x.price||'-')}</span><span class="price-unit">บาท/กก.</span></div><div class="freight-inner" style="padding:10px 0 0;border-top:1px solid var(--line);margin-top:10px"><b>ค่าขนส่ง:</b><br>${esc(x.rates||'ยังไม่มีข้อมูล').replace(/\n/g,'<br>')}</div>`)).join(''):'<div class="empty">ไม่มีข้อมูลราคา</div>'}
-  function renderStock(d){$('stockMeta').textContent=`ได้รับข้อมูล ${d.LastUpdated?new Date(d.LastUpdated).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Bangkok'}):'-'} | วันที่ตรวจนับ ${dateTH(d.AsOfDate)}`;const names={Cabbage:'กะหล่ำปลี',Onion_AFT:'หอม AFT',Onion_Chinese:'หอมจีน',Carrot:'แครอทสวย'};$('stockList').innerHTML=Object.entries(d.Items||{}).map(([k,v])=>dataCard(names[k]||v.Name||k,'ข้อมูลจาก Daily report',`<div class="metric-row"><span class="big-metric">${Number(v.StockKg||0).toLocaleString('th-TH')}</span><span class="metric-unit">กก.</span></div>`)).join('')||'<div class="empty">ไม่มีข้อมูลสต็อก</div>'}
-  document.querySelectorAll('.app-tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.app-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('panel-'+b.dataset.panel).classList.add('active')});
-  Promise.allSettled([get('/api/team-status').then(d=>{renderDelivery(d);renderIntake(d)}),get('/api/prices').then(renderPrices),get('/api/stock').then(renderStock)]).then(()=>{$('dateLabel').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH')}).catch(()=>{});
+ const $=id=>document.getElementById(id), esc=v=>String(v??'–').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const n=v=>{const m=String(v??'').replace(/,/g,'').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null};
+ const fmt=v=>{if(!v)return '–';const d=new Date(v+'T00:00:00');return Number.isNaN(d.getTime())?esc(v):d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})};
+ const card=(title,sub,body,cls='item-card')=>`<div class="${cls}">${title}${sub}${body}</div>`;
+ async function get(p){const r=await fetch(p+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error(p);return r.json()}
+ let pending=[], history=[];
+ function renderSummary(){const total=pending.reduce((s,x)=>s+(n(x.qty)||0),0);$('summaryBar').innerHTML=`<div class="cell"><div class="num">${pending.length}</div><div class="lbl">รายการรอส่งมอบ</div></div><div class="cell"><div class="num">${total.toLocaleString('th-TH')}</div><div class="lbl">น้ำหนักรวม (กก.)</div></div><div class="cell"><div class="num">–</div><div class="lbl">เกินกำหนดรับ</div></div>`}
+ function renderPending(filter='ทั้งหมด'){const view=$('pendingView');const a=filter==='ทั้งหมด'?pending:pending.filter(x=>x.crop===filter);const groups={};a.forEach(x=>(groups[x.dueDate||'ไม่ระบุ']??=[]).push(x));view.innerHTML='';Object.keys(groups).sort().forEach(d=>{view.innerHTML+=`<div class="date-group-title"><span>กำหนดรับ ${fmt(d)}</span><span class="count">${groups[d].length} รายการ</span></div>`;groups[d].forEach(x=>{const st='green';view.innerHTML+=`<div class="item-card"><div class="item-top"><div class="crop-name">${esc(x.crop)}</div><div class="status-pill ${st}">${esc(x.status||'รอดำเนินการ')}</div></div><div class="item-badges"><span class="badge">${esc(x.farm)}</span>${x.transport?`<span class="badge transport">${esc(x.transport)}</span>`:''}</div><div class="item-meta"><div><div class="meta-lbl">วันที่ขึ้นของ</div><div class="meta-val">${fmt(x.pickupDate)}</div></div><div><div class="meta-lbl">ปริมาณ</div><div class="meta-val qty">${esc(x.qty||'–')}</div></div></div></div>`})})}
+ function renderHistory(){const v=$('historyView');v.innerHTML='<div class="date-group-title"><span>ประวัติรับเข้าวัตถุดิบ</span></div>';history.forEach(x=>{const up=n(x.weightUp),got=n(x.weight),loss=up!=null&&got!=null?`${(up-got).toLocaleString('th-TH')} kg (${((up-got)/up*100).toFixed(2)}%)`:x.transitLoss||'–';v.innerHTML+=`<div class="hist-card"><div class="hist-top"><div><div class="hist-crop">${esc(x.item)}</div><div class="hist-farm">${esc(x.supplier)}</div></div><span class="yield-pill status-pill ${x.yield==null?'amber':'green'}">${x.yield==null?'รอบันทึกผล':'Yield '+Number(x.yield).toFixed(2)+'%'}</span></div><div class="hist-meta"><div><div class="meta-lbl">วันขึ้นของ</div><div class="meta-val">${fmt(x.dispatchDate)}</div></div><div><div class="meta-lbl">วันรับเข้า</div><div class="meta-val">${fmt(x.intakeDate||x.date)}</div></div><div><div class="meta-lbl">น้ำหนักต้นทาง</div><div class="meta-val">${esc(x.weightUp)}</div></div><div><div class="meta-lbl">น้ำหนักรับเข้าจริง</div><div class="meta-val">${esc(x.weight)}</div></div><div><div class="meta-lbl">น้ำหนักหาย</div><div class="meta-val">${esc(loss)}</div></div><div><div class="meta-lbl">แหล่งขึ้นสินค้า</div><div class="meta-val">${esc(x.location)}</div></div></div><div class="hist-note"><b>คุณภาพ/หมายเหตุ:</b> ${esc(x.condition||x.size)}</div></div>`})}
+ function renderPrice(d){const h=d.PriceHistory||[],x=h[h.length-1]||{};$('priceMeta').textContent=`ข้อมูล ณ ${fmt(x.Date||d.AsOfDate)} | รับข้อมูล ${x.ParsedAt?new Date(x.ParsedAt).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'–'}`;$('priceView').innerHTML=(x.Suppliers||[]).map(s=>`<div class="hist-card"><div class="hist-top"><div class="hist-crop">${esc(s.name)}</div><span class="price-num">${esc(s.price||'–')}</span></div><div class="hist-note"><b>ค่าขนส่ง:</b> ${esc(s.rates||'ยังไม่มีข้อมูล')}</div></div>`).join('')||'<div class="empty">ไม่มีข้อมูลราคา</div>'}
+ function renderStock(d){$('stockMeta').textContent=`วันที่ตรวจนับ ${fmt(d.AsOfDate)} | รับข้อมูล ${d.LastUpdated?new Date(d.LastUpdated).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'–'}`;const names={Cabbage:'กะหล่ำปลี',Onion_AFT:'หอม AFT',Onion_Chinese:'หอมจีน',Carrot:'แครอทสวย'};const rows=Object.entries(d.Items||{}).map(([k,x])=>`<div class="stock-card"><div class="stock-top"><div><div class="stock-name">${esc(names[k]||x.Name||k)}</div><div class="stock-asof">ตรวจนับล่าสุด ${esc(d.AsOfDate||'-')}</div></div><div class="runout-pill green">ข้อมูลล่าสุด</div></div><div class="stock-num-row"><div><div class="lbl">สต็อกปัจจุบัน</div><div class="num">${Number(x.StockKg||0).toLocaleString('th-TH')} กก.</div></div><div><div class="lbl">สถานะข้อมูล</div><div class="num demand">ตรวจนับจริง</div></div></div></div>`).join('');$('stockView').innerHTML=rows||'<div class="empty">ไม่มีข้อมูลสต็อก</div>';$('stockSource').textContent='ที่มาข้อมูล: API สต็อกตรวจนับจริงจากฐานข้อมูล PSC'}
+ function setup(){const crops=[...new Set(pending.map(x=>x.crop))];$('filterRow').innerHTML=['ทั้งหมด',...crops].map((x,i)=>`<div class="chip ${i?'':'active'}" data-crop="${esc(x)}">${esc(x)}</div>`).join('');document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');renderPending(c.dataset.crop)});document.querySelectorAll('.sub-tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');const h=t.dataset.target==='history';$('pendingView').classList.toggle('hidden',h);$('historyView').classList.toggle('hidden',!h);$('filterRow').classList.toggle('hidden',h)});document.querySelectorAll('.top-tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.top-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page-panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('panel-'+t.dataset.panel).classList.add('active');$('pageTitle').textContent=t.dataset.panel==='delivery'?'รายการรอส่งมอบ':t.dataset.panel==='price'?'ราคาวัตถุดิบ':'สต็อกตรวจนับจริงล่าสุด'})}
+ Promise.all([get('/api/team-status'),get('/api/prices'),get('/api/stock')]).then(([team,price,stock])=>{pending=(team.live_schedules||[]).slice(0,5).map(x=>({crop:x.product||'กะหล่ำปลี',farm:x.supplier||'ยังไม่ระบุ',pickupDate:x.dispatchDate||x.date,dueDate:x.intakeDate||x.deliveryDate||x.date,qty:x.weight,transport:x.truck,status:x.status}));history=team.intake_records||[];renderSummary();setup();renderPending();renderHistory();renderPrice(price);renderStock(stock);$('updatedLabel').textContent='อัปเดตแล้ว '+new Date().toLocaleTimeString('th-TH')}).catch(e=>{$('updatedLabel').textContent='โหลดข้อมูลไม่สำเร็จ';console.error(e)});
 })();
 </script></body></html>
