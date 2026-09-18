@@ -1011,118 +1011,13 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200);
             res.end(JSON.stringify({ success: true }));
 
-            // If running on Render or proxy URL configured, forward payload to local bot machine
-            // BUT: intake messages (รับเข้า/สุ่มปอก/ปอกได้) must be handled here by GAS — do NOT forward
-            const isCloud = !!process.env.RENDER || !!process.env.IS_RENDER;
-            const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || (isCloud ? 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook' : '')).trim();
-
-            const INTAKE_PATTERN = /รับกะหล่ำ|รับหอม|รับแครอท|รับผัก|รับของ|รับสินค้า|รับมา|สุ่มปอก|ปอกได้|รับเข้า/;
-            let bodyForCheck = {};
-            try { bodyForCheck = JSON.parse(rawBody); } catch (e) {}
-            const firstText = ((bodyForCheck.events || []).find(ev => ev.type === 'message' && ev.message && ev.message.type === 'text') || {message: {}}).message.text || '';
-            const isIntake = INTAKE_PATTERN.test(firstText);
-
-            if (localTunnelUrl && !isIntake) {
-                try {
-                    const parsedUrl = new URL(localTunnelUrl);
-                    const isHttps = parsedUrl.protocol === 'https:';
-                    const httpLib = isHttps ? https : http;
-                    const fwdReq = httpLib.request({
-                        hostname: parsedUrl.hostname,
-                        port: parsedUrl.port || (isHttps ? 443 : 80),
-                        path: parsedUrl.pathname + (parsedUrl.search || ''),
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json; charset=utf-8',
-                            'X-Line-Signature': signature,
-                            'Content-Length': Buffer.byteLength(rawBody)
-                        }
-                    }, (fwdRes) => {
-                        writeLog(`[LINE Proxy] Forwarded to ${localTunnelUrl} -> Status ${fwdRes.statusCode}`);
-                    });
-                    fwdReq.on('error', (err) => {
-                        writeLog(`[LINE Proxy] Forwarding error: ${err.message}`);
-                    });
-                    fwdReq.write(rawBody);
-                    fwdReq.end();
-                } catch (proxyErr) {
-                    writeLog(`[LINE Proxy] Setup error: ${proxyErr.message}`);
-                }
-                return;
-            }
-
-            if (isIntake) {
-                writeLog(`[LINE Proxy] Intake message detected — bypassing Desktop bot, handling locally`);
-            }
-
             let payload = {};
             try { payload = JSON.parse(rawBody); } catch (e) { return; }
-
-            const events = payload.events || [];
-            // Receiving reports must not depend on the legacy Desktop bot process.
-            // Route them directly to Apps Script, whose deployed handler writes
-            // Dispatch & Intake Log and replies with the intake confirmation.
-            const hasReceivingText = events.some(event =>
-                event && event.type === 'message' && event.message && event.message.type === 'text' &&
-                /(?:รับ\s*(?:เข้า|ของ|กะหล่ำ|หอม|พริก)|สุ่ม\s*ปอก|ปอก\s*ได้)/i.test(event.message.text || '')
-            );
-            if (hasReceivingText) {
-                syncToGoogleSheets(payload);
-                writeLog('[LINE Webhook] Receiving report routed directly to Apps Script intake workflow');
-                return;
-            }
-
-            for (const event of events) {
-                if (event.type !== 'message' || !event.message) continue;
-                const sourceId = event.source.groupId || event.source.roomId || event.source.userId;
-                if (!sourceId) continue;
-
-                if (event.message.type === 'text') {
-                    const text = (event.message.text || '').trim();
-                    if (!text) continue;
-
-                    writeLog(`[LINE Message] From ${sourceId}: ${text}`);
-
-                    if (isIntake && GAS_URL) {
-                        // Forward raw LINE event to GAS for intake handling
-                        try {
-                            const gasPayload = JSON.stringify({ events: [event], destination: payload.destination || '' });
-                            const gasUrl = new URL(GAS_URL);
-                            const gasLib = gasUrl.protocol === 'https:' ? https : http;
-                            const gasReq = gasLib.request({
-                                hostname: gasUrl.hostname,
-                                port: gasUrl.port || 443,
-                                path: gasUrl.pathname + (gasUrl.search || ''),
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(gasPayload) }
-                            }, (r) => { writeLog(`[LINE Intake→GAS] status=${r.statusCode}`); });
-                            gasReq.on('error', (e) => writeLog(`[LINE Intake→GAS] error: ${e.message}`));
-                            gasReq.write(gasPayload);
-                            gasReq.end();
-                        } catch (gasErr) {
-                            writeLog(`[LINE Intake→GAS] setup error: ${gasErr.message}`);
-                        }
-                    } else {
-                        try {
-                            const bot = require('./bot.js');
-                            bot.handleCommand(`LINE:${sourceId}`, text, null);
-                        } catch (err) {
-                            writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
-                        }
-                    }
-                } else if (event.message.type === 'image') {
-                    const messageId = event.message.id;
-                    writeLog(`[LINE Image] Received from ${sourceId}, messageId=${messageId}`);
-                    try {
-                        const bot = require('./bot.js');
-                        if (typeof bot.handleLineImage === 'function') {
-                            bot.handleLineImage(`LINE:${sourceId}`, messageId);
-                        }
-                    } catch (err) {
-                        writeLog(`[LINE Image Error]: ${err.message}`);
-                    }
-                }
-            }
+            // Single production route: every LINE event goes directly to the
+            // deployed Apps Script. The legacy Desktop/tunnel forwarding path
+            // and local bot fallback are intentionally removed.
+            syncToGoogleSheets(payload);
+            writeLog('[LINE Webhook] Routed event directly to Apps Script; Desktop forwarding disabled');
             return;
         }
 

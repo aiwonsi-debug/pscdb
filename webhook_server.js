@@ -1090,73 +1090,12 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200);
             res.end(JSON.stringify({ success: true }));
 
-            // If running on Render or proxy URL configured, forward payload to local bot machine
-            const isCloud = !!process.env.RENDER || !!process.env.IS_RENDER;
-            const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || (isCloud ? 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook' : '')).trim();
-
-            if (localTunnelUrl) {
-                try {
-                    const parsedUrl = new URL(localTunnelUrl);
-                    const isHttps = parsedUrl.protocol === 'https:';
-                    const httpLib = isHttps ? https : http;
-                    const fwdReq = httpLib.request({
-                        hostname: parsedUrl.hostname,
-                        port: parsedUrl.port || (isHttps ? 443 : 80),
-                        path: parsedUrl.pathname + (parsedUrl.search || ''),
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json; charset=utf-8',
-                            'X-Line-Signature': signature,
-                            'Content-Length': Buffer.byteLength(rawBody)
-                        }
-                    }, (fwdRes) => {
-                        writeLog(`[LINE Proxy] Forwarded to ${localTunnelUrl} -> Status ${fwdRes.statusCode}`);
-                    });
-                    fwdReq.on('error', (err) => {
-                        writeLog(`[LINE Proxy] Forwarding error: ${err.message}`);
-                    });
-                    fwdReq.write(rawBody);
-                    fwdReq.end();
-                } catch (proxyErr) {
-                    writeLog(`[LINE Proxy] Setup error: ${proxyErr.message}`);
-                }
-                return;
-            }
-
             let payload = {};
             try { payload = JSON.parse(rawBody); } catch (e) { return; }
-
-            const events = payload.events || [];
-            for (const event of events) {
-                if (event.type !== 'message' || !event.message) continue;
-                const sourceId = event.source.groupId || event.source.roomId || event.source.userId;
-                if (!sourceId) continue;
-
-                if (event.message.type === 'text') {
-                    const text = (event.message.text || '').trim();
-                    if (!text) continue;
-
-                    writeLog(`[LINE Message] From ${sourceId}: ${text}`);
-
-                    try {
-                        const bot = require('./bot.js');
-                        bot.handleCommand(`LINE:${sourceId}`, text, null);
-                    } catch (err) {
-                        writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
-                    }
-                } else if (event.message.type === 'image') {
-                    const messageId = event.message.id;
-                    writeLog(`[LINE Image] Received from ${sourceId}, messageId=${messageId}`);
-                    try {
-                        const bot = require('./bot.js');
-                        if (typeof bot.handleLineImage === 'function') {
-                            bot.handleLineImage(`LINE:${sourceId}`, messageId);
-                        }
-                    } catch (err) {
-                        writeLog(`[LINE Image Error]: ${err.message}`);
-                    }
-                }
-            }
+            // Single production route: every LINE event goes directly to the
+            // deployed Apps Script. Desktop/tunnel forwarding is removed.
+            syncToGoogleSheets(payload);
+            writeLog('[LINE Webhook] Routed event directly to Apps Script; Desktop forwarding disabled');
             return;
         }
 
