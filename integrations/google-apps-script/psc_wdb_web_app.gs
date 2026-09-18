@@ -375,7 +375,16 @@ function handleLineDirectEvent_(event, receivedAt) {
         appendFarmOpsTask_({
           receivedAt: receivedAt,
           scheduleRow: null,
-          inboxRow: [receivedAt, 'line_direct', 'รับเข้า', parsed.item || '', intakeRow.eventDate, Number(parsed.quantityKg) || 0, parsed.origin || '', 'received', rawText]
+          intakeRow: [
+            '', '', intakeRow.eventDate, intakeRow.seller, intakeRow.origin,
+            intakeRow.item, '', '', '', Number(parsed.quantityKg) || '', '',
+            '', '', '', '', parsed.yieldKg ? Number(parsed.yieldKg) : '',
+            [parsed.gradeMediumKg ? 'ขนาดกลาง-ใหญ่' : '', intakeRow.qualityNote,
+              parsed.sampleKg ? 'สุ่มปอก ' + parsed.sampleKg + ' กก.' : '',
+              parsed.yieldKg ? 'ปอกได้ ' + parsed.yieldKg + ' กก.' : '']
+              .filter(function(v) { return v; }).join('; '),
+            'รับเข้าเรียบร้อย', ''
+          ]
         });
       } catch (fErr) {
         Logger.log('Direct intake sync to Dispatch & Intake error: ' + fErr);
@@ -1101,7 +1110,7 @@ function syncPOToCustomerWorkbooks_(parsed, receivedAt, reportId) {
 /**
  * เขียนงานขึ้นของเข้า 1_Farm_Ops_Transport_and_Intake (แท็บ Schedule + แท็บ Inbox)
  * ใช้แทนโค้ดที่เดิมซ้ำกันทั้งใน handleLineDirectEvent_ และ syncPOToCustomerWorkbooks_
- * opts: { receivedAt, scheduleRow (array หรือ null เพื่อข้าม), inboxRow (array หรือ null เพื่อข้าม) }
+ * opts: { receivedAt, scheduleRow (array หรือ null เพื่อข้าม), intakeRow (19-column array หรือ null เพื่อข้าม) }
  */
 function appendFarmOpsTask_(opts) {
   try {
@@ -1112,7 +1121,12 @@ function appendFarmOpsTask_(opts) {
     if (opts.scheduleRow && scheduleSheet) {
       scheduleSheet.appendRow(opts.scheduleRow);
     }
-    if (opts.inboxRow && inboxSheet) {
+    if (opts.intakeRow && inboxSheet) {
+      // Dispatch & Intake Log has 19 operational columns (A:S). Keep intake
+      // rows aligned with its header; never write the 9-column schedule shape.
+      inboxSheet.appendRow(opts.intakeRow);
+    } else if (opts.inboxRow && inboxSheet) {
+      // Backward compatibility for legacy inbox destinations.
       inboxSheet.appendRow(opts.inboxRow);
     }
   } catch (fErr) {
