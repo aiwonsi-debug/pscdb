@@ -9,7 +9,7 @@ function formatDMY(d = new Date()) {
 
 function extractLoadingReportFromText(text) {
     if (!text || typeof text !== 'string') return null;
-    const hasLoading = /(?:ขึ้นของ|ขึ้นกะหล่ำ|รับเข้า|น้ำหนักสุทธิ)/i.test(text);
+    const hasLoading = /(?:ขึ้นของ|ขึ้นกะหล่ำ|รับเข้า|รับกะหล่ำ|รับหอม|รับพริก|น้ำหนักสุทธิ)/i.test(text);
     if (!hasLoading) return null;
 
     const dMatch = text.match(/(?:(?:วันที่)\s*)?(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/);
@@ -20,6 +20,12 @@ function extractLoadingReportFromText(text) {
 
     const fMatch = text.match(/ค่ารถ\s*[:=\-]?\s*([\d,]+(?:\.\d+)?)\s*(?:บ\.?|บาท)/i);
     const freight = fMatch ? parseFloat(fMatch[1].replace(/,/g, '')) : null;
+
+    const sampleMatch = text.match(/สุ่มปอก\s*([\d,]+(?:\.\d+)?)\s*(?:kg|กก\.?|กิโล|กิโลกรัม)/i);
+    const peeledMatch = text.match(/ปอกได้\s*([\d,]+(?:\.\d+)?)\s*(?:kg|กก\.?|กิโล|กิโลกรัม)/i);
+    const sampleKg = sampleMatch ? parseFloat(sampleMatch[1].replace(/,/g, '')) : null;
+    const peeledKg = peeledMatch ? parseFloat(peeledMatch[1].replace(/,/g, '')) : null;
+    const yieldPct = sampleKg && peeledKg !== null ? Number(((peeledKg / sampleKg) * 100).toFixed(2)) : null;
 
     let supplier = 'เฮียหนิง';
     if (text.includes('เจ๊นก') || text.includes('เจ้นก')) supplier = 'เจ๊นก';
@@ -45,9 +51,9 @@ function extractLoadingReportFromText(text) {
         freight_baht: freight,
         payment: text.includes('เก็บปลายทาง') ? 'เก็บปลายทาง' : '',
         location,
-        sample_kg: null,
-        peeled_kg: null,
-        yield_pct: null,
+        sample_kg: sampleKg,
+        peeled_kg: peeledKg,
+        yield_pct: yieldPct,
         stock_inventory: null
     };
 }
