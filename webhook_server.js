@@ -285,6 +285,22 @@ async function fetchCustomerPORegister(force = false) {
     } catch (e) { console.error('[PO Register Fetch Error]:', e.message); return cachedPORegister.rows; }
 }
 const SCHEDULE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1232005308';
+const DISPATCH_INTAKE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1767890653';
+let cachedDispatchIntake = { timestamp: 0, records: [] };
+async function fetchDispatchIntakeLog(force = false) {
+    const now = Date.now();
+    if (!force && cachedDispatchIntake.records.length && now - cachedDispatchIntake.timestamp < 5000) return cachedDispatchIntake.records;
+    const rows = parseCsv(await httpsGetFollow(DISPATCH_INTAKE_SHEET_CSV + '&t=' + now));
+    const records = [];
+    for (let i = 3; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0] || !r[1]) continue;
+        const y = (r[15] || '').replace('%', '').trim();
+        records.push({ date: r[2] || r[1], dispatchDate: r[1], intakeDate: r[2], item: r[5] || '-', weight: r[9] ? `${r[9]} kg` : '-', weightUp: r[8] ? `${r[8]} kg` : '-', transitLoss: r[10] || '-', yield: y ? Number(y) : null, size: r[16] || '-', condition: r[16] || '-', location: r[4] || '-', supplier: r[3] || '-', freight: r[13] || '-', price: r[11] || '-', status: r[17] || '-', source: 'Dispatch & Intake Log' });
+    }
+    cachedDispatchIntake = { timestamp: now, records };
+    return records;
+}
 let cachedScheduleSheet = { timestamp: 0, schedules: [] };
 
 async function fetchGoogleSheetsLiveSchedule(force = false) {
@@ -1142,13 +1158,15 @@ const server = http.createServer(async (req, res) => {
                 return res.end(JSON.stringify(cachedTeamStatus.data));
             }
             const ops = loadTeamOps();
-            const [scheduleResult, poResult, sheetResult] = await Promise.allSettled([
+            const [scheduleResult, poResult, sheetResult, intakeResult] = await Promise.allSettled([
                 fetchGoogleSheetsLiveSchedule(isForce),
                 fetchCustomerPORegister(isForce),
-                fetchGoogleSheetsData()
+                fetchGoogleSheetsData(),
+                fetchDispatchIntakeLog(isForce)
             ]);
             if (scheduleResult.status === 'fulfilled' && Array.isArray(scheduleResult.value)) ops.live_schedules = scheduleResult.value;
             if (poResult.status === 'fulfilled' && Array.isArray(poResult.value)) ops.customer_pos = poResult.value;
+            if (intakeResult.status === 'fulfilled' && Array.isArray(intakeResult.value)) { ops.intake_records = intakeResult.value; ops.history_logs = []; }
             if (sheetResult.status === 'fulfilled' && sheetResult.value && typeof sheetResult.value === 'object') {
                 const sheetData = sheetResult.value;
                 if (!ops.cards_state) ops.cards_state = {};
