@@ -1012,10 +1012,17 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({ success: true }));
 
             // If running on Render or proxy URL configured, forward payload to local bot machine
+            // BUT: intake messages (รับเข้า/สุ่มปอก/ปอกได้) must be handled here by GAS — do NOT forward
             const isCloud = !!process.env.RENDER || !!process.env.IS_RENDER;
             const localTunnelUrl = (process.env.LOCAL_BOT_WEBHOOK_URL || (isCloud ? 'https://desktop-uucclbc.tailbfc192.ts.net/api/line-webhook' : '')).trim();
 
-            if (localTunnelUrl) {
+            const INTAKE_PATTERN = /รับกะหล่ำ|รับหอม|รับแครอท|รับผัก|รับของ|รับสินค้า|รับมา|สุ่มปอก|ปอกได้|รับเข้า/;
+            let bodyForCheck = {};
+            try { bodyForCheck = JSON.parse(rawBody); } catch (e) {}
+            const firstText = ((bodyForCheck.events || []).find(ev => ev.type === 'message' && ev.message && ev.message.type === 'text') || {message: {}}).message.text || '';
+            const isIntake = INTAKE_PATTERN.test(firstText);
+
+            if (localTunnelUrl && !isIntake) {
                 try {
                     const parsedUrl = new URL(localTunnelUrl);
                     const isHttps = parsedUrl.protocol === 'https:';
@@ -1042,6 +1049,10 @@ const server = http.createServer(async (req, res) => {
                     writeLog(`[LINE Proxy] Setup error: ${proxyErr.message}`);
                 }
                 return;
+            }
+
+            if (isIntake) {
+                writeLog(`[LINE Proxy] Intake message detected — bypassing Desktop bot, handling locally`);
             }
 
             let payload = {};
@@ -1072,11 +1083,32 @@ const server = http.createServer(async (req, res) => {
 
                     writeLog(`[LINE Message] From ${sourceId}: ${text}`);
 
-                    try {
-                        const bot = require('./bot.js');
-                        bot.handleCommand(`LINE:${sourceId}`, text, null);
-                    } catch (err) {
-                        writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
+                    if (isIntake && GAS_URL) {
+                        // Forward raw LINE event to GAS for intake handling
+                        try {
+                            const gasPayload = JSON.stringify({ events: [event], destination: payload.destination || '' });
+                            const gasUrl = new URL(GAS_URL);
+                            const gasLib = gasUrl.protocol === 'https:' ? https : http;
+                            const gasReq = gasLib.request({
+                                hostname: gasUrl.hostname,
+                                port: gasUrl.port || 443,
+                                path: gasUrl.pathname + (gasUrl.search || ''),
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(gasPayload) }
+                            }, (r) => { writeLog(`[LINE Intake→GAS] status=${r.statusCode}`); });
+                            gasReq.on('error', (e) => writeLog(`[LINE Intake→GAS] error: ${e.message}`));
+                            gasReq.write(gasPayload);
+                            gasReq.end();
+                        } catch (gasErr) {
+                            writeLog(`[LINE Intake→GAS] setup error: ${gasErr.message}`);
+                        }
+                    } else {
+                        try {
+                            const bot = require('./bot.js');
+                            bot.handleCommand(`LINE:${sourceId}`, text, null);
+                        } catch (err) {
+                            writeLog(`[LINE Webhook] handleCommand error: ${err.message}`);
+                        }
                     }
                 } else if (event.message.type === 'image') {
                     const messageId = event.message.id;
