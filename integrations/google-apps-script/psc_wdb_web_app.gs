@@ -275,6 +275,8 @@ function handleLineDirectEvent_(event, receivedAt) {
 
   // 1. เรียก Gemini แปลงภาษาพูดเป็น JSON (ทำนอก Lock เพื่อไม่บล็อกคิวข้อความอื่น)
   const parsed = interpretWithGemini(rawText);
+  const receivingText = /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(rawText);
+  if (parsed && receivingText) parsed.reportType = 'intake';
   if (!parsed || parsed.reportType === 'none') {
     Logger.log("Ignored non-report message: " + rawText);
     return;
@@ -334,6 +336,47 @@ function handleLineDirectEvent_(event, receivedAt) {
 
       // ซิงค์เฉพาะรายงานสต็อกเข้า 3_Physical_Stock_and_Forecast ทันที
       syncPhysicalStockToDrive_(parsed.stockItems, parsed.asOfDate);
+    } else if (parsed.reportType === 'intake' && parsed.item) {
+      // รายงานรับเข้า/รับของ: ห้ามสร้างงานใน Next Schedule ให้ลง Dispatch & Intake เท่านั้น
+      const intakeRow = {
+        syncJobId: syncJobId,
+        reportId: reportId,
+        source: 'line_direct',
+        messageId: messageId,
+        rawText: rawText,
+        reportType: 'intake',
+        seller: parsed.seller || '',
+        item: parsed.item || '',
+        origin: parsed.origin || '',
+        eventDate: parsed.receivedDate || parsed.eventDate || Utilities.formatDate(receivedAt, 'Asia/Bangkok', 'yyyy-MM-dd'),
+        quantityKg: parsed.quantityKg || '',
+        gradeMediumKg: parsed.gradeMediumKg || '',
+        gradeSmallKg: parsed.gradeSmallKg || '',
+        qualityNote: parsed.qualityNote || '',
+        sampleKg: parsed.sampleKg || '',
+        yieldKg: parsed.yieldKg || '',
+        freightBaht: parsed.freightBaht || '',
+        paymentTerm: parsed.paymentTerm || '',
+        destination: parsed.destination || '',
+        receivedAt: receivedAt.toISOString(),
+        syncedAt: receivedAt
+      };
+      appendReportRow_(reportSheet, intakeRow);
+      auditSheet.appendRow([receivedAt, 'accepted', reportId, syncJobId, messageId, 'Direct LINE intake saved to Dispatch & Intake']);
+      notifyResult_(event, '✅ [บันทึกรับเข้า/รับของ PSC เรียบร้อย]\n' +
+        '🥬 สินค้า: ' + (parsed.item || '-') + '\n' +
+        '⚖️ จำนวน: ' + (parsed.quantityKg ? Number(parsed.quantityKg).toLocaleString() + ' กก.' : '-') + '\n' +
+        '📈 Yield: ' + (parsed.yieldKg || '-') + '\n' +
+        '🏡 ผู้จำหน่าย: ' + (parsed.seller || '-'));
+      try {
+        appendFarmOpsTask_({
+          receivedAt: receivedAt,
+          scheduleRow: null,
+          inboxRow: [receivedAt, 'line_direct', 'รับเข้า', parsed.item || '', intakeRow.eventDate, Number(parsed.quantityKg) || 0, parsed.origin || '', 'received', rawText]
+        });
+      } catch (fErr) {
+        Logger.log('Direct intake sync to Dispatch & Intake error: ' + fErr);
+      }
     } else if (parsed.reportType === 'dispatch' && parsed.item) {
       // 2. กรณีเป็นงานขึ้นของ / ขนส่งปกติ
       const rowData = {
@@ -1061,7 +1104,7 @@ function appendFarmOpsTask_(opts) {
   try {
     const farmOpsSs = SpreadsheetApp.openById(FARM_OPS_ID);
     const scheduleSheet = farmOpsSs.getSheetByName("Next Schedule & Other Tasks");
-    const inboxSheet = farmOpsSs.getSheetByName("LINE Intake Inbox");
+    const inboxSheet = farmOpsSs.getSheetByName("Dispatch & Intake") || farmOpsSs.getSheetByName("LINE Intake Inbox");
 
     if (opts.scheduleRow && scheduleSheet) {
       scheduleSheet.appendRow(opts.scheduleRow);
