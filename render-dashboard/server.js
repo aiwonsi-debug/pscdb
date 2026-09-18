@@ -1048,6 +1048,19 @@ const server = http.createServer(async (req, res) => {
             try { payload = JSON.parse(rawBody); } catch (e) { return; }
 
             const events = payload.events || [];
+            // Receiving reports must not depend on the legacy Desktop bot process.
+            // Route them directly to Apps Script, whose deployed handler writes
+            // Dispatch & Intake Log and replies with the intake confirmation.
+            const hasReceivingText = events.some(event =>
+                event && event.type === 'message' && event.message && event.message.type === 'text' &&
+                /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(event.message.text || '')
+            );
+            if (hasReceivingText) {
+                syncToGoogleSheets(payload);
+                writeLog('[LINE Webhook] Receiving report routed directly to Apps Script intake workflow');
+                return;
+            }
+
             for (const event of events) {
                 if (event.type !== 'message' || !event.message) continue;
                 const sourceId = event.source.groupId || event.source.roomId || event.source.userId;
