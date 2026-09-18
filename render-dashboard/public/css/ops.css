@@ -594,3 +594,34 @@ footer {
   color: var(--text-sub);
   margin-top: 24px;
 }
+
+/* Cabbage price dashboard visual theme */
+:root{
+  --bg:#efe9dc;--surface:#f7f4ea;--surface-sub:#f7f4ea;--surface-sub-alt:#eee9dc;
+  --border:#d5cdb8;--border-hairline:#d5cdb8;--text-main:#23241f;--text-muted:#5b5a50;--text-sub:#807d70;
+  --tab-active-bg:#2b3a2e;--tab-active-text:#efe9dc;--tab-container-bg:#d5cdb8;
+  --status-normal-bg:#dce7d1;--status-normal-text:#2b3a2e;--status-normal-border:#8fae73;
+}
+*{font-family:'IBM Plex Sans Thai','Prompt',sans-serif}
+body{background:var(--bg);color:var(--text-main);max-width:560px;margin:0 auto;padding:0 0 48px;line-height:1.55;font-size:13.5px}
+.container{max-width:560px;margin:0 auto}
+.app-header{padding:22px 18px 18px;margin:0;border-bottom:1px solid var(--border);align-items:baseline}
+.brand-title{font-family:'IBM Plex Sans Thai',sans-serif;font-size:13px;color:var(--text-muted)}
+.brand-subtitle,.section-headline{font-family:'Noto Serif Thai',serif;color:#2b3a2e;font-weight:600}
+.brand-subtitle{font-size:24px;margin-top:3px}
+.header-timestamp{font-size:11.5px;background:#dce7d1;color:#2b3a2e;border:1px solid #8fae73;padding:4px 9px;border-radius:999px}
+.main-nav-bar{margin:16px 18px 8px;padding:0;background:var(--border);border:1px solid var(--border);border-radius:10px;gap:1px;overflow:hidden}
+.nav-tab-btn{background:var(--surface);color:var(--text-muted);border-radius:0;padding:9px 0;font-size:13px}
+.nav-tab-btn.active{background:#2b3a2e;color:#efe9dc;font-weight:600}
+.tabs-carousel{padding:0 18px;display:block;overflow:visible}
+.app-section{min-width:100%;max-width:100%}
+.section-headline{font-size:16px;margin:22px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.flat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 14px;margin-bottom:10px;box-shadow:none}
+.card-title-text{font-family:'Noto Serif Thai',serif;font-size:15.5px;font-weight:600;color:var(--text-main)}
+.card-subtitle-text,.status-note{color:var(--text-muted)}
+.lbl{color:var(--text-muted);font-size:12.5px}.val{color:var(--text-main);font-weight:500}
+.card-forecast{color:var(--text-muted);border-top:1px solid var(--border);padding-top:9px;margin-top:9px}
+.metric-row{border-top:1px solid var(--border);padding-top:10px}.big-metric{font-family:'Noto Serif Thai',serif;color:#2b3a2e}
+footer{color:var(--text-muted);border-top:1px solid var(--border);padding-top:14px;margin:22px 18px 0;text-align:center}
+.error{background:#f3ded0;color:#8b3e24;border-color:#d39a78}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1d17;--surface:#23251e;--text-main:#edeae0;--text-muted:#a9a597;--border:#38392f;--tab-container-bg:#38392f}.brand-subtitle,.section-headline{color:#a9c99a}.nav-tab-btn{background:#23251e;color:#a9a597}.nav-tab-btn.active{background:#a9c99a;color:#1b1d17}}
