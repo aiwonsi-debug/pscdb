@@ -266,6 +266,23 @@ function parseCsv(text) {
     return rows;
 }
 
+const PO_REGISTER_CSV = 'https://docs.google.com/spreadsheets/d/1FfkSYTCxUFYj3dE6VHAOWEqDa4MVU3yMz7rwjefh-Ig/export?format=csv&gid=1245149988';
+let cachedPORegister = { timestamp: 0, rows: [] };
+async function fetchCustomerPORegister(force = false) {
+    const now = Date.now();
+    if (!force && cachedPORegister.rows.length > 0 && now - cachedPORegister.timestamp < 5000) return cachedPORegister.rows;
+    try {
+        const rows = parseCsv(await httpsGetFollow(PO_REGISTER_CSV + '&t=' + now));
+        const out = [];
+        for (let i = 3; i < rows.length; i++) {
+            const r = rows[i] || [];
+            if (!r.some(v => String(v || '').trim())) continue;
+            out.push({ rowIndex: i, customer: (r[0]||'').trim(), po: (r[1]||'').trim(), documentDate: (r[2]||'').trim(), deliveryDate: (r[3]||'').trim(), product: (r[4]||'').trim(), orderedKg: (r[5]||'').trim(), unitPrice: (r[6]||'').trim(), totalAmount: (r[7]||'').trim(), status: (r[8]||'').trim(), sourceFile: (r[9]||'').trim() });
+        }
+        cachedPORegister = { timestamp: now, rows: out };
+        return out;
+    } catch (e) { console.error('[PO Register Fetch Error]:', e.message); return cachedPORegister.rows; }
+}
 const SCHEDULE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1232005308';
 let cachedScheduleSheet = { timestamp: 0, schedules: [] };
 
@@ -1128,6 +1145,8 @@ const server = http.createServer(async (req, res) => {
             } catch (sheetErr) {
                 console.error('[Live Schedules Fetch Error]:', sheetErr.message);
             }
+            try { ops.customer_pos = await fetchCustomerPORegister(isForce); }
+            catch (poErr) { console.error('[PO Register Error]:', poErr.message); }
             
             // 4b. Fetch latest from Google Sheets App Script and merge with conflict resolution
             try {
