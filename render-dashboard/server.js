@@ -267,7 +267,31 @@ function parseCsv(text) {
 }
 
 const SCHEDULE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1232005308';
+const DISPATCH_INTAKE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1767890653';
 let cachedScheduleSheet = { timestamp: 0, schedules: [] };
+let cachedDispatchIntake = { timestamp: 0, records: [] };
+
+async function fetchDispatchIntakeLog(force = false) {
+    const now = Date.now();
+    if (!force && cachedDispatchIntake.records.length && now - cachedDispatchIntake.timestamp < 5000) return cachedDispatchIntake.records;
+    const rows = parseCsv(await httpsGetFollow(DISPATCH_INTAKE_SHEET_CSV + '&t=' + now));
+    const records = [];
+    for (let i = 3; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0] || !r[1]) continue;
+        const yieldText = (r[15] || '').replace('%', '').trim();
+        records.push({
+            date: r[2] || r[1], dispatchDate: r[1], intakeDate: r[2], item: r[5] || '-',
+            weight: r[9] ? `${r[9]} kg` : '-', weightUp: r[8] ? `${r[8]} kg` : '-',
+            transitLoss: r[10] || '-', yield: yieldText ? Number(yieldText) : null,
+            condition: r[16] || '-', size: r[16] || '-', location: r[4] || '-',
+            supplier: r[3] || '-', freight: r[13] || '-', price: r[11] || '-',
+            status: r[17] || '-', source: 'Dispatch & Intake Log'
+        });
+    }
+    cachedDispatchIntake = { timestamp: now, records };
+    return records;
+}
 
 async function fetchGoogleSheetsLiveSchedule(force = false) {
     const now = Date.now();
@@ -1078,6 +1102,13 @@ const server = http.createServer(async (req, res) => {
                 }
             } catch (sheetErr) {
                 console.error('[Live Schedules Fetch Error]:', sheetErr.message);
+            }
+
+            try {
+                ops.intake_records = await fetchDispatchIntakeLog(isForce);
+                ops.history_logs = [];
+            } catch (sheetErr) {
+                console.error('[Dispatch & Intake Log Fetch Error]:', sheetErr.message);
             }
             
             // 4b. Fetch latest from Google Sheets App Script and merge with conflict resolution
