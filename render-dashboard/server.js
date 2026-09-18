@@ -66,7 +66,7 @@ const mobileHtmlFile = resolveOpsHtmlPath();
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
 const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
 const stockFile = path.join(__dirname, 'stock_inventory.json');
-const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzwaao-vW7IdWqltSpFMbN7KGlU2IydbAojKmGLdEJWQ6Q_g1wCXtA1i65n_S7FHk5H/exec';
+const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbycakKFmkwBWkMkfOenwDycc3w9MxpwUw33i5MR5-eOR2kqyLGxQP34TMxDVd3BSJU2/exec';
 
 let sendLineMessage;
 try {
