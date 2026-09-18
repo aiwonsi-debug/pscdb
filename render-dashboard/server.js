@@ -29,6 +29,17 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+function normalizeAdDates(value) {
+    if (typeof value === 'string') {
+        return value
+            .replace(/(?<!\d)(\d{1,2})[\/\-](\d{1,2})[\/\-]2569\b/g, (_, d, m) => `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+            .replace(/(?<!\d)(\d{1,2})[\/\-](\d{1,2})[\/\-]69\b/g, (_, d, m) => `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+            .replace(/(?<!\d)2569(?!\d)/g, '2026');
+    }
+    if (Array.isArray(value)) return value.map(normalizeAdDates);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, normalizeAdDates(v)]));
+    return value;
+}
 function sanitizeSupplierName(name) {
     if (typeof name !== 'string' || !name.trim()) return name || '';
     let cleaned = name.replace(/\s*-?\s*[\d,]+(?:\.\d+)?\s*(?:บาท|บ\.?)/g, '');
@@ -826,7 +837,7 @@ const server = http.createServer(async (req, res) => {
                     });
                     const now = new Date();
                     stockData.LastUpdated = now.toISOString();
-                    stockData.AsOfDate = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + (now.getFullYear() + 543).toString().slice(-2);
+                    stockData.AsOfDate = now.toISOString().slice(0, 10);
                     stockData.LiveSource = 'Google Sheets Realtime';
                 }
             } catch (err) {
@@ -836,7 +847,7 @@ const server = http.createServer(async (req, res) => {
             // Prevent caching of stock data to ensure UI reflects latest values
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.writeHead(200);
-            return res.end(JSON.stringify(stockData, null, 2));
+            return res.end(JSON.stringify(normalizeAdDates(stockData), null, 2));
         }
 
         // Live Sheets Complete Dataset Endpoint (Stock, Schedules, Prices direct from Google Sheets)
@@ -857,7 +868,7 @@ const server = http.createServer(async (req, res) => {
 
         // Cabbage Prices and Transport Rates Endpoint
         if (req.method === 'GET' && (pathname === '/api/prices' || pathname === '/api/price-update')) {
-            let priceData = { AsOfDate: '16/09/69', Suppliers: [] };
+            let priceData = { AsOfDate: '2026-09-16', Suppliers: [] };
             const targetPriceFile = [
                 path.join(__dirname, 'cabbage_prices_transport.json'),
                 path.join(__dirname, '..', 'cabbage_prices_transport.json'),
@@ -870,7 +881,7 @@ const server = http.createServer(async (req, res) => {
             }
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.writeHead(200);
-            return res.end(JSON.stringify(priceData, null, 2));
+            return res.end(JSON.stringify(normalizeAdDates(priceData), null, 2));
         }
 
         // 2. Health Check
@@ -1100,7 +1111,7 @@ const server = http.createServer(async (req, res) => {
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
             res.writeHead(200);
-            return res.end(JSON.stringify(ops, null, 2));
+            return res.end(JSON.stringify(normalizeAdDates(ops), null, 2));
         }
 
         // 5. Team Update POST (Syncs to Google Sheets & Updates Memory)
