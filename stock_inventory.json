@@ -1,5 +1,5 @@
 {
-  "AsOfDate": "17/09/69",
+  "AsOfDate": "2026-09-17",
   "LastUpdated": "2026-09-17T09:58:22.546775",
   "Items": {
     "Cabbage": {
@@ -26,21 +26,21 @@
   "AuditTrail": [
     {
       "Timestamp": "2026-09-15T09:40:00.000Z",
-      "Item": "Cabbage Intake & Sample Peel (15/09/69)",
+      "Item": "Cabbage Intake & Sample Peel (2026-09-15)",
       "Details": "รับเข้ากะหล่ำปลี เฮียหนิง 7,900 kg (กลาง 4,425 kg, เล็ก 3,475 kg), สุ่มปอก 100 kg ได้ 67.648 kg (Yield 67.65%), Transit Loss -1,100 kg (-12.22%)",
-      "Source": "LINE Field Report 15/09/69"
+      "Source": "LINE Field Report 2026-09-15"
     },
     {
       "Timestamp": "2026-09-11T03:05:00.000Z",
       "Item": "Stock Baseline Update",
       "Details": "Cabbage: 11,975 kg, Onion AFT: 19,140 kg, Onion CN: 5,440 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
-      "Source": "User Explicit Directive (11/09/69 Stock Audit)"
+      "Source": "User Explicit Directive (2026-09-11 Stock Audit)"
     },
     {
       "Timestamp": "2026-09-10T11:25:00.000Z",
       "Item": "Stock Baseline Update",
       "Details": "Cabbage: 5,025 kg, Onion AFT: 20,280 kg, Onion CN: 5,440 kg, Carrot: 3,950 kg, Purple Potato: 1,690 kg",
-      "Source": "User Explicit Directive (10/09/69 Stock Audit)"
+      "Source": "User Explicit Directive (2026-09-10 Stock Audit)"
     },
     {
       "Timestamp": "2026-09-06T00:43:24.298Z",
@@ -50,21 +50,21 @@
     },
     {
       "Timestamp": "2026-09-05T20:18:11.230Z",
-      "Item": "Stock History Record (04/09/69)",
+      "Item": "Stock History Record (2026-09-04)",
       "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,760 kg, Carrot: 5,830 kg, Purple Potato: 1,690 kg",
-      "Source": "User Explicit Directive (04/09/69 Stock Audit Baseline)"
+      "Source": "User Explicit Directive (2026-09-04 Stock Audit Baseline)"
     },
     {
       "Timestamp": "2026-09-05T19:58:27.544Z",
       "Item": "Stock Baseline Update",
       "Details": "Cabbage: 8,800 kg, Onion AFT: 25,480 kg, Onion CN: 7,010 kg, Carrot: 4,090 kg, Purple Potato: 1,690 kg",
-      "Source": "User Explicit Directive (05/09/69 Stock Audit)"
+      "Source": "User Explicit Directive (2026-09-05 Stock Audit)"
     },
     {
       "Timestamp": "2026-09-05T19:01:58.347Z",
       "Item": "Cabbage",
       "NewKg": 8875,
-      "Source": "LINE Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 05/09/69"
+      "Source": "LINE Intake Report: กะหล่ำปลีเจ๊นก ศาลายา 2026-09-05"
     },
     {
       "Timestamp": "2026-09-04T02:38:11.096Z",
@@ -73,7 +73,7 @@
       "PreviousKg": 6075,
       "NewKg": 8800,
       "Source": "LINE Unified Ingestion",
-      "MessageDate": "04/09/69"
+      "MessageDate": "2026-09-04"
     },
     {
       "Timestamp": "2026-09-04T02:38:11.096Z",
@@ -82,7 +82,7 @@
       "PreviousKg": 26120,
       "NewKg": 25480,
       "Source": "LINE Unified Ingestion",
-      "MessageDate": "04/09/69"
+      "MessageDate": "2026-09-04"
     },
     {
       "Timestamp": "2026-09-05T08:21:00.000Z",
@@ -91,7 +91,7 @@
       "PreviousKg": 7760,
       "NewKg": 7010,
       "Source": "LINE Verified Ingestion",
-      "MessageDate": "05/09/69"
+      "MessageDate": "2026-09-05"
     },
     {
       "Timestamp": "2026-09-05T08:21:00.000Z",
@@ -100,7 +100,7 @@
       "PreviousKg": 5830,
       "NewKg": 4090,
       "Source": "LINE Verified Ingestion",
-      "MessageDate": "05/09/69"
+      "MessageDate": "2026-09-05"
     },
     {
       "Timestamp": "2026-09-05T13:03:12.273Z",
@@ -119,7 +119,7 @@
       "PreviousValue": 11975,
       "NewValue": 9650,
       "Unit": "kg",
-      "Source": "Stock 12/09/69",
+      "Source": "Stock 2026-09-12",
       "EventId": "update_Cabbage_1789176166548"
     },
     {
@@ -129,7 +129,7 @@
       "PreviousValue": 19140,
       "NewValue": 44160,
       "Unit": "kg",
-      "Source": "Stock 12/09/69",
+      "Source": "Stock 2026-09-12",
       "EventId": "update_Onion_AFT_1789176166626"
     },
     {
@@ -139,7 +139,7 @@
       "PreviousValue": 3950,
       "NewValue": 6560,
       "Unit": "kg",
-      "Source": "Stock 12/09/69",
+      "Source": "Stock 2026-09-12",
       "EventId": "update_Carrot_1789176166782"
     },
     {
@@ -336,8 +336,8 @@
   ],
   "RecentAudits": [
     {
-      "AsOfDate": "17/09/69",
-      "Label": "ตรวจนับจริง 17/09/69 (ล่าสุด)",
+      "AsOfDate": "2026-09-17",
+      "Label": "ตรวจนับจริง 2026-09-17 (ล่าสุด)",
       "Timestamp": "2026-09-17T09:58:22.546Z",
       "Items": {
         "Cabbage": 4835,
@@ -347,8 +347,8 @@
       }
     },
     {
-      "AsOfDate": "15/09/69",
-      "Label": "ตรวจนับจริง 15/09/69 (รอบก่อนหน้า)",
+      "AsOfDate": "2026-09-15",
+      "Label": "ตรวจนับจริง 2026-09-15 (รอบก่อนหน้า)",
       "Timestamp": "2026-09-15T01:42:50.320Z",
       "Items": {
         "Cabbage": 5800,
@@ -358,8 +358,8 @@
       }
     },
     {
-      "AsOfDate": "14/09/69",
-      "Label": "ตรวจนับจริง 14/09/69 (รอบก่อนหน้า)",
+      "AsOfDate": "2026-09-14",
+      "Label": "ตรวจนับจริง 2026-09-14 (รอบก่อนหน้า)",
       "Timestamp": "2026-09-14T01:39:36.113Z",
       "Items": {
         "Cabbage": 4350,
@@ -369,8 +369,8 @@
       }
     },
     {
-      "AsOfDate": "12/09/69",
-      "Label": "ตรวจนับจริง 12/09/69 (รอบก่อนหน้า)",
+      "AsOfDate": "2026-09-12",
+      "Label": "ตรวจนับจริง 2026-09-12 (รอบก่อนหน้า)",
       "Timestamp": "2026-09-12T01:22:46.533Z",
       "Items": {
         "Cabbage": 9650,
