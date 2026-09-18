@@ -595,7 +595,7 @@ const server = http.createServer(async (req, res) => {
   <meta charset="utf-8">
   <title>PSC Field Operations - Team Access</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     body { background:#0a0e17; color:#e6edf3; font-family:'Prompt',-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; box-sizing:border-box; }
     .card { background:#111827; border:1px solid #1f2937; padding:28px 24px; border-radius:14px; width:100%; max-width:360px; box-shadow:0 12px 30px rgba(0,0,0,0.6); text-align:center; }
