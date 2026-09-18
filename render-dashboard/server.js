@@ -220,6 +220,30 @@ function syncToGoogleSheets(payload) {
     }
 }
 
+function replyReceivingEventDirectly(event) {
+    const token = (process.env.LINE_CHANNEL_ACCESS_TOKEN || '').trim();
+    const replyToken = event && event.replyToken;
+    const text = String(event && event.message && event.message.text || '');
+    if (!token || !replyToken || !text) return false;
+    const weightMatch = text.match(/(?:จำนวน|น้ำหนัก|รับมา)\s*([\d,]+(?:\.\d+)?)\s*(?:กก|กิโล|kg)/i);
+    const sampleMatch = text.match(/สุ่ม\s*ปอก\s*([\d,]+(?:\.\d+)?)\s*(?:กก|กิโล|kg)/i);
+    const peeledMatch = text.match(/ปอก\s*ได้\s*([\d,]+(?:\.\d+)?)\s*(?:กก|กิโล|kg)/i);
+    const supplierMatch = text.match(/รับ\s*(?:กะหล่ำปลี|กะหล่ำ|หอมแดง|หอม|พริกหวาน|พริก)\s*([^\n\r]+)?/i);
+    const number = m => m ? Number(String(m[1]).replace(/,/g, '')) : null;
+    const weight = number(weightMatch);
+    const sample = number(sampleMatch);
+    const peeled = number(peeledMatch);
+    const yieldPct = sample && peeled ? Number((peeled / sample * 100).toFixed(2)) : null;
+    const supplier = supplierMatch && supplierMatch[1] ? supplierMatch[1].replace(/จำนวน.*$/i, '').trim() : '';
+    const reply = ['✅ [บันทึกรับเข้า/รับของ PSC เรียบร้อย]', '🥬 สินค้า: กะหล่ำปลี', `⚖️ จำนวน: ${weight != null ? weight.toLocaleString() : '-'} กก.`, `📈 Yield: ${yieldPct != null ? yieldPct + '%' : '-'}`, `🏡 ผู้จำหน่าย: ${supplier || '-'}`].join('\n');
+    const body = JSON.stringify({ replyToken, messages: [{ type: 'text', text: reply }] });
+    const req = https.request({ hostname: 'api.line.me', path: '/v2/bot/message/reply', method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'Content-Length': Buffer.byteLength(body) } });
+    req.on('error', e => writeLog(`[LINE Direct Reply] ${e.message}`));
+    req.write(body);
+    req.end();
+    return true;
+}
+
 function httpsGetFollow(url) {
     return new Promise((resolve, reject) => {
         https.get(url, (res) => {
@@ -1013,6 +1037,11 @@ const server = http.createServer(async (req, res) => {
 
             let payload = {};
             try { payload = JSON.parse(rawBody); } catch (e) { return; }
+            const receivingEvents = (payload.events || []).filter(event =>
+                event && event.type === 'message' && event.message && event.message.type === 'text' &&
+                /(?:รับ\s*(?:เข้า|ของ|กะหล่ำ|หอม|พริก)|สุ่ม\s*ปอก|ปอก\s*ได้)/i.test(event.message.text || '')
+            );
+            receivingEvents.forEach(replyReceivingEventDirectly);
             // Single production route: every LINE event goes directly to the
             // deployed Apps Script. The legacy Desktop/tunnel forwarding path
             // and local bot fallback are intentionally removed.
