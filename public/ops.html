@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/ops.css?v=20260918">
 <style>
-.status-note{font-size:.78rem;color:#64748b;margin:8px 0 14px}.error{color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:10px;border-radius:10px}.empty{color:#64748b;padding:16px 0}.data-card{margin-bottom:12px}
+.status-note{font-size:.78rem;color:#64748b;margin:8px 0 14px}.error{color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:10px;border-radius:10px}.empty{color:#64748b;padding:16px 0}.data-card{margin-bottom:12px}.error button{cursor:pointer}
 </style>
 </head>
 <body>
@@ -18,7 +18,7 @@
 <main class="app-section" id="delivery"><div class="section-headline">ตารางติดตามขึ้นของสวน</div><div id="ops"><div class="status-note">กำลังโหลดข้อมูล...</div></div><div class="section-headline" style="margin-top:20px">ประวัติรับเข้าวัตถุดิบ</div><div id="intake"><div class="status-note">กำลังโหลดข้อมูล...</div></div></main>
 <main class="app-section" id="price"><div class="section-headline">ราคาวัตถุดิบ & ค่าขนส่ง</div><div id="prices"><div class="status-note">กำลังโหลดข้อมูล...</div></div></main>
 <main class="app-section" id="stock"><div class="section-headline">สต็อกตรวจนับจริงล่าสุด</div><div id="stocks"><div class="status-note">กำลังโหลดข้อมูล...</div></div></main>
-</div><footer>บจก.ไพศาลเจริญ (1988)</footer></div>
+</div><div id="load-error" class="error" style="display:none;margin-top:12px"><span id="load-error-text">โหลดข้อมูลไม่สำเร็จ</span> <button id="retry" type="button" style="margin-left:8px;padding:6px 10px;border-radius:8px;border:1px solid #b91c1c;background:#fff;color:#b91c1c">ลองโหลดใหม่</button></div><footer>บจก.ไพศาลเจริญ (1988)</footer></div>
 <script>
 'use strict';
 const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -29,5 +29,9 @@ document.querySelectorAll('.nav-tab-btn').forEach(b=>b.onclick=()=>setTab(b.data
 async function get(path){const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error(path+' '+r.status);return r.json()}
 function renderOps(d){const a=[...(d.active_operations||[]),...(d.live_schedules||[])];$('ops').innerHTML=a.length?a.map(x=>card(x.product||'วัตถุดิบ',x.farm||x.customer||'',`<div class="grid-2x2"><div class="grid-cell"><span class="lbl">วันที่ขึ้นของ</span><span class="val">${esc(x.loading_date||x.date||'-')}</span></div><div class="grid-cell"><span class="lbl">กำหนดส่ง</span><span class="val">${esc(x.delivery_date||x.date||'-')}</span></div><div class="grid-cell"><span class="lbl">ปริมาณ</span><span class="val">${fmt(x.qty_kg??x.weight)} กก.</span></div><div class="grid-cell"><span class="lbl">สถานะ</span><span class="val">${esc(x.status||'-')}</span></div></div>`)).join(''):'<div class="empty">ไม่มีรายการรอส่งมอบ</div>'}
 function renderIntake(d){const a=[...(d.intake_records||[]),...(d.history_logs||[])];$('intake').innerHTML=a.length?a.map(x=>card(x.item||'วัตถุดิบ','',`<div class="grid-2x2"><div class="grid-cell"><span class="lbl">วันที่รับเข้า</span><span class="val">${esc(x.date||'-')}</span></div><div class="grid-cell"><span class="lbl">รับจริง</span><span class="val">${esc(x.weight||x.weightUp||'-')}</span></div><div class="grid-cell"><span class="lbl">Yield</span><span class="val">${x.yield==null?'-':Number(x.yield).toFixed(2)+'%'}</span></div></div><div class="card-forecast">${esc(x.condition||x.sample||x.location||'')}</div>`)).join(''):'<div class="empty">ไม่มีประวัติรับเข้า</div>'}
+function renderStock(d){const names={Cabbage:'กะหล่ำปลี',Onion_AFT:'หอม AFT',Onion_Chinese:'หอมจีน',Carrot:'แครอทสวย'};$('stocks').innerHTML=Object.entries(d.Items||{}).map(([k,v])=>card(names[k]||v.Name||k,'ข้อมูลจาก Daily report',`<div class="metric-row"><span class="big-metric">${fmt(v.StockKg)}</span><span class="metric-unit">กก.</span></div>`)).join('')||'<div class="empty">ไม่มีข้อมูลสต็อก</div>'; $('updated').textContent='อัปเดต '+(d.AsOfDate||'-')}
+function renderPrices(d){const h=d.PriceHistory||[];const latest=h[h.length-1]||{};const rows=(latest.Suppliers||[]).map(x=>card(x.name||'ผู้จำหน่าย','',`<div class="grid-2x2"><div class="grid-cell"><span class="lbl">ราคา</span><span class="val">${esc(x.price||'-')}</span></div><div class="grid-cell"><span class="lbl">ค่าขนส่ง</span><span class="val">${esc((x.rates||'-').replace(/\n/g,' · '))}</span></div></div><div class="card-forecast">${esc(x.notes||'')}</div>`)).join('');$('prices').innerHTML=rows||'<div class="empty">ไม่มีข้อมูลราคา</div>'}
+async function loadAll(){const err=$('load-error'),msg=$('load-error-text');if(err)err.style.display='none';$('updated').textContent='กำลังโหลดข้อมูล...';const jobs=[get('/api/team-status').then(d=>{renderOps(d);renderIntake(d);}),get('/api/stock').then(d=>renderStock(d)),get('/api/prices').then(d=>renderPrices(d))];const results=await Promise.allSettled(jobs);const failed=results.filter(x=>x.status==='rejected');if(failed.length){msg.textContent='โหลดข้อมูลบางส่วนไม่สำเร็จ กรุณาลองใหม่';err.style.display='block';console.error('[PSC] API load failed',failed.map(x=>x.reason));}else{$('updated').textContent='อัปเดตแล้ว '+new Date().toLocaleTimeString('th-TH');}}
+$('retry').onclick=loadAll;loadAll();
 </script>
 </body></html>
