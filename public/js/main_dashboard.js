@@ -1,6 +1,6 @@
-// Client Session Auth via HttpOnly Cookie (No API Key in DOM)
+/api/team-status
     window.lastPriceUpdate = null; // TODO: no live price-report timestamp source wired up yet — see note to user
-    const STORAGE_KEY = 'PSC_OPS_FOCUSED_SALAYA_TNS_V17';
+/api/live-sheets
     let serverCardsState = {};
 
     function sanitizeSupplierName(name) {
