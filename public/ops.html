@@ -443,7 +443,14 @@
   }
 
 </style>
-</head>
+<style>
+:root{color-scheme:light;--paper:#f8fafb;--ink:#1f2933;--ink-soft:#66737d;--field-dark:#315a49;--field:#5f8b76;--field-light:#e8f0ec;--line:#dce5e1;--card:#ffffff;--green-status:#286044;--green-bg:#e7f3eb;--amber-status:#9a6715;--amber-bg:#fff4d6;--red-status:#a7473e;--red-bg:#fde9e7}
+body{background:var(--paper)}
+.page-panel{display:none}.page-panel.active{display:block}
+.top-tab{background:#fff;color:var(--ink-soft)}.top-tab.active{background:var(--field-dark);color:#fff}
+.item-card,.hist-card,.stock-card{background:#fff;border-color:var(--line)}
+.summary{background:var(--line)}.summary .cell{background:#fff}.sub-toggle{background:#fff;border-color:var(--line)}.sub-tab{color:var(--ink-soft)}.sub-tab.active{background:var(--field-dark);color:#fff}
+</style></head>
 <body>
 <div class="browser-bar"><span class="dot"></span> pscdb.onrender.com</div>
 <header class="app-head"><div class="head-row"><span class="eyebrow">PSC field operations</span><span class="updated" id="updatedLabel">กำลังโหลดข้อมูล</span></div><h1 id="pageTitle">รายการรอส่งมอบ</h1></header>
