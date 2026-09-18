@@ -417,7 +417,8 @@ function recordLoadingReport(reportObj) {
     if (!opsData.history_logs) opsData.history_logs = [];
     if (!opsData.cards_state) opsData.cards_state = {};
 
-    const cardId = reportObj.cardId;
+    const isIntake = reportObj.reportType === 'intake';
+    const cardId = isIntake ? null : reportObj.cardId;
     if (cardId) {
         if (!opsData.cards_state[cardId]) opsData.cards_state[cardId] = { id: cardId };
         opsData.cards_state[cardId].loadedReported = true;
@@ -455,7 +456,11 @@ function recordLoadingReport(reportObj) {
             freight: reportObj.freight,
             payment: reportObj.payment,
             location: reportObj.location,
-            cardId: cardId
+            cardId: cardId,
+            reportType: reportObj.reportType || 'dispatch',
+            yield: reportObj.receivedYield || null,
+            size: reportObj.receivedSize || '',
+            condition: reportObj.receivedCondition || ''
         });
     }
 
@@ -466,6 +471,21 @@ function recordLoadingReport(reportObj) {
     syncToRender('/api/loading-report', reportObj);
     if (cardId) {
         syncToGoogleSheets(opsData.cards_state[cardId]);
+    } else if (isIntake && reportObj.rawText) {
+        // The deployed Apps Script accepts LINE webhook events and routes
+        // receiving wording to Dispatch & Intake Log without creating a schedule.
+        syncToGoogleSheets({
+            events: [{
+                type: 'message',
+                replyToken: '',
+                source: { userId: 'local-bot' },
+                message: {
+                    type: 'text',
+                    id: reportObj.reportId || ('local-' + Date.now()),
+                    text: reportObj.rawText
+                }
+            }]
+        });
     }
 }
 

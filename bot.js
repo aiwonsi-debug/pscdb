@@ -1099,6 +1099,7 @@ function handleCommand(chatId, text, msg = null) {
                     }
 
                     // 2. Process Operations / Intake / Loading Report
+                    const isReceivingReport = /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(text);
                     const isIntakeOrLoading = !!(
                         result.weight_kg || 
                         result.freight_baht || 
@@ -1158,7 +1159,8 @@ function handleCommand(chatId, text, msg = null) {
                             receivedPrice: result.price_per_kg || null,
                             receivedCondition: result.condition || '',
                             receivedSize: result.size || '',
-                            rawText: text
+                            rawText: text,
+                            reportType: isReceivingReport ? 'intake' : 'dispatch'
                         };
 
                         recordLoadingReport(reportObj);
@@ -1190,9 +1192,11 @@ function handleCommand(chatId, text, msg = null) {
                     }
 
                     // 4. Construct Clear Bot Response & LINE Push
-                    let reply = `✅ <b>[ระบบบันทึกและซิงก์ข้อมูลอัตโนมัติสำเร็จ]</b>\n`;
+                    let reply = isReceivingReport
+                        ? `✅ <b>[บันทึกรับเข้า/รับของ PSC เรียบร้อย]</b>\n`
+                        : `✅ <b>[บันทึกงานขึ้นของ PSC เรียบร้อย]</b>\n`;
                     reply += `──────────────────\n`;
-                    if (result.date) reply += `📅 <b>วันที่:</b> ${result.date}\n`;
+                    if (result.date) reply += `📅 <b>${isReceivingReport ? 'วันที่รับเข้า' : 'วันที่'}:</b> ${result.date}\n`;
                     if (result.item || result.supplier) reply += `🥬 <b>รายการ:</b> ${result.item || 'ผัก'} (${result.supplier || 'ไม่ระบุสวน'})\n`;
                     if (result.weight_kg) reply += `⚖️ <b>น้ำหนัก:</b> ${result.weight_kg.toLocaleString()} กก.\n`;
                     if (calcYield) reply += `📈 <b>Yield (สุ่มปอก):</b> ${calcYield}%\n`;
@@ -1596,4 +1600,3 @@ const { createLineHandler } = require('./line_handler.js');
 const { handleLineImage } = createLineHandler({ agyBaseDir, agyExe, sendMessage, writeLog, checkAuthorization });
 
 module.exports = { handleCommand, handleLineImage };
-
