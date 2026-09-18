@@ -275,7 +275,10 @@ function handleLineDirectEvent_(event, receivedAt) {
 
   // 1. เรียก Gemini แปลงภาษาพูดเป็น JSON (ทำนอก Lock เพื่อไม่บล็อกคิวข้อความอื่น)
   const parsed = interpretWithGemini(rawText);
-  const receivingText = /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(rawText);
+  // Receiving reports may include the supplier name immediately after the
+  // product (for example รับกะหล่ำปลีเฮียหนิง). Keep this detection broad so
+  // they can never fall through to the dispatch/schedule branch.
+  const receivingText = /(?:รับ\s*(?:เข้า|ของ|กะหล่ำ|หอม|พริก)|สุ่ม\s*ปอก|ปอก\s*ได้)/i.test(rawText);
   if (parsed && receivingText) parsed.reportType = 'intake';
   if (!parsed || parsed.reportType === 'none') {
     Logger.log("Ignored non-report message: " + rawText);

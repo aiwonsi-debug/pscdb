@@ -956,7 +956,7 @@ function handleCommand(chatId, text, msg = null) {
                         try { result = JSON.parse(parsed.choices[0].message.content.trim()); } catch(e){}
                     }
 
-                    const forcedIntakeText = /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(text);
+                    const forcedIntakeText = /(?:รับ\s*(?:เข้า|ของ|กะหล่ำ|หอม|พริก)|สุ่ม\s*ปอก|ปอก\s*ได้)/i.test(text);
                     const deterministicIntake = forcedIntakeText ? extractLoadingReportFromText(text) : null;
                     if (deterministicIntake) {
                         result = Object.assign({}, result || {}, deterministicIntake);
@@ -1099,7 +1099,7 @@ function handleCommand(chatId, text, msg = null) {
                     }
 
                     // 2. Process Operations / Intake / Loading Report
-                    const isReceivingReport = /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(text);
+                    const isReceivingReport = /(?:รับ\s*(?:เข้า|ของ|กะหล่ำ|หอม|พริก)|สุ่ม\s*ปอก|ปอก\s*ได้)/i.test(text);
                     const isIntakeOrLoading = !!(
                         result.weight_kg || 
                         result.freight_baht || 

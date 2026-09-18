@@ -1064,7 +1064,7 @@ const server = http.createServer(async (req, res) => {
             // Dispatch & Intake Log and replies with the intake confirmation.
             const hasReceivingText = events.some(event =>
                 event && event.type === 'message' && event.message && event.message.type === 'text' &&
-                /(?:รับกะหล่ำ|รับหอม|รับพริก|สุ่มปอก|ปอกได้)/i.test(event.message.text || '')
+                /(?:รับ\s*(?:เข้า|ของ|กะหล่ำ|หอม|พริก)|สุ่ม\s*ปอก|ปอก\s*ได้)/i.test(event.message.text || '')
             );
             if (hasReceivingText) {
                 syncToGoogleSheets(payload);
