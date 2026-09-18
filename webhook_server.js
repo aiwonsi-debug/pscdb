@@ -298,6 +298,7 @@ async function fetchDispatchIntakeLog(force = false) {
         const y = (r[15] || '').replace('%', '').trim();
         records.push({ date: r[2] || r[1], dispatchDate: r[1], intakeDate: r[2], item: r[5] || '-', weight: r[9] ? `${r[9]} kg` : '-', weightUp: r[8] ? `${r[8]} kg` : '-', transitLoss: r[10] || '-', yield: y ? Number(y) : null, size: r[16] || '-', condition: r[16] || '-', location: r[4] || '-', supplier: r[3] || '-', freight: r[13] || '-', price: r[11] || '-', status: r[17] || '-', source: 'Dispatch & Intake Log' });
     }
+    records.sort((a, b) => String(b.intakeDate || b.date).localeCompare(String(a.intakeDate || a.date)));
     cachedDispatchIntake = { timestamp: now, records };
     return records;
 }

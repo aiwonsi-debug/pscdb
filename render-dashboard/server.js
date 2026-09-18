@@ -289,6 +289,7 @@ async function fetchDispatchIntakeLog(force = false) {
             status: r[17] || '-', source: 'Dispatch & Intake Log'
         });
     }
+    records.sort((a, b) => String(b.intakeDate || b.date).localeCompare(String(a.intakeDate || a.date)));
     cachedDispatchIntake = { timestamp: now, records };
     return records;
 }
