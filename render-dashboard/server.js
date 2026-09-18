@@ -238,31 +238,22 @@ function httpsGetFollow(url) {
 
 function parseCsv(text) {
     if (!text) return [];
-    const lines = text.trim().split(/\r?\n/);
     const rows = [];
-    for (const line of lines) {
-        const row = [];
-        let inQuote = false;
-        let field = '';
-        for (let i = 0; i < line.length; i++) {
-            const c = line[i];
-            if (c === '"') {
-                if (inQuote && line[i + 1] === '"') {
-                    field += '"';
-                    i++;
-                } else {
-                    inQuote = !inQuote;
-                }
-            } else if (c === ',' && !inQuote) {
-                row.push(field.trim());
-                field = '';
-            } else {
-                field += c;
-            }
-        }
-        row.push(field.trim());
-        rows.push(row);
+    let row = [], field = '', inQuote = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') {
+            if (inQuote && text[i + 1] === '"') { field += '"'; i++; }
+            else inQuote = !inQuote;
+        } else if (c === ',' && !inQuote) { row.push(field.trim()); field = ''; }
+        else if ((c === '\n' || c === '\r') && !inQuote) {
+            if (c === '\r' && text[i + 1] === '\n') i++;
+            row.push(field.trim()); field = '';
+            if (row.some(v => v !== '')) rows.push(row);
+            row = [];
+        } else field += c;
     }
+    if (field || row.length) { row.push(field.trim()); if (row.some(v => v !== '')) rows.push(row); }
     return rows;
 }
 
