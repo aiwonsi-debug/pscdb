@@ -269,9 +269,6 @@ body{background:#f8fafb;color:#1f2933}.browser-bar{background:#eef3f0;color:#667
   <!-- ============ TAB 2: ราคา ============ -->
   <div class="view" id="view-price">
     <div class="price-hero"><div class="price-hero-title">ราคากะหล่ำวันนี้</div><div class="price-hero-date">▣ <span id="priceHeroDate">กำลังโหลดวันที่</span></div></div>
-    <div class="summary" id="priceSummary"></div>
-    <div class="filter-row" id="routeFilterRow"></div>
-    <h2 class="section-title">ผู้ค้ากะหล่ำ</h2>
     <div id="vendorList"></div>
     <h2 class="section-title">รถขนส่งเพิ่มเติม (ยังไม่มีของวันนี้)</h2>
     <div id="freightOnlyList"></div>
@@ -300,17 +297,11 @@ const titles={pending:'รายการรอส่งมอบ',price:'รา
 function renderPending(d){const a=(d.schedules||[]).slice(0,5);const v=$('pendingList');v.innerHTML='';const groups={};a.forEach(x=>(groups[x.targetDate||'ไม่ระบุ']??=[]).push(x));Object.keys(groups).sort().forEach(day=>{v.innerHTML+=`<div class="date-group-title"><span>กำหนดรับ ${fmt(day)}</span><span class="count">${groups[day].length} รายการ</span></div>`;groups[day].forEach(x=>v.innerHTML+=`<div class="item-card"><div class="item-top"><div class="crop-name">${esc(x.detail||'ไม่ระบุสินค้า')}</div><div class="status-pill green">${esc(x.status||'รอดำเนินการ')}</div></div><div class="item-badges"><span class="badge">${esc(x.seller||'ยังไม่ระบุ')}</span><span class="badge transport">${esc(x.transporter||'ยังไม่ระบุ')}</span></div><div class="item-meta"><div><div class="meta-lbl">วันที่กำหนดรับ</div><div class="meta-val">${fmt(x.targetDate)}</div></div><div><div class="meta-lbl">ปริมาณ</div><div class="meta-val qty">${Number(x.qtyKg||0).toLocaleString('th-TH')} กก.</div></div></div></div>`)})}
 function renderHistory(d){const a=d.intake_records||[];$('historyList').innerHTML='<div class="date-group-title"><span>ประวัติรับเข้าวัตถุดิบ</span></div>'+a.map(x=>{const up=n(x.weightUp),got=n(x.weight),pct=up!=null&&got!=null?(up-got)/up*100:null,loss=up!=null&&got!=null?`${(up-got).toLocaleString('th-TH')} kg (${pct.toFixed(2)}%)`:x.transitLoss||'–',cl=pct>10?'loss-red':pct>5?'loss-orange':'';return `<div class="hist-card"><div class="hist-top"><div><div class="hist-crop">${esc(x.item)}</div><div class="hist-farm">${esc(x.supplier)}</div></div><span class="yield-pill status-pill ${x.yield==null?'amber':'green'}">${x.yield==null?'รอบันทึกผล':'Yield '+Number(x.yield).toFixed(2)+'%'}</span></div><div class="hist-meta"><div><div class="meta-lbl">วันขึ้นของ</div><div class="meta-val">${fmt(x.dispatchDate)}</div></div><div><div class="meta-lbl">วันรับเข้า</div><div class="meta-val">${fmt(x.intakeDate||x.date)}</div></div><div><div class="meta-lbl">น้ำหนักต้นทาง</div><div class="meta-val">${esc(x.weightUp)}</div></div><div><div class="meta-lbl">น้ำหนักรับเข้าจริง</div><div class="meta-val">${esc(x.weight)}</div></div><div><div class="meta-lbl">น้ำหนักหาย</div><div class="meta-val ${cl}">${esc(loss)}</div></div><div><div class="meta-lbl">แหล่งขึ้นสินค้า</div><div class="meta-val">${esc(x.location)}</div></div></div><div class="hist-note"><b>คุณภาพ/หมายเหตุ:</b> ${esc(x.condition||x.size)}</div></div>`}).join('')}
 function renderPrice(d){
-  const all=d.prices||[], ps=all.map(s=>Number(s.pricePerKg||0)).filter(v=>v>0), hi=ps.length?Math.max(...ps):null, lo=ps.length?Math.min(...ps):null, av=ps.length?ps.reduce((a,b)=>a+b,0)/ps.length:null;
-  const summary=`<div class="stat"><div class="num">${hi==null?'–':hi.toFixed(1)}</div><div class="lbl">สูงสุด (บาท/กก.)</div></div><div class="stat"><div class="num">${lo==null?'–':lo.toFixed(1)}</div><div class="lbl">ต่ำสุด (บาท/กก.)</div></div><div class="stat"><div class="num">${av==null?'–':av.toFixed(2)}</div><div class="lbl">เฉลี่ย (บาท/กก.)</div></div>`;
-  $('priceSummary').innerHTML=summary;
   const normalizeName=name=>String(name||'').trim().replace('เจ็อารีย์','เจ๊อารีย์');
   const records=[];let currentSupplier='';
   all.forEach(s=>{const explicit=normalizeName(s.seller||s.transporter);if(explicit)currentSupplier=explicit;records.push({...s,_supplier:currentSupplier||'ไม่ระบุผู้ขาย'});});
   const supplierOrder=[];records.forEach(s=>{if(!supplierOrder.includes(s._supplier)&&s._supplier!=='ไม่ระบุผู้ขาย')supplierOrder.push(s._supplier);});
   const desiredOrder=['เฮียหนิง','เจ๊อารีย์','เฮียบุญชู','เจ๊ พรรณี','พี่บู้','เฮียธงชัย','พี่อั๋น'];const ordered=desiredOrder.filter(x=>x==='เฮียธงชัย'||supplierOrder.includes(x));supplierOrder.splice(0,supplierOrder.length,...ordered);
-  const row=$('routeFilterRow'),locations=[...new Set(all.map(s=>s.location).filter(Boolean))];row.innerHTML='';
-  const filters=[{label:'ทั้งหมด',value:''},...locations.map(x=>({label:x,value:x}))];
-  filters.forEach((f,i)=>{const el=document.createElement('div');el.className='filter-chip '+(i?'':'active');el.textContent=f.label;el.dataset.value=f.value;el.onclick=()=>{row.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));el.classList.add('active');draw(f.value)};row.appendChild(el)});
   const palette=[['#2c9b69','#eaf8f0'],['#df4f79','#fff0f4'],['#2f78c8','#edf6ff'],['#7654c8','#f3efff'],['#2c9b92','#e9f8f6'],['#ed951f','#fff5e8'],['#5267c5','#eef0ff']];
   const draw=location=>{
     $('vendorList').innerHTML=supplierOrder.map((name,idx)=>{
