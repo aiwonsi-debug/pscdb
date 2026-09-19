@@ -43,12 +43,12 @@ const AUDIT_HEADERS = [
 ];
 
 // Canonical workbook collection: Drive folder 11L80cwOkWDEZJCxVD4SghI7zfrfwj9yL
-// The .gsheet files in that folder are shortcuts; these are their underlying spreadsheet IDs.
+// The Drive shortcuts in that folder point to these underlying spreadsheet IDs.
 // รวม Spreadsheet ID ของทุกไฟล์ปลายทางไว้ที่เดียว (เดิมประกาศซ้ำกระจายอยู่หลายฟังก์ชัน)
-const PHYSICAL_STOCK_ID = "1LhS7R0GeFiQ4PR_2tXqVgkFRBYX3jXSvdC0yHiOEIEM"; // 3_Physical_Stock_and_Forecast.gsheet
-const FARM_OPS_ID = "195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM"; // 1_Farm_Ops_Transport_and_Intake.gsheet
-const MATERIAL_PRICES_ID = "1-2n4Q2XYjGyRqoogAnS_Id1tGzUBq2bKHvHVKeXEYXM"; // 2_Material_Prices_and_Freight_Matrix.gsheet
-const CUSTOMER_POS_ID = "1FfkSYTCxUFYj3dE6VHAOWEqDa4MVU3yMz7rwjefh-Ig"; // 4_Customer_POs_and_Delivery_Plans.gsheet
+const PHYSICAL_STOCK_ID = "1LhS7R0GeFiQ4PR_2tXqVgkFRBYX3jXSvdC0yHiOEIEM"; // 3_Physical_Stock_and_Forecast
+const FARM_OPS_ID = "195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM"; // 1_Farm_Ops_Transport_and_Intake
+const MATERIAL_PRICES_ID = "1-2n4Q2XYjGyRqoogAnS_Id1tGzUBq2bKHvHVKeXEYXM"; // 2_Material_Prices_and_Freight_Matrix
+const CUSTOMER_POS_ID = "1FfkSYTCxUFYj3dE6VHAOWEqDa4MVU3yMz7rwjefh-Ig"; // 4_Customer_POs_and_Delivery_Plans
 
 
 // ===================== 2. ENTRY POINTS =====================

@@ -65,7 +65,7 @@ This boundary is intentional. It prevents one event from receiving replies from 
 
 | Component | Responsibility | Location or identifier |
 |---|---|---|
-| Canonical data folder | Drive folder containing the five `.gsheet` shortcuts to operational workbooks | `11L80cwOkWDEZJCxVD4SghI7zfrfwj9yL` |
+| Canonical data folder | Drive folder containing five real shortcuts to operational Google Sheets workbooks | `11L80cwOkWDEZJCxVD4SghI7zfrfwj9yL` |
 | Render dashboard | Production HTTP gateway and dashboard host | `https://pscdb.onrender.com/` |
 | Apps Script project | LINE processing, Gemini interpretation, sheet writes, summary API | Project `PSC WDB`, ID `1I6OABrk6kUi_AKeEO_QyAzatBzr52ldSW8dFyIl_SUuACqf5WZrvW5vQ` |
 | Physical stock workbook | Current stock and Forecast support data | `1LhS7R0GeFiQ4PR_2tXqVgkFRBYX3jXSvdC0yHiOEIEM` |
