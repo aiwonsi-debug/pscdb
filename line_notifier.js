@@ -143,19 +143,21 @@ function generateD1LineMessage(dateStr) {
     if (!op || op.skip_line_alert || isDone(op.status)) continue;
     const product = clean(op.product);
     const qty = asQty(op.qty_kg);
+    const loading = dateKey(op.loading_date || op.delivery_date);
     const delivery = dateKey(op.delivery_date || op.loading_date);
-    if (!product || qty <= 0 || !delivery) continue;
+    if (!product || qty <= 0 || !loading) continue;
     const customer = clean(op.customer);
-    const farm = clean(op.farm);
-    const key = [delivery, product, qty, customer, farm].map(x => String(x).toLowerCase()).join('|');
+    const farmRaw = clean(op.farm);
+    const farm = (farmRaw.match(/\(([^)]+)\)/) || [])[1] || farmRaw;
+    const key = [loading, product, qty, customer, farm].map(x => String(x).toLowerCase()).join('|');
     if (seen.has(key)) continue;
     seen.add(key);
     pendingOps.push({
-      delivery, product, qty, customer, farm,
+      loading, delivery, product, qty, customer, farm,
       status: clean(op.status, 'รอดำเนินการ')
     });
   }
-  pendingOps.sort((a, b) => a.delivery.localeCompare(b.delivery) || a.product.localeCompare(b.product));
+  pendingOps.sort((a, b) => a.loading.localeCompare(b.loading) || a.product.localeCompare(b.product));
 
   const rawOther = Array.isArray(opsStatus.other_tasks) ? opsStatus.other_tasks : [];
   const pendingOther = rawOther.filter(t => t && !isDone(t.status) && (clean(t.crop) || clean(t.task_type)));
@@ -168,9 +170,10 @@ function generateD1LineMessage(dateStr) {
     msg += `งานรอขึ้นของ ${pendingOps.length} รายการ\n`;
     const limit = 12;
     pendingOps.slice(0, limit).forEach(op => {
-      const customer = op.customer ? `เข้า ${op.customer}` : '';
+      const customerName = op.customer.replace(/^โรงงาน/, '').trim();
+      const customer = customerName ? `เข้า ${customerName}` : '';
       const farm = op.farm ? ` → ${op.farm}` : '';
-      msg += `- ${displayDate(op.delivery)} ขึ้น${op.product} ${customer}${farm} ${op.qty.toLocaleString('en-US')} กก.\n`;
+      msg += `- ${displayDate(op.loading)} ขึ้น${op.product} ${customer}${farm} ${op.qty.toLocaleString('en-US')} กก.\n`;
     });
     if (pendingOps.length > limit) msg += `- … และอีก ${pendingOps.length - limit} รายการ\n`;
   }
