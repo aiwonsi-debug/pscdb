@@ -47,7 +47,7 @@ function sendLineMessage(messageText, targetOverride) {
     // 2. Short acknowledgements to user reports ("รับทราบรายการ...")
     // All other spontaneous alerts/details are blocked from group and sent privately to admin user.
     const isGroupTarget = targetId.startsWith('C') || targetId === config.line_target_group_id;
-    const isDailySummary = typeof messageText === 'string' && messageText.includes('[สรุปงานค้าง & กำหนดส่งมอบประจำวัน]');
+    const isDailySummary = typeof messageText === 'string' && (messageText.includes('[สรุปงาน PSC') || messageText.includes('[สรุปงานค้าง & กำหนดส่งมอบประจำวัน]'));
     const isShortAck = typeof messageText === 'string' && messageText.startsWith('รับทราบรายการวันที่');
 
     if (isGroupTarget && !isDailySummary && !isShortAck) {
@@ -101,68 +101,88 @@ function sendLineMessage(messageText, targetOverride) {
 }
 
 /**
- * Generate Pending Tasks Summary message for LINE (Daily 08:00 AM)
+ * Generate a compact, deduplicated pending-work summary for LINE at 08:00.
+ * Invalid rows (blank product/date or quantity <= 0) are excluded.
  */
 function generateD1LineMessage(dateStr) {
   let opsStatus = {};
   if (fs.existsSync(OPS_STATUS_FILE)) {
-    try {
-      opsStatus = JSON.parse(fs.readFileSync(OPS_STATUS_FILE, 'utf8'));
-    } catch(e) {}
+    try { opsStatus = JSON.parse(fs.readFileSync(OPS_STATUS_FILE, 'utf8')); } catch (e) {}
   }
 
-  const activeOps = opsStatus.active_operations || [];
-  const pendingOps = activeOps.filter(o => !String(o.status || '').includes('ขึ้นของและส่งมอบเรียบร้อย') && !o.skip_line_alert);
+  const asText = (v) => String(v == null ? '' : v).trim();
+  const asQty = (v) => {
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    const n = Number(asText(v).replace(/,/g, '').replace(/kg/i, '').trim());
+    return Number.isFinite(n) ? n : 0;
+  };
+  const dateKey = (v) => {
+    const raw = asText(v);
+    if (!raw) return '';
+    const iso = raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (iso) return `${iso[1]}-${String(iso[2]).padStart(2, '0')}-${String(iso[3]).padStart(2, '0')}`;
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(d);
+    const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}`;
+  };
+  const displayDate = (v) => {
+    const k = dateKey(v);
+    if (!k) return '';
+    const [y, m, d] = k.split('-').map(Number);
+    return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y + 543}`;
+  };
+  const clean = (v, fallback = '') => asText(v) || fallback;
+  const isDone = (v) => /ขึ้นของและส่งมอบเรียบร้อย|จัดส่งแล้ว|เสร็จ|เรียบร้อย/.test(asText(v));
 
-  // Sort by delivery date ascending
-  pendingOps.sort((a, b) => {
-    const da = a.delivery_date || '9999-99-99';
-    const db = b.delivery_date || '9999-99-99';
-    return da.localeCompare(db);
-  });
+  const rawOps = Array.isArray(opsStatus.active_operations) ? opsStatus.active_operations : [];
+  const seen = new Set();
+  const pendingOps = [];
+  for (const op of rawOps) {
+    if (!op || op.skip_line_alert || isDone(op.status)) continue;
+    const product = clean(op.product);
+    const qty = asQty(op.qty_kg);
+    const delivery = dateKey(op.delivery_date || op.loading_date);
+    if (!product || qty <= 0 || !delivery) continue;
+    const customer = clean(op.customer);
+    const farm = clean(op.farm);
+    const key = [delivery, product, qty, customer, farm].map(x => String(x).toLowerCase()).join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pendingOps.push({
+      delivery, product, qty, customer, farm,
+      status: clean(op.status, 'รอดำเนินการ')
+    });
+  }
+  pendingOps.sort((a, b) => a.delivery.localeCompare(b.delivery) || a.product.localeCompare(b.product));
 
-  const otherTasks = opsStatus.other_tasks || [];
-  const pendingOther = otherTasks.filter(t => !String(t.status || '').includes('เสร็จ') && !String(t.status || '').includes('เรียบร้อย'));
+  const rawOther = Array.isArray(opsStatus.other_tasks) ? opsStatus.other_tasks : [];
+  const pendingOther = rawOther.filter(t => t && !isDone(t.status) && (clean(t.crop) || clean(t.task_type)));
 
-  const opsUrl = getOpsWebUrl();
-
-  let msg = `📋 [สรุปงานค้าง & กำหนดส่งมอบประจำวัน]\n`;
-  msg += `⏰ อัปเดต: 08:00 น. (${dateStr || new Date().toISOString().slice(0, 10)})\n`;
-  msg += `──────────────────\n`;
-
+  const today = dateKey(dateStr) || dateKey(new Date());
+  let msg = `📋 [สรุปงาน PSC วันที่ ${displayDate(today)}]\n\n`;
   if (pendingOps.length === 0) {
-    msg += `✅ ไม่มีรายการส่งมอบค้างในระบบ\n`;
+    msg += 'งานรอขึ้นของ 0 รายการ\n';
   } else {
-    msg += `🚚 [รายการส่งมอบที่รอดำเนินการ (${pendingOps.length} รายการ)]:\n`;
-    pendingOps.forEach((op, idx) => {
-      let dStr = '-';
-      if (op.delivery_date) {
-        const parts = op.delivery_date.split('-');
-        dStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0].slice(2)}` : op.delivery_date;
-      }
-      const qtyStr = Number(op.qty_kg || 0).toLocaleString();
-      msg += `\n${idx + 1}. 📅 ส่ง: ${dStr} | ${op.customer || '-'}\n`;
-      msg += `   🥬 สินค้า: ${op.product || '-'} ${qtyStr} กก.\n`;
-      msg += `   🏡 สวน: ${op.farm || '-'}\n`;
-      msg += `   🚛 ขนส่ง: ${op.truck || '-'}\n`;
-      msg += `   📌 สถานะ: ${op.status || 'รอดำเนินการ'}\n`;
+    msg += `งานรอขึ้นของ ${pendingOps.length} รายการ\n`;
+    const limit = 12;
+    pendingOps.slice(0, limit).forEach(op => {
+      const customer = op.customer ? `เข้า ${op.customer}` : '';
+      const farm = op.farm ? ` → ${op.farm}` : '';
+      msg += `- ${displayDate(op.delivery)} ขึ้น${op.product} ${customer}${farm} ${op.qty.toLocaleString('en-US')} กก.\n`;
     });
+    if (pendingOps.length > limit) msg += `- … และอีก ${pendingOps.length - limit} รายการ\n`;
   }
-
   if (pendingOther.length > 0) {
-    msg += `──────────────────\n`;
-    msg += `🌱 [งานแปลงปลูก/งานติดตาม (${pendingOther.length} รายการ)]:\n`;
-    pendingOther.forEach((ot, idx) => {
-      msg += ` • ${ot.crop || ot.task_type || 'งาน'}: ลูกค้า ${ot.target_customer || '-'} (ส่ง ${ot.target_delivery || '-'}) [${ot.status || '-'}]\n`;
+    msg += `\nงานติดตาม ${pendingOther.length} รายการ\n`;
+    pendingOther.slice(0, 5).forEach(t => {
+      msg += `- ${clean(t.crop || t.task_type, 'งาน')}${t.target_customer ? ` → ${clean(t.target_customer)}` : ''}\n`;
     });
+    if (pendingOther.length > 5) msg += `- … และอีก ${pendingOther.length - 5} รายการ\n`;
   }
-
-  msg += `──────────────────\n`;
-  msg += `🌐 ตรวจสอบสถานะ & บันทึกงาน:\n`;
-  msg += `${opsUrl}\n`;
-  msg += `🔑 Team Code: 9624`;
-
-  return msg;
+  msg += `\nตรวจสอบรายละเอียด: ${getOpsWebUrl()}`;
+  return msg.slice(0, 4500);
 }
 
 /**
