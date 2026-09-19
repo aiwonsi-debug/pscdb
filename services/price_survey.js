@@ -1,11 +1,8 @@
 // Cabbage price & freight-rate survey parser.
 // Pure domain logic: takes an incoming Thai-language text message, extracts
 // supplier prices and freight rates, saves them to cabbage_prices_transport.json,
-// and replies with a formatted summary. No dependency on AI engines, config,
+// and forwards the result to the Drive-backed ingestion layer. No dependency on AI engines, config,
 // or currentAiEngine — safe to keep as a standalone module.
-
-const fs = require('fs');
-const path = require('path');
 
 function createPriceSurvey({ agyBaseDir, writeLog, formatDMY, sendMessage }) {
 
@@ -62,24 +59,7 @@ function createPriceSurvey({ agyBaseDir, writeLog, formatDMY, sendMessage }) {
             });
         }
 
-        // Save to cabbage_prices_transport.json
-        try {
-            const cpPath = path.join(agyBaseDir, 'cabbage_prices_transport.json');
-            let cp = fs.existsSync(cpPath) ? JSON.parse(fs.readFileSync(cpPath, 'utf8')) : { Locations: {}, ShipmentHistory: [] };
-            if (!cp.PriceHistory) cp.PriceHistory = [];
-            cp.PriceHistory.push({
-                Date: dateStr,
-                RawText: text,
-                ParsedAt: new Date().toISOString(),
-                Suppliers: suppliers
-            });
-            fs.writeFileSync(cpPath, JSON.stringify(cp, null, 2), 'utf8');
-            try {
-                fs.writeFileSync(path.join(agyBaseDir, 'render-dashboard', 'cabbage_prices_transport.json'), JSON.stringify(cp, null, 2), 'utf8');
-            } catch(e){}
-        } catch(err) {
-            writeLog('[Price Survey Save Error]: ' + err.message);
-        }
+        writeLog('[Price Survey] Parsed price/freight data; persistence is owned by Google Sheets/Apps Script.');
 
         // Build Clean Line Response
         let reply = `🥬 <b>[บันทึกราคากะหล่ำ & ค่ารถประจำวัน]</b>\n`;

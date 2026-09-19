@@ -25,22 +25,10 @@ function createDashboardUi({ agyBaseDir, isWithinWorkingHours, getCurrentAiEngin
             } catch (e) {}
         }
 
-        let cabbageNet = 2575;
-        let carrotStock = 5840;
-        let onionStock = 29680;
-        const stockPath = path.join(agyBaseDir, 'stock_inventory.json');
-        if (fs.existsSync(stockPath)) {
-            try {
-                const stk = JSON.parse(fs.readFileSync(stockPath, 'utf8'));
-                if (stk.Items) {
-                    if (stk.Items.Cabbage) cabbageNet = stk.Items.Cabbage.StockKg || cabbageNet;
-                    if (stk.Items.Carrot) carrotStock = stk.Items.Carrot.StockKg || carrotStock;
-                    const onionAFT = (stk.Items.Onion_AFT && stk.Items.Onion_AFT.StockKg) || 26120;
-                    const onionCN = (stk.Items.Onion_Chinese && stk.Items.Onion_Chinese.StockKg) || 3560;
-                    onionStock = onionAFT + onionCN;
-                }
-            } catch (e) {}
-        }
+        // Operational stock totals are read from Google Sheets by the live dashboard.
+        const cabbageNet = 0;
+        const carrotStock = 0;
+        const onionStock = 0;
 
         const currentAiEngine = getCurrentAiEngine();
         const engineName = (currentAiEngine === 'glm') ? 'GLM-5.3 (Open Weights API)' : 'Google Antigravity CLI (AGY)';

@@ -64,10 +64,11 @@ test('M-03: webhook_server.js limits JSON request body size', () => {
     assert.ok(whCode.includes('Payload Too Large'), 'Must reject bodies exceeding limit');
 });
 
-test('C-06: webhook_server.js validates stock-update schema and writes atomically', () => {
+test('C-06: webhook_server.js validates stock-update schema and forwards to Google Sheets', () => {
     const whCode = fs.readFileSync(path.join(__dirname, '../webhook_server.js'), 'utf8');
     assert.ok(whCode.includes('Must contain Items object'), 'Must validate schema');
-    assert.ok(whCode.includes('renameSync'), 'Must commit file using atomic rename');
+    assert.ok(whCode.includes('syncToGoogleSheets(body)'), 'Must forward stock updates to Google Sheets');
+    assert.ok(!whCode.includes('stock_inventory.json'), 'Must not persist stock data to local JSON');
 });
 
 // 3. Verify H-07, H-08 in excel_integrity_engine.js

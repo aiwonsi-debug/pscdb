@@ -26,9 +26,9 @@ The five operational workbooks are organized in the canonical Drive folder recor
 
 ## Data policy
 
-Google Sheets/WDB is the system of record for live stock, schedules, prices, and customer plans. Do not commit downloaded Drive exports, customer files, PO images, operational backups, or generated audit snapshots. Use `.example` files for schemas and sanitized test data.
+Google Sheets/WDB in the canonical Drive folder is the only operational source for live stock, schedules, prices, customer plans, and LINE synchronization. Do not commit downloaded Drive exports, customer files, PO images, operational backups, or generated audit snapshots. Use `.example` files for schemas and sanitized test data.
 
-Operational JSON files that are still present are compatibility fallbacks used by the existing local and Render runtimes. They should not be treated as the primary source for the dashboard.
+Operational JSON files are not part of the runtime repository. Historical JSON backups are stored in the canonical Drive folder and are not read by production or local runtime code.
 
 ## Removed from the repository
 

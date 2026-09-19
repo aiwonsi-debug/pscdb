@@ -4,7 +4,6 @@ const https = require('https');
 
 const BASE_DIR = 'E:\\agy';
 const CONFIG_FILE = path.join(BASE_DIR, 'line_config.json');
-const OPS_STATUS_FILE = path.join(BASE_DIR, 'team_ops_status.json');
 const NOTIFIED_FILE = path.join(BASE_DIR, 'notified_salaya_alerts.json');
 
 // Notification intervals requested: D-15, D-10, D-5, D-3, D-2, D-1
@@ -152,8 +151,8 @@ async function checkAndSendSalayaAlerts(dryRun = false) {
   const token = lineConfig.line_channel_access_token;
   const targetId = lineConfig.line_target_group_id || lineConfig.line_target_user_id;
 
-  const opsData = loadJson(OPS_STATUS_FILE, { active_operations: [] });
-  const activeOps = opsData.active_operations || [];
+  // Operational schedules are read from Google Sheets by the deployed API.
+  const activeOps = [];
   const notified = loadJson(NOTIFIED_FILE, {});
 
   // Filter for Salaya operations that are pending/in-progress

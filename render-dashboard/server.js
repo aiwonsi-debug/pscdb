@@ -74,8 +74,6 @@ function resolveOpsHtmlPath() {
 }
 const mobileHtmlFile = resolveOpsHtmlPath();
 const aiHtmlFile = path.join(__dirname, 'ai_dashboard.html');
-const teamOpsFile = path.join(__dirname, 'team_ops_status.json');
-const stockFile = path.join(__dirname, 'stock_inventory.json');
 const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbz4ro2cYV1FC4EvJiX42D2BDAD33ccARs8LbGm8G59gJA323CbJPdIimWRQvd1gES4j/exec';
 
 let sendLineMessage;
@@ -388,7 +386,7 @@ function fetchGoogleSheetsData(queryParam = '') {
 }
 
 function loadTeamOps() {
-    let data = { 
+    return {
         last_updated: new Date().toISOString(), 
         active_operations: [], 
         history_logs: [], 
@@ -397,17 +395,6 @@ function loadTeamOps() {
         custom_trucks: [],
         other_tasks: []
     };
-    const targetOpsFile = fs.existsSync(teamOpsFile) ? teamOpsFile : (fs.existsSync(teamOpsFile + '.example') ? (teamOpsFile + '.example') : null);
-    if (targetOpsFile) {
-        try {
-            data = Object.assign(data, JSON.parse(fs.readFileSync(targetOpsFile, 'utf8')));
-            if (!data.cards_state) data.cards_state = {};
-            if (!data.custom_suppliers) data.custom_suppliers = [];
-            if (!data.custom_trucks) data.custom_trucks = [];
-            if (!data.other_tasks) data.other_tasks = [];
-        } catch (e) {}
-    }
-    return data;
 }
 
 
@@ -471,14 +458,8 @@ function recordLoadingReport(reportObj) {
 
 function saveTeamOps(data) {
     data.last_updated = new Date().toISOString();
-    const tmpFile = `${teamOpsFile}.${process.pid}.${Date.now()}.tmp`;
-    try {
-        fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf8');
-        fs.renameSync(tmpFile, teamOpsFile);
-    } catch (e) {
-        try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (err) {}
-        console.error('[saveTeamOps Error]:', e.message);
-    }
+    // Operational state is persisted by Apps Script/Google Sheets only.
+    return data;
 }
 
 const server = http.createServer(async (req, res) => {
@@ -796,46 +777,17 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
-            // Atomic file write using temporary file + renameSync to avoid corruption (Fix C-06, H-14)
-            const tmpFile = `${stockFile}.${process.pid}.${Date.now()}.tmp`;
-            try {
-                fs.writeFileSync(tmpFile, JSON.stringify(body, null, 2), 'utf8');
-                fs.renameSync(tmpFile, stockFile);
-                res.writeHead(200);
-                return res.end(JSON.stringify({ success: true, message: 'Stock inventory updated atomically' }));
-            } catch (err) {
-                try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (e) {}
-                res.writeHead(500);
-                return res.end(JSON.stringify({ success: false, error: 'Failed to commit stock update: ' + err.message }));
-            }
+            syncToGoogleSheets(body);
+            res.writeHead(202);
+            return res.end(JSON.stringify({ success: true, message: 'Stock inventory update forwarded to Google Sheets' }));
         }
 
-        // Real-Time Live Stock Inventory Endpoint (Direct Sheets Sync with Local Fallback)
+        // Real-Time Live Stock Inventory Endpoint (Google Sheets only)
         if (req.method === 'GET' && (pathname === '/api/stock' || pathname === '/api/inventory')) {
             let stockData = {
                 AsOfDate: new Date().toISOString().slice(0, 10),
-                Items: {
-                    Cabbage: { Name: "กะหล่ำปลี", StockKg: 2575 },
-                    Onion_AFT: { Name: "หอม AFT", StockKg: 26120 },
-                    Onion_Chinese: { Name: "หอมจีน", StockKg: 3560 },
-                    Carrot: { Name: "แครอทสวย", StockKg: 5840 },
-                    Purple_Sweet_Potato: { Name: "มันม่วงหัวเล็ก", StockKg: 1690 },
-                    Yellow_Sweet_Potato: { Name: "มันเหลืองไข่", StockKg: 342 },
-                    Orange_Sweet_Potato: { Name: "มันส้ม", StockKg: 390 }
-                }
+                Items: {}
             };
-            const targetStockFile = [
-                stockFile,
-                path.join(__dirname, '..', 'stock_inventory.json'),
-                path.join(__dirname, '..', 'data', 'examples', 'stock.json.example'),
-                path.join(__dirname, '..', 'stock_inventory.json.example'),
-                stockFile + '.example'
-            ].find(f => fs.existsSync(f));
-            if (targetStockFile) {
-                try {
-                    stockData = JSON.parse(fs.readFileSync(targetStockFile, 'utf8'));
-                } catch (e) {}
-            }
 
             // Real-Time Sheets Direct Sync: Fetch live stock array from Google Apps Script
             try {
@@ -892,18 +844,16 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify(liveData, null, 2));
         }
 
-        // Cabbage Prices and Transport Rates Endpoint
+        // Cabbage Prices and Transport Rates Endpoint (Google Sheets only)
         if (req.method === 'GET' && (pathname === '/api/prices' || pathname === '/api/price-update')) {
-            let priceData = { AsOfDate: '2026-09-16', Suppliers: [] };
-            const targetPriceFile = [
-                path.join(__dirname, 'cabbage_prices_transport.json'),
-                path.join(__dirname, '..', 'cabbage_prices_transport.json'),
-                path.join(__dirname, 'data', 'cabbage_prices_transport.json')
-            ].find(f => fs.existsSync(f));
-            if (targetPriceFile) {
-                try {
-                    priceData = JSON.parse(fs.readFileSync(targetPriceFile, 'utf8'));
-                } catch (e) {}
+            let priceData = { ok: false, prices: [], source: 'Google Sheets' };
+            try {
+                const liveSheets = await fetchGoogleSheetsData('action=summary');
+                if (liveSheets && typeof liveSheets === 'object') {
+                    priceData = { ok: true, prices: Array.isArray(liveSheets.prices) ? liveSheets.prices : [], source: 'Google Sheets' };
+                }
+            } catch (err) {
+                console.error('[Live Prices Error]:', err.message);
             }
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.writeHead(200);

@@ -29,9 +29,9 @@
 ```
 [Farm Sourcing / Weigh Slip] ➔ [1_Farm_Ops_Transport_and_Intake.xlsx]
                                       │
-[Customer POs (AFT / TNS)]   ➔ [team_ops_status.json] ➔ [Local Node Server / Sync]
+[Customer POs (AFT / TNS)]   ➔ [Google Drive / Sheets] ➔ [Apps Script / Node API]
                                       │                          │
-[Physical Stock Count]       ➔ [stock_inventory.json]            ▼
+[Physical Stock Count]       ➔ [Google Drive / Sheets]            ▼
                                       │                  [GitHub: aiwonsi-debug/pscdb]
                                       │                          │
                                       ▼                          ▼
@@ -41,8 +41,8 @@
 ### 2.2 โครงสร้างไดเรกทอรีสำคัญ
 - `public/ops.html` และ `render-dashboard/public/ops.html`: หน้า UI หลักสำหรับ Mobile Web Dashboard (โหมด Read-Only Monitor สำหรับผู้บริหารและทีมงาน)
 - `public/js/ops.js`: Logic ฝั่ง Frontend สำหรับสลับแท็บ (Tab Navigation), ฟิลเตอร์ (Category Filter), และการ Render ข้อมูล
-- `team_ops_status.json`: ไฟล์ฐานข้อมูลสถานะคำสั่งซื้อ, คิวรถขนส่ง, ราคาวัตถุดิบ, และค่าส่ง
-- `stock_inventory.json`: บันทึกประวัติการรับเข้า (Intake), จ่ายออก (Outbound), สต็อกตรวจนับจริง, และ Audit Trail
+- `config/data-sources.js`: canonical Drive folder and underlying workbook IDs
+- Google Drive/Sheets: สถานะคำสั่งซื้อ, คิวรถขนส่ง, ราคา, สต็อกตรวจนับจริง, และ Audit Trail
 - `1_Farm_Ops_Transport_and_Intake.xlsx`: บันทึกการขึ้นของสวน, ชั่งน้ำหนักจริงที่โรงงาน, Transit Loss, และผลสุ่มปอก (Yield)
 - `server.js` / `app.js` / `webhook_server.js`: Web API Server และ Webhook เชื่อมต่อการแจ้งเตือน
 
@@ -85,7 +85,7 @@
 - **ผลลัพธ์:** วัตถุดิบเพียงพอส่งมอบต่อเนื่องจนถึงวันที่ 19/09/69 โดยมีสต็อกเหลือสำรองประมาณ ~487 กก.
 
 ### 4.3 การสอบทาน Audit Trail ในฐานข้อมูล JSON
-ในไฟล์ `stock_inventory.json` จะมีฟิลด์ `AuditTrail` บันทึกทุกธุรกรรม (Transaction) ประกอบด้วย:
+ใน workbook Physical Stock จะมีฟิลด์ `AuditTrail` บันทึกทุกธุรกรรม (Transaction) ประกอบด้วย:
 - `timestamp`: วันที่และเวลาที่มีการแก้ไข
 - `action`: ประเภทธุรกรรม (LOAD, RECEIVE, MANUAL_SET)
 - `itemKey`: รหัสสินค้า (Cabbage, Onion_AFT, Onion_Chinese, Carrot)
@@ -109,12 +109,12 @@
    - ตารางเปรียบเทียบผลต่างระหว่างสต็อกบัญชี (Recorded) กับสต็อกนับจริง (Physical)
 
 ### 5.2 ขั้นตอนการอัปเดตข้อมูลขึ้นระบบ Live (Deployment Workflow)
-เมื่อมีการแก้ไขไฟล์ Frontend หรือข้อมูล JSON ต้องดำเนินการดังนี้:
+เมื่อมีการแก้ไขไฟล์ Frontend หรือข้อมูลใน Google Sheets ต้องดำเนินการดังนี้:
 1. **ตรวจสอบความสอดคล้อง (Mirroring):**  
    ไฟล์หน้าเว็บต้องแก้ไขคู่กันเสมอระหว่าง `public/ops.html` และ `render-dashboard/public/ops.html`
 2. **Commit และ Push ขึ้น GitHub:**
    ```powershell
-   git add public/ops.html render-dashboard/public/ops.html team_ops_status.json
+   git add public/ops.html render-dashboard/public/ops.html
    git commit -m "Update ops status and intake records"
    git push origin main
    ```
@@ -129,8 +129,8 @@
 
 ### 5.4 การกำจัดความซ้ำซ้อนและการรักษาความคลีนของระบบ (Codebase Hygiene & Zero Bloat)
 เพื่อป้องกันข้อผิดพลาดจากความซ้ำซ้อน (Redundancy & Dual Truth) ระบบกำหนดกติกาดังนี้:
-1. **สต็อกเป็น Single Source of Truth:** ไฟล์สต็อกจริงอยู่ที่รากโปรเจกต์ `E:/agy/stock_inventory.json` เพียงจุดเดียว โดยสคริปต์ใน `scripts/record_cli.js` จะชี้ตรงมาที่ไฟล์นี้ และทำการกระจาย (Sync) ไปยัง `render-dashboard/` โดยอัตโนมัติ ห้ามสร้างไฟล์สต็อกแยกอิสระในโฟลเดอร์ย่อย
-2. **การซิงก์อัตโนมัติระหว่าง Local และ Render:** ใช้สคริปต์ `node sync_to_render.js` หรือ Git Push ผ่าน GitHub `main` เพื่อให้ทั้ง Local และ Live บน `pscdb.onrender.com` มีสถานะตรงกันเสมอ
+1. **Google Drive/Sheets เป็น Single Source of Truth:** สต็อก ตารางงาน ราคา Customer PO และ LINE Sync Database อยู่ในโฟลเดอร์ Drive ที่กำหนดใน `config/data-sources.js` ห้ามสร้างหรือใช้งานไฟล์ข้อมูลปฏิบัติการแบบ local JSON
+2. **การซิงก์ข้อมูล:** ใช้ Apps Script/Google Sheets เป็นช่องทางเขียนและอ่านข้อมูลหลัก ส่วน Git Push ผ่าน GitHub `main` ใช้สำหรับซอร์สโค้ดและการ deploy เท่านั้น
 3. **การรักษาความกระชับ (Ponytail Principle):** หลีกเลี่ยงการสร้างโค้ดหรือสคริปต์เฉพาะกิจใหม่ซ้ำซ้อน หากมีงานที่ฟังก์ชันเดิมทำได้ ให้ใช้ฟังก์ชันเดิมร่วมกันผ่านโมดูลหลัก
 
 ---
@@ -138,13 +138,13 @@
 ## 6. กฎความปลอดภัยและการรักษาเสถียรภาพ (Security & Integrity Protocol)
 1. **Zero Hallucination Policy:** ห้ามประมาณการตัวเลขเอง ทุกจำนวนต้องสอดคล้องกับ PO (AFT / TNS) หรือใบรับเข้าจริง
 2. **Read-Only Interface for General Users:** หน้าเว็บสาธารณะต้องไม่มีปุ่มกดที่อนุญาตให้ลบหรือเขียนทับข้อมูลโดยไม่มีการยืนยันตัวตน
-3. **Backup Routine:** ไฟล์ JSON และ Excel สำคัญจะถูกเก็บประวัติไว้ใน Git Version Control ทุกครั้งที่มีการเปลี่ยนแปลง เพื่อให้สามารถ Rollback หรือตรวจสอบย้อนหลังได้ตลอดเวลา
+3. **Backup Routine:** ข้อมูลปฏิบัติการอยู่ใน Google Drive/Sheets และมีประวัติการแก้ไขของ Drive เป็นหลัก ไฟล์ JSON สำรองเก็บไว้ในโฟลเดอร์ Drive เดียวกัน ไม่เก็บใน Git และไม่ถูกอ่านโดย runtime
 
 ---
 *เอกสารนี้จัดทำขึ้นเพื่อให้การส่งมอบงานมีความโปร่งใส ตรวจสอบได้ และรักษามาตรฐานการดำเนินงานอย่างต่อเนื่อง*
 
 ## 7. นโยบายโครงสร้าง repository หลัง cleanup
 
-ไฟล์ legacy, patch scripts, ไฟล์ export จาก Drive, รูปภาพ PO, backup ตามวันที่, source dump และ workbook binary ถูกนำออกจาก repository แล้ว ระบบ live ควรใช้ PSC WDB/Google Sheets ผ่าน `/api/live-sheets` เป็นแหล่งข้อมูลหลัก ส่วน JSON ที่ยังคงอยู่มีไว้เพื่อ compatibility fallback ของ local bot และ Render เท่านั้น ไม่ใช่ source of truth หลักของ dashboard
+ไฟล์ legacy, patch scripts, ไฟล์ export จาก Drive, รูปภาพ PO, backup ตามวันที่, source dump, operational JSON และ workbook binary ถูกนำออกจาก repository แล้ว ระบบ live ใช้ PSC WDB/Google Sheets ผ่าน `/api/live-sheets` เป็นแหล่งข้อมูลเดียว ส่วนไฟล์ JSON สำรองเก็บอยู่ในโฟลเดอร์ Drive ที่กำหนดและไม่ถูกอ่านโดย runtime
 
 รายละเอียดโครงสร้างปัจจุบันอยู่ที่ [`docs/REPOSITORY_STRUCTURE.md`](docs/REPOSITORY_STRUCTURE.md)

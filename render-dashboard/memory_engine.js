@@ -260,17 +260,7 @@ function buildAgyContextPrompt(userPrompt) {
         contextHeader += `• ข้อมูลธุรกิจที่จำได้: ${mem.learned_facts.slice(-6).join(' | ')}\n`;
     }
 
-    // Inject active field operations from team_ops_status.json
-    const opsPath = path.join(agyBaseDir, 'team_ops_status.json');
-    if (fs.existsSync(opsPath)) {
-        try {
-            const ops = JSON.parse(fs.readFileSync(opsPath, 'utf8'));
-            if (ops.active_operations && ops.active_operations.length > 0) {
-                const recentOps = ops.active_operations.slice(-4).map(o => `[${o.customer} ส่ง ${o.delivery_date}] ${o.product} ${o.qty_kg}kg สวน="${o.farm}" รถ="${o.truck}" สถานะ="${o.status}"`).join(' | ');
-                contextHeader += `• สถานะงานจัดซื้อ & ขนส่งภาคสนาม (Real-Time Ops): ${recentOps}\n`;
-            }
-        } catch(e) {}
-    }
+    // Operational status is read from Google Sheets by the dashboard/API layer.
 
     // Inject recent context
     if (mem.recent_conversations && mem.recent_conversations.length > 0) {

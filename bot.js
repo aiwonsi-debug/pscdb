@@ -737,12 +737,8 @@ function handleCommand(chatId, text, msg = null) {
     // 0. Cabbage Intake Schedule Query Handler (ตารางเข้ากะหล่ำ / ตารางกะ)
     if (lower.includes('ตารางเข้ากะหล่ำ') || lower.includes('ตารางกะหล่ำ') || (lower.includes('ตาราง') && (lower.includes('กะหล่ำ') || lower.includes('เข้ากะ')))) {
         try {
-            const opsPath = path.join(agyBaseDir, 'team_ops_status.json');
-            let opsData = {};
-            if (fs.existsSync(opsPath)) {
-                opsData = JSON.parse(fs.readFileSync(opsPath, 'utf8'));
-            }
-            const activeOps = opsData.active_operations || [];
+            // Operational schedules now live in Google Sheets; the dashboard is the live reader.
+            const activeOps = [];
             const cabbageOps = activeOps.filter(o => (o.product || '').includes('กะหล่ำ') || (o.customer || '').includes('ศาลายา'));
 
             let reply = `🥬 <b>[ตารางติดตามการเข้ากะหล่ำปลี & สั่งรถ]</b>\n──────────────────\n`;
@@ -971,16 +967,8 @@ function handleCommand(chatId, text, msg = null) {
                     const { recordLoadingReport, syncToRender } = require('./webhook_server.js');
                     const lineNotifier = require('./line_notifier.js');
 
-                    // 1. Process Stock Inventory Updates & Yield Auto-Calculation
-                    const stockPath = path.join(agyBaseDir, 'stock_inventory.json');
-                    let stock = {};
-                    if (fs.existsSync(stockPath)) {
-                        try { stock = JSON.parse(fs.readFileSync(stockPath, 'utf8').replace(/^﻿/, '')); } catch(e){}
-                    }
-                    if (!stock.Items) stock.Items = {};
-
-                    let stockUpdated = false;
-                    let updatedKeys = [];
+                    // 1. Forward stock and yield updates to the Drive-backed Google Sheets gateway.
+                    const stockPayload = { Items: {}, AsOfDate: result.date || undefined };
 
                     // Auto-calculate yield if sample given using strict production module
                     let calcYield = result.yield_pct;
@@ -992,110 +980,21 @@ function handleCommand(chatId, text, msg = null) {
                         }
                     }
 
-                    let persistRequired = false;
                     const lineEventId = `line:${chatId}:${(msg && msg.message_id) ? msg.message_id : Date.now()}`;
-
-                    if (calcYield && (result.item || '').includes('กะหล่ำ')) {
-                        if (!stock.Items.Cabbage) stock.Items.Cabbage = { Name: "กะหล่ำปลี", StockKg: 6075 };
-                        
-                        try {
-                            const newYieldFactor = yieldPctToFactor(calcYield);
-                            const prevYieldFactor = (stock.Items.Cabbage.Yield && stock.Items.Cabbage.Yield.AFT !== undefined)
-                                ? stock.Items.Cabbage.Yield.AFT
-                                : 0.60;
-                            
-                            const yieldResult = applyYieldUpdate(stock, {
-                                itemKey: 'Cabbage',
-                                subKey: 'AFT',
-                                newYieldFactor: newYieldFactor,
-                                source: 'LINE Sample Test Ingestion',
-                                timestamp: new Date().toISOString(),
-                                eventId: `${lineEventId}:Cabbage_Yield_AFT`
-                            });
-
-                            stock = yieldResult.data;
-                            if (yieldResult.persistRequired) {
-                                persistRequired = true;
-                            }
-
-                            if (yieldResult.yieldChanged) {
-                                stockUpdated = true;
-                                updatedKeys.push(`Yield กะหล่ำ AFT: ${(prevYieldFactor * 100).toFixed(1)}% -> ${calcYield}%`);
-                            } else if (yieldResult.reason === 'duplicate_event') {
-                                writeLog(`[Idempotency Notice]: Yield Event ${lineEventId}:Cabbage_Yield_AFT already processed. Skipped.`);
-                            } else if (yieldResult.reason === 'same_value') {
-                                writeLog(`[Dedup Notice]: Cabbage Yield value identical (${calcYield}%). Skipped redundant audit.`);
-                            }
-                        } catch (err) {
-                            writeLog('[Yield Update Error]: ' + err.message);
-                        }
-                    }
-
-                    if (result.stock_inventory) {
+                    if (result.stock_inventory && typeof result.stock_inventory === 'object') {
                         const inv = result.stock_inventory;
-                        const keyMap = {
-                            Cabbage: 'กะหล่ำปลี',
-                            Onion_AFT: 'หอม AFT',
-                            Onion_Chinese: 'หอมจีน',
-                            Carrot: 'แครอท',
-                            Purple_Sweet_Potato: 'มันม่วง',
-                            Yellow_Sweet_Potato: 'มันเหลืองไข่',
-                            Orange_Sweet_Potato: 'มันส้ม'
-                        };
-                        
-                        Object.keys(keyMap).forEach(k => {
-                            if (inv[k] !== null && inv[k] !== undefined) {
-                                try {
-                                    const updateResult = applyStockUpdate(stock, {
-                                        itemKey: k,
-                                        newKg: inv[k],
-                                        source: 'LINE Unified Ingestion',
-                                        timestamp: new Date().toISOString(),
-                                        eventId: `${lineEventId}:${k}`
-                                    });
-                                    
-                                    stock = updateResult.data;
-                                    if (updateResult.persistRequired) {
-                                        persistRequired = true;
-                                    }
-
-                                    if (updateResult.stockChanged) {
-                                        stockUpdated = true;
-                                        updatedKeys.push(`${keyMap[k]} = ${Number(inv[k]).toLocaleString()} kg`);
-                                    } else if (updateResult.reason === 'duplicate_event') {
-                                        writeLog(`[Idempotency Notice]: Event ${lineEventId}:${k} already processed. Skipped.`);
-                                    } else if (updateResult.reason === 'same_value') {
-                                        writeLog(`[Dedup Notice]: ${keyMap[k]} value unchanged (${inv[k]}).`);
-                                    }
-                                } catch(err) {
-                                    writeLog(`[Stock Update Error] ${k}: ` + err.message);
-                                }
+                        Object.entries(inv).forEach(([key, value]) => {
+                            if (value !== null && value !== undefined && Number.isFinite(Number(value))) {
+                                stockPayload.Items[key] = { StockKg: Number(value) };
                             }
                         });
                     }
-
-                    if (persistRequired) {
-                        stock.LastUpdated = new Date().toISOString();
-                        if (result.date) stock.AsOfDate = result.date;
-                        
-                        // Atomic Write with tmp file and renameSync (AUD-02)
-                        const tmpStockPath = `${stockPath}.${process.pid}.${Date.now()}.tmp`;
-                        fs.writeFileSync(tmpStockPath, JSON.stringify(stock, null, 2), 'utf8');
-                        fs.renameSync(tmpStockPath, stockPath);
-                        backupStockSnapshot(stock);
-                        
-                        try {
-                            const renderStockPath = path.join(agyBaseDir, 'render-dashboard', 'stock_inventory.json');
-                            const tmpRenderPath = `${renderStockPath}.${process.pid}.${Date.now()}.tmp`;
-                            fs.writeFileSync(tmpRenderPath, JSON.stringify(stock, null, 2), 'utf8');
-                            fs.renameSync(tmpRenderPath, renderStockPath);
-                        } catch(e){}
-                        
-                        if (stockUpdated) {
-                            syncToRender('/api/stock-update', stock);
-                        }
-                    } else if (result.stock_inventory || calcYield) {
-                        writeLog('[Dedup Notice]: Event already processed or identical to existing database. Skipped disk write and Render sync.');
+                    if (calcYield && (result.item || '').includes('กะหล่ำ')) {
+                        stockPayload.yield_pct = Number(calcYield);
+                    }
+                    if (Object.keys(stockPayload.Items).length || stockPayload.yield_pct) {
+                        stockPayload.eventId = lineEventId;
+                        syncToRender('/api/stock-update', stockPayload);
                     }
 
                     // 2. Process Operations / Intake / Loading Report
@@ -1168,28 +1067,7 @@ function handleCommand(chatId, text, msg = null) {
                         writeLog('[Ops Notice]: Pure stock inventory count detected; skipped shipment loading report overwrite.');
                     }
 
-                    // 3. Update Cabbage Prices Transport Log if relevant
-                    if ((result.item || '').includes('กะหล่ำ')) {
-                        const cpPath = path.join(agyBaseDir, 'cabbage_prices_transport.json');
-                        if (fs.existsSync(cpPath)) {
-                            try {
-                                let cp = JSON.parse(fs.readFileSync(cpPath, 'utf8'));
-                                if (cp.ShipmentHistory) {
-                                    cp.ShipmentHistory.push({
-                                        BatchId: 'CB-' + Date.now().toString().slice(-6),
-                                        Supplier: result.supplier || 'เฮียหนิง',
-                                        Location: result.location || 'อมพาย แม่สะเรียง',
-                                        IntakeDate: result.date || formatDMY(),
-                                        NetReceivedKg: result.weight_kg || 0,
-                                        SampleTest: { sampleKg: result.sample_kg || 100, peeledKg: result.peeled_kg || 0, actualYield: (calcYield ? calcYield/100 : null) },
-                                        Notes: text
-                                    });
-                                    fs.writeFileSync(cpPath, JSON.stringify(cp, null, 2), 'utf8');
-                                    try { fs.writeFileSync(path.join(agyBaseDir, 'render-dashboard', 'cabbage_prices_transport.json'), JSON.stringify(cp, null, 2), 'utf8'); } catch(e){}
-                                }
-                            } catch(e){}
-                        }
-                    }
+                    // 3. Price and freight records are maintained in the Drive workbook.
 
                     // 4. Construct Clear Bot Response & LINE Push
                     let reply = isReceivingReport
@@ -1205,10 +1083,9 @@ function handleCommand(chatId, text, msg = null) {
                     if (result.freight_baht) reply += `🚛 <b>ค่ารถ:</b> ${result.freight_baht.toLocaleString()} บาท (${result.payment || 'เก็บปลายทาง'})\n`;
                     if (result.location) reply += `📍 <b>สถานที่:</b> ${result.location}\n`;
 
-                    if (stockUpdated) {
+                    if (Object.keys(stockPayload.Items).length || stockPayload.yield_pct) {
                         reply += `──────────────────\n`;
-                        reply += `📦 <b>อัปเดตสต็อก/Yield ในระบบ:</b>\n`;
-                        updatedKeys.forEach(k => { reply += `• ${k}\n`; });
+                        reply += `📦 <b>ส่งข้อมูลสต็อก/Yield เข้า Google Sheets แล้ว</b>\n`;
                     }
 
                     reply += `──────────────────\n`;

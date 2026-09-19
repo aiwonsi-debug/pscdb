@@ -34,7 +34,7 @@ The LINE webhook enters the application through `/api/line-webhook`. Text messag
 | Customer PO demand | WDB Apps Script summary | Dashboard Stock forecast chart |
 | LINE receiving reports | Apps Script direct-event handler | Dispatch & Intake Log destination |
 | Shipment or loading plans | Apps Script direct-event handler | Next Schedule & Other Tasks |
-| Local operational intake history | `webhook_server.js` and `team_ops_status.json` | Dashboard History / intake data |
+| Operational intake history | Apps Script/Google Sheets, read through `webhook_server.js` | Dashboard History / intake data |
 
 The critical distinction is that a receiving report is not a future schedule. A receiving report must not create a schedule row. It should create an intake row with `reportType: intake` and be written to the Dispatch & Intake destination.
 

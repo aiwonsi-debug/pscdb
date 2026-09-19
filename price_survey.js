@@ -62,24 +62,7 @@ function createPriceSurvey({ agyBaseDir, writeLog, formatDMY, sendMessage }) {
             });
         }
 
-        // Save to cabbage_prices_transport.json
-        try {
-            const cpPath = path.join(agyBaseDir, 'cabbage_prices_transport.json');
-            let cp = fs.existsSync(cpPath) ? JSON.parse(fs.readFileSync(cpPath, 'utf8')) : { Locations: {}, ShipmentHistory: [] };
-            if (!cp.PriceHistory) cp.PriceHistory = [];
-            cp.PriceHistory.push({
-                Date: dateStr,
-                RawText: text,
-                ParsedAt: new Date().toISOString(),
-                Suppliers: suppliers
-            });
-            fs.writeFileSync(cpPath, JSON.stringify(cp, null, 2), 'utf8');
-            try {
-                fs.writeFileSync(path.join(agyBaseDir, 'render-dashboard', 'cabbage_prices_transport.json'), JSON.stringify(cp, null, 2), 'utf8');
-            } catch(e){}
-        } catch(err) {
-            writeLog('[Price Survey Save Error]: ' + err.message);
-        }
+        // Price and freight records are written to the Drive workbook by Apps Script.
 
         // Build Clean Line Response
         let reply = `🥬 <b>[บันทึกราคากะหล่ำ & ค่ารถประจำวัน]</b>\n`;

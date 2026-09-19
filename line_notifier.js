@@ -4,7 +4,6 @@ const https = require('https');
 const secretsLoader = require('./secrets_loader');
 
 const CONFIG_FILE = secretsLoader.getSecretPath('line_config.json', __dirname);
-const OPS_STATUS_FILE = path.join(__dirname, 'team_ops_status.json');
 const TUNNEL_URL_FILE = path.join(__dirname, 'public_tunnel_url.txt');
 
 function getOpsWebUrl() {
@@ -105,10 +104,7 @@ function sendLineMessage(messageText, targetOverride) {
  * Invalid rows (blank product/date or quantity <= 0) are excluded.
  */
 function generateD1LineMessage(dateStr, opsOverride = null) {
-  let opsStatus = {};
-  if (fs.existsSync(OPS_STATUS_FILE)) {
-    try { opsStatus = JSON.parse(fs.readFileSync(OPS_STATUS_FILE, 'utf8')); } catch (e) {}
-  }
+  const opsStatus = opsOverride || {};
 
   const asText = (v) => String(v == null ? '' : v).trim();
   const asQty = (v) => {
