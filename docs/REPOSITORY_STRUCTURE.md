@@ -11,6 +11,7 @@ The dashboard has a mirrored source copy at `public/ops.html`. Keep both dashboa
 | Path | Purpose |
 |---|---|
 | `config/`, `core/` | Shared runtime configuration and application context |
+| `config/data-sources.js` | Canonical Drive folder and underlying workbook IDs used by both Node runtimes |
 | `repositories/`, `services/` | Inventory and operational service modules |
 | `scripts/` | CLI tools and deterministic record-processing utilities |
 | `public/` | Local dashboard source assets |
@@ -20,6 +21,8 @@ The dashboard has a mirrored source copy at `public/ops.html`. Keep both dashboa
 | `data/examples/` | Sanitized example payloads |
 
 `scripts/validate-deployment.js` is the deterministic release guard. It verifies that the root and Render server entrypoints remain separate, the sync scripts cannot overwrite runtime files, Render contains no LINE reply endpoint, and the shared forecast-rule exports are present.
+
+The five operational workbooks are organized in the canonical Drive folder recorded in `config/data-sources.js`. The folder contains `.gsheet` shortcut files, so runtime code uses each shortcut's underlying spreadsheet ID rather than the shortcut file ID.
 
 ## Data policy
 

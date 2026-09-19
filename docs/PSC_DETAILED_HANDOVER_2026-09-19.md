@@ -65,13 +65,14 @@ This boundary is intentional. It prevents one event from receiving replies from 
 
 | Component | Responsibility | Location or identifier |
 |---|---|---|
+| Canonical data folder | Drive folder containing the five `.gsheet` shortcuts to operational workbooks | `11L80cwOkWDEZJCxVD4SghI7zfrfwj9yL` |
 | Render dashboard | Production HTTP gateway and dashboard host | `https://pscdb.onrender.com/` |
 | Apps Script project | LINE processing, Gemini interpretation, sheet writes, summary API | Project `PSC WDB`, ID `1I6OABrk6kUi_AKeEO_QyAzatBzr52ldSW8dFyIl_SUuACqf5WZrvW5vQ` |
 | Physical stock workbook | Current stock and Forecast support data | `1LhS7R0GeFiQ4PR_2tXqVgkFRBYX3jXSvdC0yHiOEIEM` |
 | Sync database workbook | LINE report and audit storage | `1L_C9vZUOV28I4LejJcw16ey-tLvimVuw0euNWuaLFdo` |
 | Farm operations workbook | Schedules and actual intake history | `195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM` |
-| Material prices workbook | Purchase price and freight matrix | configured in Apps Script project properties/source |
-| Customer PO workbook | AFT, Siam Yamamori, TNS customer PO sheets | configured in Apps Script project properties/source |
+| Material prices workbook | Purchase price and freight matrix | `1-2n4Q2XYjGyRqoogAnS_Id1tGzUBq2bKHvHVKeXEYXM` |
+| Customer PO workbook | AFT, Siam Yamamori, TNS customer PO sheets | `1FfkSYTCxUFYj3dE6VHAOWEqDa4MVU3yMz7rwjefh-Ig` |
 | Dashboard repository | Source and release history | `https://github.com/aiwonsi-debug/pscdb` |
 
 Do not place access tokens, Gemini keys, LINE secrets, session secrets, or API keys in Git. Apps Script secrets belong in Script Properties. Render secrets belong in Render environment variables.

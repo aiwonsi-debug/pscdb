@@ -6,6 +6,7 @@ const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const { WORKBOOK_IDS, csvExportUrl } = require('../config/data-sources');
 const quotaTracker = { loadQuotaData: () => ({}), saveQuotaData: () => {} };
 
 // Local logger for this module — writes to the same secretary_activity.log
@@ -266,8 +267,8 @@ function parseCsv(text) {
     return rows;
 }
 
-const SCHEDULE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1232005308';
-const DISPATCH_INTAKE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1767890653';
+const SCHEDULE_SHEET_CSV = csvExportUrl(WORKBOOK_IDS.farmOps, 1232005308);
+const DISPATCH_INTAKE_SHEET_CSV = csvExportUrl(WORKBOOK_IDS.farmOps, 1767890653);
 let cachedScheduleSheet = { timestamp: 0, schedules: [] };
 let cachedDispatchIntake = { timestamp: 0, records: [] };
 

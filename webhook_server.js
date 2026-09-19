@@ -6,6 +6,7 @@ const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const { WORKBOOK_IDS, csvExportUrl } = require('./config/data-sources');
 const quotaTracker = { loadQuotaData: () => ({}), saveQuotaData: () => {} };
 
 // Local logger for this module — writes to the same secretary_activity.log
@@ -266,7 +267,7 @@ function parseCsv(text) {
     return rows;
 }
 
-const PO_REGISTER_CSV = 'https://docs.google.com/spreadsheets/d/1FfkSYTCxUFYj3dE6VHAOWEqDa4MVU3yMz7rwjefh-Ig/export?format=csv&gid=1245149988';
+const PO_REGISTER_CSV = csvExportUrl(WORKBOOK_IDS.customerPos, 1245149988);
 let cachedPORegister = { timestamp: 0, rows: [] };
 let cachedTeamStatus = { timestamp: 0, data: null };
 async function fetchCustomerPORegister(force = false) {
@@ -284,8 +285,8 @@ async function fetchCustomerPORegister(force = false) {
         return out;
     } catch (e) { console.error('[PO Register Fetch Error]:', e.message); return cachedPORegister.rows; }
 }
-const SCHEDULE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1232005308';
-const DISPATCH_INTAKE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/195Foz8mjcLt1q5agCh28FoyJkg4VxGhMt86XqX7ZSCM/export?format=csv&gid=1767890653';
+const SCHEDULE_SHEET_CSV = csvExportUrl(WORKBOOK_IDS.farmOps, 1232005308);
+const DISPATCH_INTAKE_SHEET_CSV = csvExportUrl(WORKBOOK_IDS.farmOps, 1767890653);
 let cachedDispatchIntake = { timestamp: 0, records: [] };
 async function fetchDispatchIntakeLog(force = false) {
     const now = Date.now();
