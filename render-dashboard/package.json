@@ -9,7 +9,7 @@
     "test": "npm run test:security && npm run test:deployment",
     "test:security": "node ../tests/security_remediation.test.js",
     "test:deployment": "node ../scripts/validate-deployment.js",
-    "test:integration": "node test_live_http_audit.js"
+    "test:integration": "node ../tests/live_http_audit.test.js"
   },
   "dependencies": {}
 }

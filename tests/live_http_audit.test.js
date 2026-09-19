@@ -7,15 +7,6 @@ process.env.PSC_API_KEY = TEST_KEY;
 process.env.PORT = '8999';
 
 const path = require('path');
-const fs = require('fs');
-
-// Backup stock_inventory.json before running test mutations
-const stockPath = path.resolve(__dirname, '..', 'stock_inventory.json');
-let stockBackup = null;
-if (fs.existsSync(stockPath)) {
-    try { stockBackup = fs.readFileSync(stockPath, 'utf8'); } catch(e){}
-}
-
 const { server } = require(path.resolve(__dirname, '..', 'webhook_server.js'));
 
 let pass = 0;
@@ -72,7 +63,7 @@ server.listen(8999, '127.0.0.1', async () => {
         headers: { 'Content-Type': 'application/json' }
     }, JSON.stringify({ Items: { Cabbage: { StockKg: 100 } } }), 401);
 
-    // Test 3: Authenticated POST via X-PSC-API-KEY -> MUST SUCCEED 200
+    // Test 3: Authenticated POST via X-PSC-API-KEY -> accepted for async forwarding
     await runHttpTest('3. Accept authenticated POST via X-PSC-API-KEY header', {
         hostname: '127.0.0.1',
         port: 8999,
@@ -82,9 +73,9 @@ server.listen(8999, '127.0.0.1', async () => {
             'Content-Type': 'application/json',
             'X-PSC-API-KEY': TEST_KEY
         }
-    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 200);
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 202);
 
-    // Test 4: Authenticated POST via X-API-KEY -> MUST SUCCEED 200
+    // Test 4: Authenticated POST via X-API-KEY -> accepted for async forwarding
     await runHttpTest('4. Accept authenticated POST via legacy X-API-KEY header', {
         hostname: '127.0.0.1',
         port: 8999,
@@ -94,7 +85,7 @@ server.listen(8999, '127.0.0.1', async () => {
             'Content-Type': 'application/json',
             'X-API-KEY': TEST_KEY
         }
-    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 200);
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 202);
 
     // Test 5: Reject invalid API key -> 401
     await runHttpTest('5. Reject invalid X-PSC-API-KEY header with 401', {
@@ -120,7 +111,7 @@ server.listen(8999, '127.0.0.1', async () => {
         }
     }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 401);
 
-    // Test 7: Authenticated POST via Authorization: Bearer -> MUST SUCCEED 200
+    // Test 7: Authenticated POST via Authorization: Bearer -> accepted for async forwarding
     await runHttpTest('7. Accept authenticated POST via Authorization: Bearer <key>', {
         hostname: '127.0.0.1',
         port: 8999,
@@ -130,7 +121,7 @@ server.listen(8999, '127.0.0.1', async () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${TEST_KEY}`
         }
-    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 200);
+    }, JSON.stringify({ Items: { Cabbage: { StockKg: 5000 } } }), 202);
 
     // Test 8: Reject Malformed Stock Schema -> 400 Bad Request
     await runHttpTest('8. Schema validation: Reject malformed payload with 400', {
@@ -457,11 +448,6 @@ server.listen(8999, '127.0.0.1', async () => {
     console.log('\n================================================================');
     console.log(`📊 LIVE TEST RESULTS: PASS: ${pass} | FAIL: ${fail}`);
     console.log('================================================================\n');
-
-    // Restore original stock_inventory.json
-    if (stockBackup !== null && fs.existsSync(stockPath)) {
-        try { fs.writeFileSync(stockPath, stockBackup, 'utf8'); } catch(e){}
-    }
 
     server.close(() => {
         process.exit(fail > 0 ? 1 : 0);

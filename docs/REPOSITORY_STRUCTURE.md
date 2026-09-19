@@ -4,16 +4,16 @@
 
 `webhook_server.js` is the local/bot-facing runtime. `render-dashboard/server.js` is the production Render runtime. They are currently separate entry points and must not be synchronized automatically. Render serves the dashboard from `render-dashboard/public/ops.html`.
 
-The dashboard has a mirrored source copy at `public/ops.html`. Keep both dashboard copies synchronized when changing the UI. The WDB/Google Sheets service is the preferred live data source through `/api/live-sheets`; the JSON files remain local/runtime fallbacks for existing bot and server workflows.
+The dashboard has a mirrored source copy at `public/ops.html`. Keep both dashboard copies synchronized when changing the UI. The WDB/Google Sheets service is the only live operational data source through `/api/live-sheets`; operational JSON files are not runtime fallbacks.
 
 ## Source directories
 
 | Path | Purpose |
 |---|---|
-| `config/`, `core/` | Shared runtime configuration and application context |
+| `config/` | Shared runtime configuration |
 | `config/data-sources.js` | Canonical Drive folder and underlying workbook IDs used by both Node runtimes |
-| `repositories/`, `services/` | Inventory and operational service modules |
-| `scripts/` | CLI tools and deterministic record-processing utilities |
+| `services/` | Operational service modules |
+| `scripts/` | Deployment, validation, and deterministic maintenance utilities |
 | `public/` | Local dashboard source assets |
 | `render-dashboard/` | Render deployment copy and server |
 | `tests/` | Security and live HTTP tests |
@@ -39,6 +39,6 @@ Legacy patch scripts, binary stock workbooks, captured PO images, dated backups,
 1. Update the correct runtime. Do not copy `webhook_server.js` over `render-dashboard/server.js`; they currently have different route ownership.
 2. Run `npm run check`, `npm test`, and `npm run test:duplicates` from the repository root. The Render package exposes the same checks through `cd render-dashboard && npm run check && npm test`.
 3. Confirm `render-dashboard/public/ops.html` contains the current dashboard adapter.
-4. Use `sync_render_dashboard.sh` only for the explicitly listed shared assets. It checks for drift and requires `--apply` for a copy operation.
+4. Use `sync_render_dashboard.sh` only to check or explicitly copy `public/ops.html` to the Render dashboard path. It requires `--apply` for a copy operation.
 5. Run `git diff --check`. The optional `npm run test:integration` command runs the live HTTP audit and may mutate local runtime state; it is not part of the default test command.
 6. Commit and push to `main`; Render deploys from that branch.

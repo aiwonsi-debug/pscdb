@@ -88,7 +88,7 @@ Do not place access tokens, Gemini keys, LINE secrets, session secrets, or API k
 | `render-dashboard/package.json` | Production | Render start and check commands |
 | `integrations/google-apps-script/psc_wdb_web_app.gs` | Apps Script source copy | Web API, LINE handlers, Gemini, sheet writers, messaging |
 | `public/ops.html` | Canonical UI mirror | Root copy of the dashboard page |
-| `public/css/ops.css` | Shared style mirror | Dashboard styling |
+| `public/ops.html` | Canonical UI mirror | Self-contained dashboard styling and inline logic |
 | `sync_render_dashboard.sh` | Release guard | Checks shared asset drift; requires `--apply` for copying |
 | `sync_render_dashboard.ps1` | Windows release guard | PowerShell equivalent of the shell guard |
 
@@ -104,7 +104,7 @@ Do not place access tokens, Gemini keys, LINE secrets, session secrets, or API k
 
 ### 4.3 Compatibility and support files
 
-The repository also contains the local bot runtime, inventory services, CLI helpers, PowerShell automation, and JSON compatibility stores. They should be treated as support or compatibility code unless the deployment configuration explicitly uses them.
+The repository also contains the local bot runtime and PowerShell automation. Operational stock and team data are stored in Google Drive/Sheets; no local JSON compatibility store is part of the live runtime.
 
 Before changing one of these files, search for its imports and confirm whether it is part of a live process. Do not assume that a file is production merely because it is tracked in Git.
 

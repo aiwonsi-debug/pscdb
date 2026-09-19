@@ -1,6 +1,6 @@
 const querystring = require('querystring');
 const crypto = require('crypto');
-const memoryEngine = require('./memory_engine.js');
+const memoryEngine = require('../memory_engine.js');
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -78,7 +78,7 @@ const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros
 
 let sendLineMessage;
 try {
-    sendLineMessage = require('./line_notifier').sendLineMessage;
+    sendLineMessage = require('../line_notifier').sendLineMessage;
 } catch (e) {
     sendLineMessage = async (msg) => { console.log('[Webhook Notify Fallback]:', msg); return { success: false }; };
 }
@@ -696,9 +696,9 @@ const server = http.createServer(async (req, res) => {
 
             // Header auth checks Master PSC_API_KEY
             isMasterAuth = !!(PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)));
-            // Session auth checks Cookie or Bearer/Header token
+            // Session auth is cookie-only; header tokens are reserved for the master API key.
             const headerSession = (req.headers['x-psc-session'] || '').trim();
-            isSessionAuth = isValidWebSession(cookieSession) || isValidWebSession(bearerToken) || isValidWebSession(headerSession);
+            isSessionAuth = isValidWebSession(cookieSession);
 
             const isAuthorized = PSC_API_KEY && (isMasterAuth || isSessionAuth);
             if (!isAuthorized) {

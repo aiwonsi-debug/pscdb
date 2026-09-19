@@ -14,11 +14,7 @@ elif [[ "${1:-}" != "" ]]; then
 fi
 
 FILES=(
-  "line_notifier.js"
-  "memory_engine.js"
-  "cabbage_prices_transport.json"
-  "stock_inventory.json"
-  "team_ops_status.json"
+  "public/ops.html:public/ops.html"
 )
 
 has_drift=false

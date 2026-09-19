@@ -726,9 +726,9 @@ const server = http.createServer(async (req, res) => {
 
             // Header auth checks Master PSC_API_KEY
             isMasterAuth = !!(PSC_API_KEY && ((reqKey === PSC_API_KEY) || (bearerToken === PSC_API_KEY)));
-            // Session auth checks Cookie or Bearer/Header token
+            // Session auth is cookie-only; header tokens are reserved for the master API key.
             const headerSession = (req.headers['x-psc-session'] || '').trim();
-            isSessionAuth = isValidWebSession(cookieSession) || isValidWebSession(bearerToken) || isValidWebSession(headerSession);
+            isSessionAuth = isValidWebSession(cookieSession);
 
             const isAuthorized = PSC_API_KEY && (isMasterAuth || isSessionAuth);
             if (!isAuthorized) {

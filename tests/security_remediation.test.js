@@ -117,8 +117,7 @@ test('C-05: public/ops.html uses dynamic auth and has no hardcoded secret', () =
     const pubHtmlPath = path.join(__dirname, '../public/ops.html');
     const targetFile = fs.existsSync(pubHtmlPath) ? pubHtmlPath : path.join(__dirname, '../ops_mobile_web.html');
     const htmlCode = fs.readFileSync(targetFile, 'utf8');
-    const jsCode = fs.existsSync(path.join(__dirname, '../public/js/ops.js')) ? fs.readFileSync(path.join(__dirname, '../public/js/ops.js'), 'utf8') : '';
-    const combined = htmlCode + '\n' + jsCode;
+    const combined = htmlCode;
     assert.ok(combined.includes("credentials: 'same-origin'") || combined.includes("X-PSC-API-KEY"), 'Client must support authenticated session calls');
     assert.ok(!combined.includes("'psc_sec_ops_2026_key'"), 'Client must NOT hardcode fallback secret key');
 });

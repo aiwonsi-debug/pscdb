@@ -1,7 +1,7 @@
 // Cabbage price & freight-rate survey parser.
 // Pure domain logic: takes an incoming Thai-language text message, extracts
-// supplier prices and freight rates, saves them to cabbage_prices_transport.json,
-// and forwards the result to the Drive-backed ingestion layer. No dependency on AI engines, config,
+// supplier prices and freight rates, and forwards the result to the Drive-backed ingestion layer.
+// No dependency on AI engines, config,
 // or currentAiEngine — safe to keep as a standalone module.
 
 function createPriceSurvey({ agyBaseDir, writeLog, formatDMY, sendMessage }) {

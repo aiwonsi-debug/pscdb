@@ -128,3 +128,11 @@ The project should not attempt to reduce file count by deleting the two servers 
 [2]: https://github.com/aiwonsi-debug/pscdb/blob/main/docs/PSC_PROJECT_MAINTAINABILITY_AUDIT_2026-09-19.md "PSCDB maintainability audit"
 
 [3]: https://github.com/aiwonsi-debug/pscdb/blob/main/docs/REPOSITORY_STRUCTURE.md "PSCDB repository structure"
+
+## Cleanup execution result
+
+The recommended cleanup was executed on the repository after the audit. The tree decreased from **94 to 70 tracked files**, from approximately **1.2 MB to 892 KB**, and from approximately **18,872 to 11,397 code and markup lines**. The cleanup removed **25 files and 7,539 lines** while preserving both production server entrypoints, the Apps Script source, the shared forecast rules, and the self-contained dashboard.
+
+The cleanup also consolidated the Render runtime onto the shared root notifier and memory modules, consolidated the live HTTP audit test, removed the obsolete local-inventory CLI and repository layer, removed unreferenced dashboard assets and maintenance utilities, and enforced cookie-only session authentication for team write endpoints.
+
+The final validation passed the root checks, unit tests, security suite with 15 passing assertions, deployment guard, duplicate-logic audit with no duplicates, root live HTTP audit with 32 passing tests, Render checks, Render tests, Render live HTTP audit, dashboard mirror comparison, synchronization check, and whitespace validation. The cleanup was pushed to the `main` branch after verification.

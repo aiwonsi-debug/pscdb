@@ -35,12 +35,12 @@
                                       │                  [GitHub: aiwonsi-debug/pscdb]
                                       │                          │
                                       ▼                          ▼
-                         [public/ops.html / ops.js] ➔ [Render Live Hosting: pscdb.onrender.com]
+                         [public/ops.html] ➔ [Render Live Hosting: pscdb.onrender.com]
 ```
 
 ### 2.2 โครงสร้างไดเรกทอรีสำคัญ
 - `public/ops.html` และ `render-dashboard/public/ops.html`: หน้า UI หลักสำหรับ Mobile Web Dashboard (โหมด Read-Only Monitor สำหรับผู้บริหารและทีมงาน)
-- `public/js/ops.js`: Logic ฝั่ง Frontend สำหรับสลับแท็บ (Tab Navigation), ฟิลเตอร์ (Category Filter), และการ Render ข้อมูล
+- `public/ops.html`: Dashboard UI, styles, and inline rendering logic
 - `config/data-sources.js`: canonical Drive folder and underlying workbook IDs
 - Google Drive/Sheets: สถานะคำสั่งซื้อ, คิวรถขนส่ง, ราคา, สต็อกตรวจนับจริง, และ Audit Trail
 - `1_Farm_Ops_Transport_and_Intake.xlsx`: บันทึกการขึ้นของสวน, ชั่งน้ำหนักจริงที่โรงงาน, Transit Loss, และผลสุ่มปอก (Yield)

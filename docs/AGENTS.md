@@ -20,4 +20,4 @@ Apply these rules on every interaction across all projects:
 4. **Shortest Working Diff:** The most concise patch that addresses root cause is the right solution.
 
 ## 4. Memory & State Compactness
-- When reading or updating JSON memory files (e.g. `secretary_memory.json`, `stock_inventory.json`), do not print out the full file contents in the chat response. Display only the delta summary.
+- When reading or updating JSON memory files (for example, `secretary_memory.json`), do not print out the full file contents in the chat response. Operational stock and team data are stored in Google Drive/Sheets; display only the relevant delta summary.
