@@ -357,32 +357,45 @@ async function fetchGoogleSheetsLiveSchedule(force = false) {
     }
 }
 
-function fetchGoogleSheetsData(queryParam = '') {
-    return new Promise((resolve) => {
+const LIVE_SHEETS_CACHE_TTL_MS = 30 * 1000;
+const LIVE_SHEETS_STALE_TTL_MS = 5 * 60 * 1000;
+let liveSheetsCache = { data: null, fetchedAt: 0, refreshing: null };
+
+function fetchGoogleSheetsData(queryParam = '', forceRefresh = false) {
+    const isSummary = queryParam === 'action=summary';
+    const now = Date.now();
+    if (isSummary && !forceRefresh && liveSheetsCache.data && now - liveSheetsCache.fetchedAt < LIVE_SHEETS_CACHE_TTL_MS) {
+        return Promise.resolve(liveSheetsCache.data);
+    }
+    if (isSummary && !forceRefresh && liveSheetsCache.data && now - liveSheetsCache.fetchedAt < LIVE_SHEETS_STALE_TTL_MS) {
+        if (!liveSheetsCache.refreshing) liveSheetsCache.refreshing = fetchGoogleSheetsData(queryParam, true).finally(() => { liveSheetsCache.refreshing = null; });
+        return Promise.resolve(liveSheetsCache.data);
+    }
+    if (isSummary && liveSheetsCache.refreshing) return liveSheetsCache.refreshing;
+    const request = new Promise((resolve) => {
         if (!GAS_URL) return resolve(null);
         try {
-            const fetchUrl = queryParam ? `${GAS_URL}${GAS_URL.includes('?') ? '&' : '?'}${queryParam}` : GAS_URL;
+            const cacheBust = isSummary ? (queryParam + '&server_cache=' + now) : queryParam;
+            const fetchUrl = cacheBust ? `${GAS_URL}${GAS_URL.includes('?') ? '&' : '?'}${cacheBust}` : GAS_URL;
+            const handleResponse = (res) => {
+                let data = '';
+                res.on('data', c => data += c);
+                res.on('end', () => {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (isSummary && parsed && parsed.ok !== false) liveSheetsCache = { data: parsed, fetchedAt: Date.now(), refreshing: null };
+                        resolve(parsed);
+                    } catch (e) { resolve(null); }
+                });
+            };
             https.get(fetchUrl, (res) => {
-                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                    https.get(res.headers.location, (redRes) => {
-                        let data = '';
-                        redRes.on('data', c => data += c);
-                        redRes.on('end', () => {
-                            try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
-                        });
-                    }).on('error', () => resolve(null));
-                } else {
-                    let data = '';
-                    res.on('data', c => data += c);
-                    res.on('end', () => {
-                        try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
-                    });
-                }
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) https.get(res.headers.location, handleResponse).on('error', () => resolve(null));
+                else handleResponse(res);
             }).on('error', () => resolve(null));
-        } catch (e) {
-            resolve(null);
-        }
+        } catch (e) { resolve(null); }
     });
+    if (isSummary) liveSheetsCache.refreshing = request.finally(() => { liveSheetsCache.refreshing = null; });
+    return request;
 }
 
 function loadTeamOps() {
@@ -791,7 +804,7 @@ const server = http.createServer(async (req, res) => {
 
             // Real-Time Sheets Direct Sync: Fetch live stock array from Google Apps Script
             try {
-                const liveSheets = await fetchGoogleSheetsData('action=summary');
+                const liveSheets = await fetchGoogleSheetsData('action=summary', parsedUrl.query.refresh === '1' || parsedUrl.query.force === '1');
                 if (liveSheets && Array.isArray(liveSheets.stock) && liveSheets.stock.length > 0) {
                     if (!stockData.Items) stockData.Items = {};
                     liveSheets.stock.forEach(row => {
@@ -832,14 +845,15 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'GET' && (pathname === '/api/live-sheets' || pathname === '/api/sheets-data' || pathname === '/api/schedules')) {
             let liveData = { ok: true, stock: [], schedules: [], prices: [] };
             try {
-                const sheetResult = await fetchGoogleSheetsData('action=summary');
+                const sheetResult = await fetchGoogleSheetsData('action=summary', parsedUrl.query.refresh === '1' || parsedUrl.query.force === '1');
                 if (sheetResult && typeof sheetResult === 'object') {
                     liveData = sheetResult;
                 }
             } catch (err) {
                 console.error('[Live Sheets API Error]:', err.message);
             }
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+            res.setHeader('X-PSC-Data-Cache', liveSheetsCache.data === liveData ? 'hit' : 'refresh');
             res.writeHead(200);
             return res.end(JSON.stringify(liveData, null, 2));
         }
