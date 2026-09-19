@@ -5,8 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js",
-    "test:security": "node ../tests/security_remediation.test.js"
+    "check": "node --check server.js && node --check ../shared/forecast-rules.js && node --check ../scripts/validate-deployment.js",
+    "test": "npm run test:security && npm run test:deployment",
+    "test:security": "node ../tests/security_remediation.test.js",
+    "test:deployment": "node ../scripts/validate-deployment.js",
+    "test:integration": "node test_live_http_audit.js"
   },
   "dependencies": {}
 }

@@ -18,6 +18,15 @@ function writeLog(msg) {
     try { fs.appendFileSync(path.join(__dirname, 'secretary_activity.log'), line + '\n', 'utf8'); } catch (e) {}
     try { console.log(line); } catch (e) {}
 }
+function lineTrace(payload) {
+    const event = payload && Array.isArray(payload.events) ? (payload.events[0] || {}) : {};
+    return {
+        eventId: String(event.webhookEventId || event.eventId || ''),
+        messageId: String(event.message && event.message.id || ''),
+        replyOwner: 'apps-script',
+        replyAttempted: false
+    };
+}
 
 function escapeHtml(str) {
     if (!str || typeof str !== 'string') return '';
@@ -1017,7 +1026,7 @@ const server = http.createServer(async (req, res) => {
             // deployed Apps Script. Apps Script is the only component allowed
             // to consume the LINE replyToken and send a user reply.
             syncToGoogleSheets(payload);
-            writeLog('[LINE Webhook] Routed event directly to Apps Script; Desktop forwarding disabled');
+            writeLog(`[LINE Webhook] Routed event to Apps Script trace=${JSON.stringify(lineTrace(payload))}`);
             return;
         }
 

@@ -5,10 +5,12 @@
   "main": "webhook_server.js",
   "scripts": {
     "start": "node webhook_server.js",
-    "check": "node --check webhook_server.js && node --check shared/forecast-rules.js",
-    "test": "npm run test:forecast && npm run test:security",
+    "check": "node --check webhook_server.js && node --check render-dashboard/server.js && node --check shared/forecast-rules.js && node --check scripts/validate-deployment.js",
+    "test": "npm run test:forecast && npm run test:security && npm run test:deployment",
     "test:forecast": "node tests/forecast_rules.test.js",
     "test:security": "node tests/security_remediation.test.js",
+    "test:deployment": "node scripts/validate-deployment.js",
+    "test:integration": "node tests/live_http_audit.test.js",
     "test:duplicates": "node scripts/audit-duplicate-logic.js"
   },
   "dependencies": {},

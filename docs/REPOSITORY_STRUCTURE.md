@@ -19,6 +19,8 @@ The dashboard has a mirrored source copy at `public/ops.html`. Keep both dashboa
 | `docs/` | Maintained documentation only |
 | `data/examples/` | Sanitized example payloads |
 
+`scripts/validate-deployment.js` is the deterministic release guard. It verifies that the root and Render server entrypoints remain separate, the sync scripts cannot overwrite runtime files, Render contains no LINE reply endpoint, and the shared forecast-rule exports are present.
+
 ## Data policy
 
 Google Sheets/WDB is the system of record for live stock, schedules, prices, and customer plans. Do not commit downloaded Drive exports, customer files, PO images, operational backups, or generated audit snapshots. Use `.example` files for schemas and sanitized test data.
@@ -32,7 +34,8 @@ Legacy patch scripts, binary stock workbooks, captured PO images, dated backups,
 ## Deployment checklist
 
 1. Update the correct runtime. Do not copy `webhook_server.js` over `render-dashboard/server.js`; they currently have different route ownership.
-2. Run `git diff --check` and the relevant tests.
+2. Run `npm run check`, `npm test`, and `npm run test:duplicates` from the repository root. The Render package exposes the same checks through `cd render-dashboard && npm run check && npm test`.
 3. Confirm `render-dashboard/public/ops.html` contains the current dashboard adapter.
 4. Use `sync_render_dashboard.sh` only for the explicitly listed shared assets. It checks for drift and requires `--apply` for a copy operation.
-5. Commit and push to `main`; Render deploys from that branch.
+5. Run `git diff --check`. The optional `npm run test:integration` command runs the live HTTP audit and may mutate local runtime state; it is not part of the default test command.
+6. Commit and push to `main`; Render deploys from that branch.
