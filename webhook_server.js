@@ -1394,4 +1394,4 @@ if (require.main === module) {
     createWebhookServer(null);
 }
 
-module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, saveTeamOps, recordLoadingReport, syncToRender, server };
+module.exports = { createWebhookServer, WEBHOOK_PORT: PORT, loadTeamOps, saveTeamOps, recordLoadingReport, syncToRender, fetchGoogleSheetsLiveSchedule, server };

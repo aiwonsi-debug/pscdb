@@ -104,7 +104,7 @@ function sendLineMessage(messageText, targetOverride) {
  * Generate a compact, deduplicated pending-work summary for LINE at 08:00.
  * Invalid rows (blank product/date or quantity <= 0) are excluded.
  */
-function generateD1LineMessage(dateStr) {
+function generateD1LineMessage(dateStr, opsOverride = null) {
   let opsStatus = {};
   if (fs.existsSync(OPS_STATUS_FILE)) {
     try { opsStatus = JSON.parse(fs.readFileSync(OPS_STATUS_FILE, 'utf8')); } catch (e) {}
@@ -136,7 +136,7 @@ function generateD1LineMessage(dateStr) {
   const clean = (v, fallback = '') => asText(v) || fallback;
   const isDone = (v) => /ขึ้นของและส่งมอบเรียบร้อย|จัดส่งแล้ว|เสร็จ|เรียบร้อย/.test(asText(v));
 
-  const rawOps = Array.isArray(opsStatus.active_operations) ? opsStatus.active_operations : [];
+  const rawOps = Array.isArray((opsOverride || opsStatus).active_operations) ? (opsOverride || opsStatus).active_operations : [];
   const seen = new Set();
   const pendingOps = [];
   for (const op of rawOps) {
@@ -188,12 +188,36 @@ function generateD1LineMessage(dateStr) {
   return msg.slice(0, 4500);
 }
 
+/** Build the 08:00 summary from the live Next Schedule sheet. */
+async function generateD1LineMessageFromLiveSchedule(dateStr) {
+  try {
+    const { fetchGoogleSheetsLiveSchedule } = require('./webhook_server');
+    const rows = await fetchGoogleSheetsLiveSchedule(true);
+    if (Array.isArray(rows) && rows.length > 0) {
+      const active_operations = rows.map(r => ({
+        loading_date: r.date,
+        delivery_date: r.date,
+        product: r.product,
+        qty_kg: Number(String(r.weight || '').replace(/,/g, '').match(/[0-9]+(?:\.[0-9]+)?/)?.[0] || 0),
+        customer: r.customer,
+        farm: r.origin,
+        status: r.status || 'รอดำเนินการ',
+        skip_line_alert: false
+      }));
+      return generateD1LineMessage(dateStr, { active_operations, other_tasks: [] });
+    }
+  } catch (e) {
+    console.error('[LINE OA SCHEDULER] Live schedule read failed:', e.message);
+  }
+  return generateD1LineMessage(dateStr);
+}
+
 /**
  * Daily 08:00 AM Cron Checker
  */
 function initDailyLineScheduler() {
   console.log('[LINE OA SCHEDULER] Initialized. Monitoring for 08:00 AM daily dispatch...');
-  setInterval(() => {
+  setInterval(async () => {
     const now = new Date();
     const currentHour = now.getHours();
     const currentMin = now.getMinutes();
@@ -207,7 +231,7 @@ function initDailyLineScheduler() {
 
     if (currentHour === targetHour && currentMin === targetMin && config.last_sent_date !== todayStr) {
       console.log(`[LINE OA SCHEDULER] Firing 08:00 AM Alert for ${todayStr}...`);
-      const msg = generateD1LineMessage(todayStr);
+      const msg = await generateD1LineMessageFromLiveSchedule(todayStr);
       sendLineMessage(msg).then(() => {
         config.last_sent_date = todayStr;
         saveLineConfig(config);
@@ -221,6 +245,7 @@ module.exports = {
   saveLineConfig,
   sendLineMessage,
   generateD1LineMessage,
+  generateD1LineMessageFromLiveSchedule,
   initDailyLineScheduler,
   getOpsWebUrl
 };
