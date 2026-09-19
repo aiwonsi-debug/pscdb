@@ -1,63 +1,62 @@
-# sync_render_dashboard.ps1 — run from project root before every deploy.
-# Root files are the source of truth; render-dashboard/ is the deploy copy.
+# Check or explicitly synchronize the Render deployment copy.
+# Usage:
+#   .\sync_render_dashboard.ps1          # check only; fails on drift
+#   .\sync_render_dashboard.ps1 -Apply   # copy root canonical files to Render
+[CmdletBinding()]
+param([switch]$Apply)
 $ErrorActionPreference = "Stop"
 
-# Format: "src" (same filename) or "src:dest" (different filename)
 $files = @(
     "line_notifier.js",
     "memory_engine.js",
-    "webhook_server.js:server.js",
     "cabbage_prices_transport.json",
     "stock_inventory.json",
     "team_ops_status.json",
-    "secretary_memory.json",
-    "public\ops.html",
-    "public\js\ops.js"
 )
 
-Write-Host "== Checking for drift before sync ==" -ForegroundColor Cyan
+$hasDrift = $false
 foreach ($entry in $files) {
     if ($entry -match ":") {
-        $parts = $entry -split ":"
+        $parts = $entry -split ":", 2
         $src = $parts[0]
         $dest = $parts[1]
     } else {
         $src = $entry
         $dest = $entry
     }
-
     $rootPath = Join-Path $PSScriptRoot $src
     $renderPath = Join-Path $PSScriptRoot "render-dashboard\$dest"
+    if (!(Test-Path $rootPath) -or !(Test-Path $renderPath)) {
+        Write-Host "MISSING: $src or render-dashboard/$dest" -ForegroundColor Red
+        $hasDrift = $true
+    } elseif ((Get-FileHash $rootPath).Hash -ne (Get-FileHash $renderPath).Hash) {
+        Write-Host "DIFF: $src -> render-dashboard/$dest" -ForegroundColor Yellow
+        $hasDrift = $true
+    } else {
+        Write-Host "OK:   $src -> render-dashboard/$dest" -ForegroundColor Green
+    }
+}
 
-    if ((Test-Path $rootPath) -and (Test-Path $renderPath)) {
-        $h1 = (Get-FileHash $rootPath).Hash
-        $h2 = (Get-FileHash $renderPath).Hash
-        if ($h1 -ne $h2) {
-            Write-Host "  DIFF: $src -> render-dashboard/$dest (render-dashboard copy will be overwritten by root copy)" -ForegroundColor Yellow
+if ($hasDrift -and !$Apply) {
+    Write-Host "`nDrift detected. Review the diff, then rerun with -Apply only if root is canonical." -ForegroundColor Yellow
+    exit 1
+}
+
+if ($Apply) {
+    foreach ($entry in $files) {
+        if ($entry -match ":") {
+            $parts = $entry -split ":", 2
+            $src = $parts[0]
+            $dest = $parts[1]
         } else {
-            Write-Host "  OK: $src -> render-dashboard/$dest (identical)" -ForegroundColor Green
+            $src = $entry
+            $dest = $entry
+        }
+        $rootPath = Join-Path $PSScriptRoot $src
+        $renderPath = Join-Path $PSScriptRoot "render-dashboard\$dest"
+        if (Test-Path $rootPath) {
+            Copy-Item -Path $rootPath -Destination $renderPath -Force
+            Write-Host "SYNCED: $src -> render-dashboard/$dest" -ForegroundColor Green
         }
     }
 }
-
-Write-Host "`n== Syncing root -> render-dashboard ==" -ForegroundColor Cyan
-foreach ($entry in $files) {
-    if ($entry -match ":") {
-        $parts = $entry -split ":"
-        $src = $parts[0]
-        $dest = $parts[1]
-    } else {
-        $src = $entry
-        $dest = $entry
-    }
-
-    $rootPath = Join-Path $PSScriptRoot $src
-    $renderPath = Join-Path $PSScriptRoot "render-dashboard\$dest"
-
-    if (Test-Path $rootPath) {
-        Copy-Item -Path $rootPath -Destination $renderPath -Force
-        Write-Host "  Synced: $src -> render-dashboard/$dest" -ForegroundColor Green
-    }
-}
-
-Write-Host "`n== Done. render-dashboard/ now matches root. Ready to deploy. ==" -ForegroundColor Green

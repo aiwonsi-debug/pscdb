@@ -2,7 +2,7 @@
 
 ## Runtime and deployment
 
-`webhook_server.js` is the local/bot-facing runtime. `render-dashboard/server.js` is the Render runtime. Render serves the dashboard from `render-dashboard/public/ops.html`.
+`webhook_server.js` is the local/bot-facing runtime. `render-dashboard/server.js` is the production Render runtime. They are currently separate entry points and must not be synchronized automatically. Render serves the dashboard from `render-dashboard/public/ops.html`.
 
 The dashboard has a mirrored source copy at `public/ops.html`. Keep both dashboard copies synchronized when changing the UI. The WDB/Google Sheets service is the preferred live data source through `/api/live-sheets`; the JSON files remain local/runtime fallbacks for existing bot and server workflows.
 
@@ -31,7 +31,8 @@ Legacy patch scripts, binary stock workbooks, captured PO images, dated backups,
 
 ## Deployment checklist
 
-1. Update the canonical source and its Render mirror where applicable.
+1. Update the correct runtime. Do not copy `webhook_server.js` over `render-dashboard/server.js`; they currently have different route ownership.
 2. Run `git diff --check` and the relevant tests.
 3. Confirm `render-dashboard/public/ops.html` contains the current dashboard adapter.
-4. Commit and push to `main`; Render deploys from that branch.
+4. Use `sync_render_dashboard.sh` only for the explicitly listed shared assets. It checks for drift and requires `--apply` for a copy operation.
+5. Commit and push to `main`; Render deploys from that branch.

@@ -4,7 +4,9 @@
   "description": "PSC Team Ops Dashboard",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "test:security": "node ../tests/security_remediation.test.js"
   },
   "dependencies": {}
 }
